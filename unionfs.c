@@ -24,6 +24,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 
 #include "unionfs.h"
 #include "cache.h"
+#include "stats.h"
 
 
 int findroot(const char *path) {
@@ -43,7 +44,7 @@ int findroot(const char *path) {
 }
 
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
-	if (stats && strcmp(path, "/stats") == 0) {
+	if (stats_enabled && strcmp(path, "/stats") == 0) {
 		memset(stbuf, 0, sizeof(stbuf));
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_nlink = 1;
@@ -137,7 +138,7 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 	for (i = 0; i < nadded; i++) free(added[i]);
 	free(added);
 
-	if (stats && strcmp(path, "/") == 0) {
+	if (stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
 	}
 
@@ -361,7 +362,10 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 
 
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
-	if (stats && strcmp(path, "/stats") == 0) return 0;
+	if (stats_enabled && strcmp(path, "/stats") == 0) {
+		if ((fi->flags & 3) == O_RDONLY) return 0;
+		return -EACCES;
+	}
 
 	int i = cache_lookup(path);
 	if (i == -1) i = findroot(path);
@@ -385,10 +389,9 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	if (stats && strcmp(path, "/stats") == 0) {
+	if (stats_enabled && strcmp(path, "/stats") == 0) {
 		char out[STATS_SIZE] = "";
-		sprintf(out, "Cache hits/misses/ratio: %d/%d/%.3f\n", cache_hits, cache_misses, (double)cache_hits/(double)cache_misses);
-		sprintf(out+strlen(out), "Bytes read/written: %.3fM/%.3fM\n", (double)bytes_read/1000000, (double)bytes_written/1000000);
+		stats_sprint(out);
 
 		int s = size;
 		if (offset < strlen(out)) {
@@ -419,7 +422,7 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 	int res = pread(fd, buf, size, offset);
 	if (res == -1) res = -errno;
 
-	if (stats) bytes_read += size;
+	if (stats_enabled) stats_add_read(size);
 
 	close(fd);
 
@@ -446,7 +449,7 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 	int res = pwrite(fd, buf, size, offset);
 	if (res == -1) res = -errno;
 
-	if (stats) bytes_written += size;
+	if (stats_enabled) stats_add_written(size);
 
 	close(fd);
 
@@ -609,11 +612,9 @@ static struct fuse_operations unionfs_oper = {
 
 int main(int argc, char *argv[]) {
 	printf("unionfs-fuse by Radek Podgorny\n");
-	printf("version 0.9\n");
+	printf("version 0.10\n");
 
-	stats = 0;
-	bytes_read = bytes_written = 0;
-
+	stats_init();
 
 	int argc_new = 0;
 	char *argv_new[argc];
@@ -637,7 +638,7 @@ int main(int argc, char *argv[]) {
 				printf("root %d is %s\n", nroots, roots[nroots-1]);
 			}
 		} else if (strcmp(argv[i], "--stats") == 0) {
-			stats = 1;
+			stats_enabled = 1;
 		} else {
 			argv_new[argc_new++] = argv[i];
 		}
@@ -648,7 +649,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	printf("Stats %s\n", stats?"enabled":"disabled");
+	printf("Stats %s\n", stats_enabled?"enabled":"disabled");
 
 	cache_init();
 

@@ -14,7 +14,6 @@ struct cache_entry {
 } cache[CACHE_SIZE];
 
 int cache_pos;
-int cache_hits, cache_misses;
 
 
 void cache_init();

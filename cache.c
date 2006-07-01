@@ -1,4 +1,5 @@
 #include "cache.h"
+#include "stats.h"
 
 
 void cache_init() {
@@ -9,7 +10,6 @@ void cache_init() {
 	}
 
 	cache_pos = 0;
-	cache_hits = cache_misses = 0;
 }
 
 int cache_lookup(const char *path) {
@@ -19,12 +19,12 @@ int cache_lookup(const char *path) {
 		if (pos < 0) pos += CACHE_SIZE;
 
 		if (strcmp(cache[pos].path, path) == 0) {
-			if (stats) cache_hits++;
+			if (stats_enabled) stats_cache_hits++;
 			return cache[pos].root;
 		}
 	}
 
-	if (stats) cache_misses++;
+	if (stats_enabled) stats_cache_misses++;
 
 	return -1;
 }
