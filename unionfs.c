@@ -151,11 +151,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	strcat(p, path);
 
 	int res = lstat(p, stbuf);
-
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_getattr(path, stbuf);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
