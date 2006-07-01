@@ -172,7 +172,17 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 static int unionfs_link(const char *from, const char *to) {
 	DBG("link\n");
 
-	int res = link(from, to);
+	int i = findroot(to);
+	if (i == -1) {
+		if (errno == ENOENT) i = findroot_cutlast(to);
+		if (i == -1) return -errno;
+	}
+
+	char t[PATHLEN_MAX];
+	strcpy(t, roots[i]);
+	strcat(t, to);
+
+	int res = link(from, t);
 	if (res == -1) return -errno;
 
 	return 0;
