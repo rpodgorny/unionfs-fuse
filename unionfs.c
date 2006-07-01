@@ -882,13 +882,13 @@ int main(int argc, char *argv[]) {
 			while (strlen(tmp) > 0 && nroots < ROOTS_MAX) {
 				char *ri = rindex(tmp, ',');
 				if (ri) {
-					roots[nroots] = malloc(strlen(ri+1));
-					strcpy(roots[nroots], ri+1);
-					ri[0] = 0;
+					roots[nroots] = malloc(PATHLEN_MAX);
+					strncpy(roots[nroots], ri+1, PATHLEN_MAX);
+					ri[0] = '\0';
 				} else {
-					roots[nroots] = malloc(strlen(tmp));
-					strcpy(roots[nroots], tmp);
-					tmp[0] = 0;
+					roots[nroots] = malloc(PATHLEN_MAX);
+					strncpy(roots[nroots], tmp, PATHLEN_MAX);
+					tmp[0] = '\0';
 				}
 				nroots++;
 /*
