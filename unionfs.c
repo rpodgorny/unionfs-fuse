@@ -423,14 +423,17 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 static int unionfs_symlink(const char *from, const char *to) {
 	DBG("symlink\n");
 
-	int i = findroot(from);
-	if (i == -1) return -errno;
+	int i = findroot(to);
+	if (i == -1) {
+		if (errno == ENOENT) i = findroot_cutlast(to);
+		if (i == -1) return -errno;
+	}
 
-	char f[PATHLEN_MAX];
-	strcpy(f, roots[i]);
-	strcat(f, from);
+	char t[PATHLEN_MAX];
+	strcpy(t, roots[i]);
+	strcat(t, to);
 
-	int res = symlink(f, to);
+	int res = symlink(from, t);
 	if (res == -1) return -errno;
 
 	return 0;
