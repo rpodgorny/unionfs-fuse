@@ -405,10 +405,7 @@ static int unionfs_rmdir(const char *path) {
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	DBG("statfs\n");
 
-	stbuf->f_bsize = 0;
-	stbuf->f_frsize = 0;
-	stbuf->f_fsid = 0;
-	stbuf->f_flag = 0;
+	int first = 1;
 
 	int i = 0;
 	for (i = 0; i < nroots; i++) {
@@ -416,14 +413,22 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 		int res = statvfs(roots[i], &stb);
 		if (res == -1) continue;
 
-		stbuf->f_blocks += stb.f_blocks;
-		stbuf->f_bfree += stb.f_bfree;
-		stbuf->f_bavail += stb.f_bavail;
-		stbuf->f_files += stb.f_files;
-		stbuf->f_ffree += stb.f_ffree;
+		if (first) {
+			memcpy(stbuf, &stb, sizeof(*stbuf));
+			first = 0;
+		} else {
+			// Filesystem can have different block sizes -> normalize to first's block size
+			double ratio = (double)stb.f_bsize / (double)stbuf->f_bsize;
 
-		if (stb.f_namemax < stbuf->f_namemax || stbuf->f_namemax == 0) {
-			stbuf->f_namemax = stb.f_namemax;
+			stbuf->f_blocks += stb.f_blocks * ratio;
+			stbuf->f_bfree += stb.f_bfree * ratio;
+			stbuf->f_bavail += stb.f_bavail * ratio;
+
+			stbuf->f_files += stb.f_files;
+			stbuf->f_ffree += stb.f_ffree;
+			stbuf->f_favail += stb.f_favail;
+
+			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
 		}
 	}
 
