@@ -877,20 +877,19 @@ int main(int argc, char *argv[]) {
 		if (strncmp(argv[i], "--roots=", strlen("--roots=")) == 0) {
 			int len = strlen(argv[i]) - strlen("--roots=");
 			char tmp[len+1];
-			strncpy(tmp, argv[i]+len, len);
+			strncpy(tmp, argv[i]+strlen("--roots="), len);
+			tmp[len] = '\0';
 
 			while (strlen(tmp) > 0 && nroots < ROOTS_MAX) {
 				char *ri = rindex(tmp, ',');
+				roots[nroots] = malloc(PATHLEN_MAX);
 				if (ri) {
-					roots[nroots] = malloc(PATHLEN_MAX);
 					strncpy(roots[nroots], ri+1, PATHLEN_MAX);
 					ri[0] = '\0';
 				} else {
-					roots[nroots] = malloc(PATHLEN_MAX);
 					strncpy(roots[nroots], tmp, PATHLEN_MAX);
 					tmp[0] = '\0';
 				}
-				nroots++;
 /*
 				char *ind = index(tmp, ',');
 				int len;
@@ -912,7 +911,9 @@ int main(int argc, char *argv[]) {
 					tmp[0] = '\0';
 				}
 */
-				printf("root %d is %s\n", nroots, roots[nroots-1]);
+				printf("root %d is %s\n", nroots, roots[nroots]);
+
+				nroots++;
 			}
 		} else if (strcmp(argv[i], "--stats") == 0) {
 			stats_enabled = 1;
