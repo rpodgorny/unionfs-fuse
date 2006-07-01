@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "cache.h"
 #include "stats.h"
 

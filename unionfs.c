@@ -11,7 +11,9 @@ This is offered under a BSD-style license. This means you can use the code for w
 
 #include <fuse.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
