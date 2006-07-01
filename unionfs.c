@@ -30,7 +30,10 @@ This is offered under a BSD-style license. This means you can use the code for w
 
 
 int findroot(const char *path) {
-	int i = 0;
+	int i = cache_lookup(path);
+
+	if (i != -1) return i;
+
 	for (i = 0; i < nroots; i++) {
 		char p[PATHLEN_MAX];
 		strcpy(p, roots[i]);
@@ -39,7 +42,10 @@ int findroot(const char *path) {
 		struct stat stbuf;
 		int res = lstat(p, &stbuf);
 
-		if (res == 0) return i;
+		if (res == 0) {
+			cache_save(path, i);
+			return i;
+		}
 	}
 
 	return -1;
@@ -54,10 +60,8 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 		return 0;
 	}
 
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -74,10 +78,8 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 }
 
 static int unionfs_readlink(const char *path, char *buf, size_t size) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -180,10 +182,8 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 */
 
 static int unionfs_unlink(const char *path) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -203,10 +203,8 @@ static int unionfs_unlink(const char *path) {
 }
 
 static int unionfs_rmdir(const char *path) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -227,10 +225,8 @@ static int unionfs_rmdir(const char *path) {
 
 /**/
 static int unionfs_symlink(const char *from, const char *to) {
-	int i = cache_lookup(from);
-	if (i == -1) i = findroot(from);
+	int i = findroot(from);
 	if (i == -1) return -errno;
-	cache_save(from, i);
 
 	char f[PATHLEN_MAX];
 	strcpy(f, roots[i]);
@@ -246,10 +242,8 @@ static int unionfs_symlink(const char *from, const char *to) {
 }
 
 static int unionfs_rename(const char *from, const char *to) {
-	int i = cache_lookup(from);
-	if (i == -1) i = findroot(from);
+	int i = findroot(from);
 	if (i == -1) return -errno;
-	cache_save(from, i);
 
 	char f[PATHLEN_MAX];
 	strcpy(f, roots[i]);
@@ -285,10 +279,8 @@ static int unionfs_link(const char *from, const char *to) {
 */
 
 static int unionfs_chmod(const char *path, mode_t mode) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -305,10 +297,8 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 }
 
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -325,10 +315,8 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 }
 
 static int unionfs_truncate(const char *path, off_t size) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -345,10 +333,8 @@ static int unionfs_truncate(const char *path, off_t size) {
 }
 
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -371,10 +357,8 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 		return -EACCES;
 	}
 
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -407,10 +391,8 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 		return s;
 	}
 
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -434,10 +416,8 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 }
 
 static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -505,10 +485,8 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 #ifdef HAVE_SETXATTR
 // xattr operations are optional and can safely be left unimplemented
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -525,10 +503,8 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 }
 
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -545,10 +521,8 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 }
 
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -565,10 +539,8 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 }
 
 static int unionfs_removexattr(const char *path, const char *name) {
-	int i = cache_lookup(path);
-	if (i == -1) i = findroot(path);
+	int i = findroot(path);
 	if (i == -1) return -errno;
-	cache_save(path, i);
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
