@@ -230,7 +230,6 @@ static int unionfs_rmdir(const char *path) {
 	return 0;
 }
 
-/**/
 static int unionfs_symlink(const char *from, const char *to) {
 	DBG("symlink\n");
 
@@ -564,7 +563,7 @@ static struct fuse_operations unionfs_oper = {
 	.readdir	= unionfs_readdir,
 	.mknod	= unionfs_mknod,
 //	.mkdir	= unionfs_mkdir,
-//	.symlink	= unionfs_symlink,
+	.symlink	= unionfs_symlink,
 	.unlink	= unionfs_unlink,
 	.rmdir	= unionfs_rmdir,
 	.rename	= unionfs_rename,
