@@ -63,7 +63,6 @@ static int unionfs_access(const char *path, int mask) {
 	strcat(p, path);
 
 	int res = access(p, mask);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -108,7 +107,6 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	strcat(p, path);
 
 	int res = readlink(p, buf, size - 1);
-
 	if (res == -1) return -errno;
 
 	buf[res] = '\0';
@@ -197,10 +195,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 static int unionfs_mkdir(const char *path, mode_t mode) {
 	DBG("mkdir\n");
 
-	int res;
-
-	res = mkdir(path, mode);
-
+	int res = mkdir(path, mode);
 	if (res == -1) return -errno;
 
 	return 0;
@@ -258,7 +253,6 @@ static int unionfs_symlink(const char *from, const char *to) {
 	strcat(f, from);
 
 	int res = symlink(f, to);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -279,7 +273,6 @@ static int unionfs_rename(const char *from, const char *to) {
 	strcat(t, to);
 
 	int res = rename(f, t);
-
 	if (res == -1) return -errno;
 
 	// The path should no longer exist
@@ -292,10 +285,7 @@ static int unionfs_rename(const char *from, const char *to) {
 static int unionfs_link(const char *from, const char *to) {
 	DBG("link\n");
 
-	int res;
-
-	res = link(from, to);
-
+	int res = link(from, to);
 	if (res == -1) return -errno;
 
 	return 0;
@@ -313,7 +303,6 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	strcat(p, path);
 
 	int res = chmod(p, mode);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -330,7 +319,6 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	strcat(p, path);
 
 	int res = lchown(p, uid, gid);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -347,7 +335,6 @@ static int unionfs_truncate(const char *path, off_t size) {
 	strcat(p, path);
 
 	int res = truncate(p, size);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -364,7 +351,6 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	strcat(p, path);
 
 	int res = utime(p, buf);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -405,8 +391,9 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 		if (offset < strlen(out)) {
 			if (s > strlen(out)-offset) s = strlen(out)-offset;
 			memcpy(buf, out+offset, s);
-		} else
+		} else {
 			s = 0;
+		}
 
 		return s;
 	}
@@ -513,7 +500,6 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	strcat(p, path);
 
 	int res = lsetxattr(p, name, value, size, flags);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -530,7 +516,6 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	strcat(p, path);
 
 	int res = lgetxattr(p, name, value, size);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -547,7 +532,6 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	strcat(p, path);
 
 	int res = llistxattr(p, list, size);
-
 	if (res == -1) return -errno;
 
 	return 0;
@@ -564,7 +548,6 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	strcat(p, path);
 
 	int res = lremovexattr(p, name);
-
 	if (res == -1) return -errno;
 
 	return 0;
