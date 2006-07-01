@@ -68,6 +68,70 @@ static int unionfs_access(const char *path, int mask) {
 	return 0;
 }
 
+static int unionfs_chmod(const char *path, mode_t mode) {
+	DBG("chmod\n");
+
+	int i = findroot(path);
+	if (i == -1) return -errno;
+
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = chmod(p, mode);
+	if (res == -1) return -errno;
+
+	return 0;
+}
+
+static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
+	DBG("chown\n");
+
+	int i = findroot(path);
+	if (i == -1) return -errno;
+
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = lchown(p, uid, gid);
+	if (res == -1) return -errno;
+
+	return 0;
+}
+
+/*
+flush may be called multiple times for an open file, this must not
+really close the file. This is important if used on a network
+filesystem like NFS which flush the data/metadata on close()
+*/
+static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
+	DBG("flush\n");
+
+	int fd = dup(fi->fh);
+
+	if (fd == -1) {
+		// What to do now?
+		if (fsync(fi->fh) == -1) return -EIO;
+		return 0;
+	}
+
+	if (close(fd) == -1) return -errno;
+
+	return 0;
+}
+
+static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
+	DBG("fsync\n");
+
+	// Just a stub. This method is optional and can safely be left unimplemented
+
+	(void) path;
+	(void) isdatasync;
+	(void) fi;
+	return 0;
+}
+
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	DBG("getattr\n");
 
@@ -96,8 +160,58 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	return 0;
 }
 
-static int unionfs_readlink(const char *path, char *buf, size_t size) {
-	DBG("readlink\n");
+/*
+static int unionfs_link(const char *from, const char *to) {
+	DBG("link\n");
+
+	int res = link(from, to);
+	if (res == -1) return -errno;
+
+	return 0;
+}
+*/
+
+/*
+static int unionfs_mkdir(const char *path, mode_t mode) {
+	DBG("mkdir\n");
+
+	int res = mkdir(path, mode);
+	if (res == -1) return -errno;
+
+	return 0;
+}
+*/
+
+static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
+	DBG("mknod\n");
+
+	int res;
+
+	int i = 0;
+	for (i = 0; i < nroots; i++) {
+		char p[PATHLEN_MAX];
+		strcpy(p, roots[i]);
+		strcat(p, path);
+
+		res = mknod(p, mode, rdev);
+
+		if (res == -1) {
+			res = -errno; continue;
+		} else {
+			res = 0; break;
+		}
+	}
+
+	return res;
+}
+
+static int unionfs_open(const char *path, struct fuse_file_info *fi) {
+	DBG("open\n");
+
+	if (stats_enabled && strcmp(path, "/stats") == 0) {
+		if ((fi->flags & 3) == O_RDONLY) return 0;
+		return -EACCES;
+	}
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
@@ -106,14 +220,39 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	strcpy(p, roots[i]);
 	strcat(p, path);
 
-	int res = readlink(p, buf, size - 1);
-	if (res == -1) return -errno;
+	int fd = open(p, fi->flags);
+	if (fd == -1) return -errno;
 
-	buf[res] = '\0';
+	fi->fh = (unsigned long)fd;
 
 	return 0;
 }
 
+static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	DBG("read\n");
+
+	if (stats_enabled && strcmp(path, "/stats") == 0) {
+		char out[STATS_SIZE] = "";
+		stats_sprint(out);
+
+		int s = size;
+		if (offset < strlen(out)) {
+			if (s > strlen(out)-offset) s = strlen(out)-offset;
+			memcpy(buf, out+offset, s);
+		} else {
+			s = 0;
+		}
+
+		return s;
+	}
+
+	int res = pread(fi->fh, buf, size, offset);
+	if (res == -1) return -errno;
+
+	if (stats_enabled) stats_add_read(size);
+
+	return res;
+}
 
 static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
 	DBG("readdir\n");
@@ -168,42 +307,8 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 	return 0;
 }
 
-static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
-	DBG("mknod\n");
-
-	int res;
-
-	int i = 0;
-	for (i = 0; i < nroots; i++) {
-		char p[PATHLEN_MAX];
-		strcpy(p, roots[i]);
-		strcat(p, path);
-
-		res = mknod(p, mode, rdev);
-
-		if (res == -1) {
-			res = -errno; continue;
-		} else {
-			res = 0; break;
-		}
-	}
-
-	return res;
-}
-
-/*
-static int unionfs_mkdir(const char *path, mode_t mode) {
-	DBG("mkdir\n");
-
-	int res = mkdir(path, mode);
-	if (res == -1) return -errno;
-
-	return 0;
-}
-*/
-
-static int unionfs_unlink(const char *path) {
-	DBG("unlink\n");
+static int unionfs_readlink(const char *path, char *buf, size_t size) {
+	DBG("readlink\n");
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
@@ -212,48 +317,20 @@ static int unionfs_unlink(const char *path) {
 	strcpy(p, roots[i]);
 	strcat(p, path);
 
-	int res = unlink(p);
-
+	int res = readlink(p, buf, size - 1);
 	if (res == -1) return -errno;
 
-	// The path should no longer exist
-	cache_invalidate(path);
+	buf[res] = '\0';
 
 	return 0;
 }
 
-static int unionfs_rmdir(const char *path) {
-	DBG("rmdir\n");
+static int unionfs_release(const char *path, struct fuse_file_info *fi) {
+	DBG("release\n");
 
-	int i = findroot(path);
-	if (i == -1) return -errno;
+	///(void) path;
 
-	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
-
-	int res = rmdir(p);
-
-	if (res == -1) return -errno;
-
-	// The path should no longer exist
-	cache_invalidate(path);
-
-	return 0;
-}
-
-static int unionfs_symlink(const char *from, const char *to) {
-	DBG("symlink\n");
-
-	int i = findroot(from);
-	if (i == -1) return -errno;
-
-	char f[PATHLEN_MAX];
-	strcpy(f, roots[i]);
-	strcat(f, from);
-
-	int res = symlink(f, to);
-	if (res == -1) return -errno;
+	close(fi->fh);
 
 	return 0;
 }
@@ -281,19 +358,8 @@ static int unionfs_rename(const char *from, const char *to) {
 	return 0;
 }
 
-/*
-static int unionfs_link(const char *from, const char *to) {
-	DBG("link\n");
-
-	int res = link(from, to);
-	if (res == -1) return -errno;
-
-	return 0;
-}
-*/
-
-static int unionfs_chmod(const char *path, mode_t mode) {
-	DBG("chmod\n");
+static int unionfs_rmdir(const char *path) {
+	DBG("rmdir\n");
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
@@ -302,119 +368,14 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	strcpy(p, roots[i]);
 	strcat(p, path);
 
-	int res = chmod(p, mode);
+	int res = rmdir(p);
+
 	if (res == -1) return -errno;
+
+	// The path should no longer exist
+	cache_invalidate(path);
 
 	return 0;
-}
-
-static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
-	DBG("chown\n");
-
-	int i = findroot(path);
-	if (i == -1) return -errno;
-
-	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
-
-	int res = lchown(p, uid, gid);
-	if (res == -1) return -errno;
-
-	return 0;
-}
-
-static int unionfs_truncate(const char *path, off_t size) {
-	DBG("truncate\n");
-
-	int i = findroot(path);
-	if (i == -1) return -errno;
-
-	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
-
-	int res = truncate(p, size);
-	if (res == -1) return -errno;
-
-	return 0;
-}
-
-static int unionfs_utime(const char *path, struct utimbuf *buf) {
-	DBG("utime\n");
-
-	int i = findroot(path);
-	if (i == -1) return -errno;
-
-	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
-
-	int res = utime(p, buf);
-	if (res == -1) return -errno;
-
-	return 0;
-}
-
-
-static int unionfs_open(const char *path, struct fuse_file_info *fi) {
-	DBG("open\n");
-
-	if (stats_enabled && strcmp(path, "/stats") == 0) {
-		if ((fi->flags & 3) == O_RDONLY) return 0;
-		return -EACCES;
-	}
-
-	int i = findroot(path);
-	if (i == -1) return -errno;
-
-	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
-
-	int fd = open(p, fi->flags);
-	if (fd == -1) return -errno;
-
-	fi->fh = (unsigned long)fd;
-
-	return 0;
-}
-
-static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	DBG("read\n");
-
-	if (stats_enabled && strcmp(path, "/stats") == 0) {
-		char out[STATS_SIZE] = "";
-		stats_sprint(out);
-
-		int s = size;
-		if (offset < strlen(out)) {
-			if (s > strlen(out)-offset) s = strlen(out)-offset;
-			memcpy(buf, out+offset, s);
-		} else {
-			s = 0;
-		}
-
-		return s;
-	}
-
-	int res = pread(fi->fh, buf, size, offset);
-	if (res == -1) return -errno;
-
-	if (stats_enabled) stats_add_read(size);
-
-	return res;
-}
-
-static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	DBG("write\n");
-
-	int res = pwrite(fi->fh, buf, size, offset);
-	if (res == -1) return -errno;
-
-	if (stats_enabled) stats_add_written(size);
-
-	return res;
 }
 
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
@@ -445,52 +406,24 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	return 0;
 }
 
-static int unionfs_release(const char *path, struct fuse_file_info *fi) {
-	DBG("release\n");
+static int unionfs_symlink(const char *from, const char *to) {
+	DBG("symlink\n");
 
-	///(void) path;
+	int i = findroot(from);
+	if (i == -1) return -errno;
 
-	close(fi->fh);
+	char f[PATHLEN_MAX];
+	strcpy(f, roots[i]);
+	strcat(f, from);
 
-	return 0;
-}
-
-/*
-flush may be called multiple times for an open file, this must not
-really close the file. This is important if used on a network
-filesystem like NFS which flush the data/metadata on close()
-*/
-static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
-	DBG("flush\n");
-
-	int fd = dup(fi->fh);
-
-	if (fd == -1) {
-		// What to do now?
-		if (fsync(fi->fh) == -1) return -EIO;
-		return 0;
-	}
-
-	if (close(fd) == -1) return -errno;
+	int res = symlink(f, to);
+	if (res == -1) return -errno;
 
 	return 0;
 }
 
-static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
-	DBG("fsync\n");
-
-	// Just a stub. This method is optional and can safely be left unimplemented
-
-	(void) path;
-	(void) isdatasync;
-	(void) fi;
-	return 0;
-}
-
-#ifdef HAVE_SETXATTR
-// xattr operations are optional and can safely be left unimplemented
-static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
-	DBG("sexattr\n");
+static int unionfs_truncate(const char *path, off_t size) {
+	DBG("truncate\n");
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
@@ -499,12 +432,60 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	strcpy(p, roots[i]);
 	strcat(p, path);
 
-	int res = lsetxattr(p, name, value, size, flags);
+	int res = truncate(p, size);
 	if (res == -1) return -errno;
 
 	return 0;
 }
 
+static int unionfs_unlink(const char *path) {
+	DBG("unlink\n");
+
+	int i = findroot(path);
+	if (i == -1) return -errno;
+
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = unlink(p);
+
+	if (res == -1) return -errno;
+
+	// The path should no longer exist
+	cache_invalidate(path);
+
+	return 0;
+}
+
+static int unionfs_utime(const char *path, struct utimbuf *buf) {
+	DBG("utime\n");
+
+	int i = findroot(path);
+	if (i == -1) return -errno;
+
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = utime(p, buf);
+	if (res == -1) return -errno;
+
+	return 0;
+}
+
+static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	DBG("write\n");
+
+	int res = pwrite(fi->fh, buf, size, offset);
+	if (res == -1) return -errno;
+
+	if (stats_enabled) stats_add_written(size);
+
+	return res;
+}
+
+#ifdef HAVE_SETXATTR
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
 	DBG("getxattr\n");
 
@@ -548,6 +529,22 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	strcat(p, path);
 
 	int res = lremovexattr(p, name);
+	if (res == -1) return -errno;
+
+	return 0;
+}
+
+static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
+	DBG("sexattr\n");
+
+	int i = findroot(path);
+	if (i == -1) return -errno;
+
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = lsetxattr(p, name, value, size, flags);
 	if (res == -1) return -errno;
 
 	return 0;
