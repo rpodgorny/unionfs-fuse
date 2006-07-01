@@ -398,12 +398,13 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
 			int j = 0;
-			for (j = 0; j < nadded; j++)
+			for (j = 0; j < nadded; j++) {
 				if (strcmp(added[j], de->d_name) == 0) break;
+			}
 			if (j < nadded) continue;
 
 			added = (char**)realloc(added, (nadded+1)*sizeof(char*));
-			added[nadded] = malloc(strlen(de->d_name)+1);
+			added[nadded] = malloc(PATHLEN_MAX);
 			strncpy(added[nadded], de->d_name, PATHLEN_MAX);
 			nadded++;
 
