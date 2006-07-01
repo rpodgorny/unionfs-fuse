@@ -438,28 +438,29 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 	return res;
 }
 
-/**/
-static int unionfs_statfs(const char *path, struct statfs *stbuf) {
+static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	DBG("statfs\n");
+
+	stbuf->f_bsize = 0;
+	stbuf->f_frsize = 0;
+	stbuf->f_fsid = 0;
+	stbuf->f_flag = 0;
 
 	int i = 0;
 	for (i = 0; i < nroots; i++) {
-		struct statfs stb;
-		int res = statfs(roots[i], &stb);
-
-		if (i == 0) {
-			memcpy(stbuf, &stb, sizeof(stb));
-		} else {
-			stbuf->f_blocks += stb.f_blocks;
-			stbuf->f_bfree += stb.f_bfree;
-			stbuf->f_bavail += stb.f_bavail;
-			stbuf->f_files += stb.f_files;
-			stbuf->f_ffree += stb.f_ffree;
-
-			if (stb.f_namelen < stbuf->f_namelen) stbuf->f_namelen = stb.f_namelen;
-		}
-
+		struct statvfs stb;
+		int res = statvfs(roots[i], &stb);
 		if (res == -1) continue;
+
+		stbuf->f_blocks += stb.f_blocks;
+		stbuf->f_bfree += stb.f_bfree;
+		stbuf->f_bavail += stb.f_bavail;
+		stbuf->f_files += stb.f_files;
+		stbuf->f_ffree += stb.f_ffree;
+
+		if (stb.f_namemax < stbuf->f_namemax || stbuf->f_namemax == 0) {
+			stbuf->f_namemax = stb.f_namemax;
+		}
 	}
 
 	return 0;
