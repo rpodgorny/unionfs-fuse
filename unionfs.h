@@ -7,7 +7,7 @@
 
 
 int nroots;
-char roots[ROOTS_MAX][PATHLEN_MAX];
+char *roots[ROOTS_MAX];
 
 
 #endif

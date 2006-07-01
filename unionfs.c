@@ -593,25 +593,50 @@ int main(int argc, char *argv[]) {
 	stats_init();
 	cache_init();
 
+	nroots = 0;
+
 	int argc_new = 0;
 	char *argv_new[argc];
 
 	int i = 0;
 	for (i = 0; i < argc; i++) {
 		if (strncmp(argv[i], "--roots=", strlen("--roots=")) == 0) {
-			char tmp[strlen(argv[i])];
+			char tmp[strlen(argv[i])-strlen("--roots=")+1];
 			strcpy(tmp, argv[i]+strlen("--roots="));
 
-			while (strlen(tmp) > 0) {
+			while (strlen(tmp) > 0 && nroots < ROOTS_MAX) {
 				char *ri = rindex(tmp, ',');
-				if (ri != NULL) {
-					strcpy(roots[nroots++], ri+1);
+				if (ri) {
+					roots[nroots] = malloc(strlen(ri+1));
+					strcpy(roots[nroots], ri+1);
 					ri[0] = 0;
 				} else {
-					strcpy(roots[nroots++], tmp);
+					roots[nroots] = malloc(strlen(tmp));
+					strcpy(roots[nroots], tmp);
 					tmp[0] = 0;
 				}
+				nroots++;
+/*
+				char *ind = index(tmp, ',');
+				int len;
+				if (ind) {
+					len = ind - tmp;
+				} else {
+					len = strlen(tmp);
+				}
 
+				roots[nroots] = malloc(len+1);
+				strncpy(roots[nroots], tmp, len);
+				nroots++;
+
+				if (ind) {
+					char tmp2[strlen(tmp)+1];
+					strcpy(tmp2, tmp);
+					strcpy(tmp, tmp2+len+1);
+				} else {
+					tmp[0] = '\0';
+				}
+*/
 				printf("root %d is %s\n", nroots, roots[nroots-1]);
 			}
 		} else if (strcmp(argv[i], "--stats") == 0) {
