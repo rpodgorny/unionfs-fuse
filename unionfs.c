@@ -152,11 +152,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	return 0;
 }
 
-/*
-flush may be called multiple times for an open file, this must not
-really close the file. This is important if used on a network
-filesystem like NFS which flush the data/metadata on close()
-*/
+/* flush may be called multiple times for an open file, this must not really close the file. This is important if used on a network filesystem like NFS which flush the data/metadata on close() */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	DBG("flush\n");
 
@@ -173,7 +169,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	return 0;
 }
 
-// Just a stub. This method is optional and can safely be left unimplemented
+/* Just a stub. This method is optional and can safely be left unimplemented */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
 	DBG("fsync\n");
 
@@ -852,7 +848,7 @@ static struct fuse_operations unionfs_oper = {
 
 int main(int argc, char *argv[]) {
 	printf("unionfs-fuse by Radek Podgorny\n");
-	printf("version 0.12\n");
+	printf("version 0.13\n");
 
 #ifdef DEBUG
 	char *dbgpath = "./unionfs_debug.log";
