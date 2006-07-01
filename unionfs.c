@@ -387,10 +387,9 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	strcat(p, path);
 
 	int fd = open(p, fi->flags);
-
 	if (fd == -1) return -errno;
 
-	close(fd);
+	fi->fh = (unsigned long)fd;
 
 	return 0;
 }
@@ -412,22 +411,10 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 		return s;
 	}
 
-	int i = findroot(path);
-	if (i == -1) return -errno;
-
-	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
-
-	int fd = open(p, O_RDONLY);
-	if (fd == -1) return -errno;
-
-	int res = pread(fd, buf, size, offset);
-	if (res == -1) res = -errno;
+	int res = pread(fi->fh, buf, size, offset);
+	if (res == -1) return -errno;
 
 	if (stats_enabled) stats_add_read(size);
-
-	close(fd);
 
 	return res;
 }
@@ -435,22 +422,10 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	DBG("write\n");
 
-	int i = findroot(path);
-	if (i == -1) return -errno;
-
-	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
-
-	int fd = open(p, O_WRONLY);
-	if (fd == -1) return -errno;
-
-	int res = pwrite(fd, buf, size, offset);
-	if (res == -1) res = -errno;
+	int res = pwrite(fi->fh, buf, size, offset);
+	if (res == -1) return -errno;
 
 	if (stats_enabled) stats_add_written(size);
-
-	close(fd);
 
 	return res;
 }
@@ -486,10 +461,31 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 	DBG("release\n");
 
-	// Just a stub. This method is optional and can safely be left unimplemented
+	///(void) path;
 
-	(void) path;
-	(void) fi;
+	close(fi->fh);
+
+	return 0;
+}
+
+/*
+flush may be called multiple times for an open file, this must not
+really close the file. This is important if used on a network
+filesystem like NFS which flush the data/metadata on close()
+*/
+static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
+	DBG("flush\n");
+
+	int fd = dup(fi->fh);
+
+	if (fd == -1) {
+		// What to do now?
+		if (fsync(fi->fh) == -1) return -EIO;
+		return 0;
+	}
+
+	if (close(fd) == -1) return -errno;
+
 	return 0;
 }
 
@@ -577,6 +573,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 
 static struct fuse_operations unionfs_oper = {
 	.access	= unionfs_access,
+	.flush	= unionfs_flush,
 	.getattr	= unionfs_getattr,
 	.readlink	= unionfs_readlink,
 	.readdir	= unionfs_readdir,
