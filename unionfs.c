@@ -52,6 +52,18 @@ int findroot(const char *path) {
 	return -1;
 }
 
+/* Try to find root when we cut the last path element */
+int findroot_cutlast(const char *path) {
+	char* ri = rindex(path, '/'); //this char should always be found
+	int len = ri - path;
+
+	char p[PATHLEN_MAX];
+	strncpy(p, path, len);
+	p[len] = '\0';
+
+	return findroot(p);
+}
+
 static int unionfs_access(const char *path, int mask) {
 	DBG("access\n");
 
@@ -156,7 +168,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	return 0;
 }
 
-/*
+
 static int unionfs_link(const char *from, const char *to) {
 	DBG("link\n");
 
@@ -165,40 +177,43 @@ static int unionfs_link(const char *from, const char *to) {
 
 	return 0;
 }
-*/
 
-/*
 static int unionfs_mkdir(const char *path, mode_t mode) {
 	DBG("mkdir\n");
 
-	int res = mkdir(path, mode);
+	int i = findroot(path);
+	if (i == -1) {
+		if (errno == ENOENT) i = findroot_cutlast(path);
+		if (i == -1) return -errno;
+	}
+
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = mkdir(p, mode);
 	if (res == -1) return -errno;
 
 	return 0;
 }
-*/
 
 static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	DBG("mknod\n");
 
-	int res;
-
-	int i = 0;
-	for (i = 0; i < nroots; i++) {
-		char p[PATHLEN_MAX];
-		strcpy(p, roots[i]);
-		strcat(p, path);
-
-		res = mknod(p, mode, rdev);
-
-		if (res == -1) {
-			res = -errno; continue;
-		} else {
-			res = 0; break;
-		}
+	int i = findroot(path);
+	if (i == -1) {
+		if (errno == ENOENT) i = findroot_cutlast(path);
+		if (i == -1) return -errno;
 	}
 
-	return res;
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = mknod(p, mode, rdev);
+	if (res == -1) return -errno;
+
+	return 0;
 }
 
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
@@ -210,7 +225,10 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	}
 
 	int i = findroot(path);
-	if (i == -1) return -errno;
+	if (i == -1) {
+		if (errno == ENOENT && fi->flags & O_CREAT) i = findroot_cutlast(path);
+		if (i == -1) return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	strcpy(p, roots[i]);
@@ -554,8 +572,8 @@ static struct fuse_operations unionfs_oper = {
 	.flush	= unionfs_flush,
 	.fsync	= unionfs_fsync,
 	.getattr	= unionfs_getattr,
-//	.link	= unionfs_link,
-//	.mkdir	= unionfs_mkdir,
+	.link	= unionfs_link,
+	.mkdir	= unionfs_mkdir,
 	.mknod	= unionfs_mknod,
 	.open	= unionfs_open,
 	.read	= unionfs_read,
