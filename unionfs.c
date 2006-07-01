@@ -637,7 +637,7 @@ static struct fuse_operations unionfs_oper = {
 
 int main(int argc, char *argv[]) {
 	printf("unionfs-fuse by Radek Podgorny\n");
-	printf("version 0.10\n");
+	printf("version 0.11\n");
 
 #ifdef DEBUG
 	char *dbgpath = "./unionfs_debug.log";
