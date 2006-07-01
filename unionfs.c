@@ -92,12 +92,9 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 
 	int res = readlink(p, buf, size - 1);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_readlink(path, buf, size);
-	}
+	if (res == -1) return -errno;
 
-	buf[res] = 0;
+	buf[res] = '\0';
 
 	return 0;
 }
@@ -186,6 +183,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	int res;
 
 	res = mkdir(path, mode);
+
 	if (res == -1) return -errno;
 
 	return 0;
@@ -204,10 +202,7 @@ static int unionfs_unlink(const char *path) {
 
 	int res = unlink(p);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_unlink(path);
-	}
+	if (res == -1) return -errno;
 
 	// The path should no longer exist
 	cache_invalidate(path);
@@ -227,10 +222,7 @@ static int unionfs_rmdir(const char *path) {
 
 	int res = rmdir(p);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_rmdir(path);
-	}
+	if (res == -1) return -errno;
 
 	// The path should no longer exist
 	cache_invalidate(path);
@@ -250,10 +242,8 @@ static int unionfs_symlink(const char *from, const char *to) {
 	strcat(f, from);
 
 	int res = symlink(f, to);
-	if (res == -1) {
-		cache_invalidate(from);
-		return unionfs_symlink(from, to);
-	}
+
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -274,11 +264,7 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	int res = rename(f, t);
 
-	if (res == -1) {
-		cache_invalidate(from);
-		/* TODO: This is way too complicated so just fail */
-		res = -errno;
-	}
+	if (res == -1) return -errno;
 
 	// The path should no longer exist
 	cache_invalidate(from);
@@ -293,6 +279,7 @@ static int unionfs_link(const char *from, const char *to) {
 	int res;
 
 	res = link(from, to);
+
 	if (res == -1) return -errno;
 
 	return 0;
@@ -311,10 +298,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 
 	int res = chmod(p, mode);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_chmod(path, mode);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -331,10 +315,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 
 	int res = lchown(p, uid, gid);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_chown(path, uid, gid);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -351,10 +332,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 
 	int res = truncate(p, size);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_truncate(path, size);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -371,10 +349,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 
 	int res = utime(p, buf);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_utime(path, buf);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -397,10 +372,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 
 	int fd = open(p, fi->flags);
 
-	if (fd == -1) {
-		cache_invalidate(path);
-		return unionfs_open(path, fi);
-	}
+	if (fd == -1) return -errno;
 
 	close(fd);
 
@@ -432,11 +404,7 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 	strcat(p, path);
 
 	int fd = open(p, O_RDONLY);
-
-	if (fd == -1) {
-		cache_invalidate(path);
-		return unionfs_read(path, buf, size, offset, fi);
-	}
+	if (fd == -1) return -errno;
 
 	int res = pread(fd, buf, size, offset);
 	if (res == -1) res = -errno;
@@ -459,11 +427,7 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 	strcat(p, path);
 
 	int fd = open(p, O_WRONLY);
-
-	if (fd == -1) {
-		cache_invalidate(path);
-		return unionfs_write(path, buf, size, offset, fi);
-	}
+	if (fd == -1) return -errno;
 
 	int res = pwrite(fd, buf, size, offset);
 	if (res == -1) res = -errno;
@@ -537,10 +501,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 
 	int res = lsetxattr(p, name, value, size, flags);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_setxattr(path, name, value, size, flags);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -557,10 +518,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 
 	int res = lgetxattr(p, name, value, size);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_getxattr(path, name, value, size);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -577,10 +535,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 
 	int res = llistxattr(p, list, size);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_listxattr(path, list, size);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
@@ -597,10 +552,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 
 	int res = lremovexattr(p, name);
 
-	if (res == -1) {
-		cache_invalidate(path);
-		return unionfs_removexattr(path, name);
-	}
+	if (res == -1) return -errno;
 
 	return 0;
 }
