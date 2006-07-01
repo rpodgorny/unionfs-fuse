@@ -168,7 +168,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	return res;
 }
 
-/**/
+/*
 static int unionfs_mkdir(const char *path, mode_t mode) {
 	int res;
 
@@ -177,6 +177,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 
 	return 0;
 }
+*/
 
 static int unionfs_unlink(const char *path) {
 	int i = cache_lookup(path);
@@ -272,7 +273,7 @@ static int unionfs_rename(const char *from, const char *to) {
 	return 0;
 }
 
-/**/
+/*
 static int unionfs_link(const char *from, const char *to) {
 	int res;
 
@@ -281,6 +282,7 @@ static int unionfs_link(const char *from, const char *to) {
 
 	return 0;
 }
+*/
 
 static int unionfs_chmod(const char *path, mode_t mode) {
 	int i = cache_lookup(path);
@@ -617,6 +619,7 @@ int main(int argc, char *argv[]) {
 	printf("version 0.10\n");
 
 	stats_init();
+	cache_init();
 
 	int argc_new = 0;
 	char *argv_new[argc];
@@ -647,13 +650,11 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (nroots == 0) {
-		printf("You need to specify at least one root!");
+		printf("You have to specify at least one root!\n");
 		return 1;
 	}
 
 	printf("Stats %s\n", stats_enabled?"enabled":"disabled");
-
-	cache_init();
 
 	umask(0);
 	return fuse_main(argc_new, argv_new, &unionfs_oper);
