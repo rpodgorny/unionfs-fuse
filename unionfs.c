@@ -52,6 +52,23 @@ int findroot(const char *path) {
 	return -1;
 }
 
+static int unionfs_access(const char *path, int mask) {
+	DBG("access\n");
+
+	int i = findroot(path);
+	if (i == -1) return -errno;
+
+	char p[PATHLEN_MAX];
+	strcpy(p, roots[i]);
+	strcat(p, path);
+
+	int res = access(p, mask);
+
+	if (res == -1) return -errno;
+
+	return 0;
+}
+
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	DBG("getattr\n");
 
@@ -559,6 +576,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 #endif /* HAVE_SETXATTR */
 
 static struct fuse_operations unionfs_oper = {
+	.access	= unionfs_access,
 	.getattr	= unionfs_getattr,
 	.readlink	= unionfs_readlink,
 	.readdir	= unionfs_readdir,
