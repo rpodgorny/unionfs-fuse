@@ -48,6 +48,6 @@ void cache_save(const char *path, int root) {
 	cache_pos++;
 	cache_pos %= CACHE_SIZE;
 
-	strcpy(cache[cache_pos].path, path);
+	strncpy(cache[cache_pos].path, path, PATHLEN_MAX);
 	cache[cache_pos].root = root;
 }

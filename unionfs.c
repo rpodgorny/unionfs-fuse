@@ -37,8 +37,7 @@ int findroot(const char *path) {
 
 	for (i = 0; i < nroots; i++) {
 		char p[PATHLEN_MAX];
-		strcpy(p, roots[i]);
-		strcat(p, path);
+		snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 		struct stat stbuf;
 		int res = lstat(p, &stbuf);
@@ -71,8 +70,7 @@ static int unionfs_access(const char *path, int mask) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = access(p, mask);
 	if (res == -1) {
@@ -83,8 +81,7 @@ static int unionfs_access(const char *path, int mask) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = access(p, mask);
 			if (res == -1) return -errno;
@@ -103,8 +100,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = chmod(p, mode);
 	if (res == -1) {
@@ -115,8 +111,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = chmod(p, mode);
 			if (res == -1) return -errno;
@@ -135,8 +130,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = lchown(p, uid, gid);
 	if (res == -1) {
@@ -146,8 +140,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = lchown(p, uid, gid);
 			if (res == -1) return -errno;
@@ -202,8 +195,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = lstat(p, stbuf);
 	if (res == -1) {
@@ -213,8 +205,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = lstat(p, stbuf);
 			if (res == -1) return -errno;
@@ -237,8 +228,7 @@ static int unionfs_link(const char *from, const char *to) {
 	}
 
 	char t[PATHLEN_MAX];
-	strcpy(t, roots[i]);
-	strcat(t, to);
+	snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
 
 	int res = link(from, t);
 	if (res == -1) {
@@ -248,8 +238,7 @@ static int unionfs_link(const char *from, const char *to) {
 			i = findroot(to);
 			if (i == -1) return -errno;
 
-			strcpy(t, roots[i]);
-			strcat(t, to);
+			snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
 
 			res = link(from, t);
 			if (res == -1) return -errno;
@@ -271,8 +260,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	}
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = mkdir(p, mode);
 	if (res == -1) {
@@ -282,8 +270,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = mkdir(p, mode);
 			if (res == -1) return -errno;
@@ -305,8 +292,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	}
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = mknod(p, mode, rdev);
 	if (res == -1) {
@@ -316,8 +302,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = mknod(p, mode, rdev);
 			if (res == -1) return -errno;
@@ -344,8 +329,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	}
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int fd = open(p, fi->flags);
 	if (fd == -1) {
@@ -356,8 +340,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 		
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			fd = open(p, fi->flags);
 			if (fd == -1) return -errno;
@@ -407,8 +390,7 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 	int i = 0;
 	for (i = 0; i < nroots; i++) {
 		char p[PATHLEN_MAX];
-		strcpy(p, roots[i]);
-		strcat(p, path);
+		snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 		DIR *dp = opendir(p);
 		if (dp == NULL) continue;
@@ -422,7 +404,7 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 
 			added = (char**)realloc(added, (nadded+1)*sizeof(char*));
 			added[nadded] = malloc(strlen(de->d_name)+1);
-			strcpy(added[nadded], de->d_name);
+			strncpy(added[nadded], de->d_name, PATHLEN_MAX);
 			nadded++;
 
 			struct stat st;
@@ -452,8 +434,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = readlink(p, buf, size - 1);
 	if (res == -1) {
@@ -463,8 +444,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = readlink(p, buf, size - 1);
 			if (res == -1) return -errno;
@@ -493,12 +473,10 @@ static int unionfs_rename(const char *from, const char *to) {
 	if (i == -1) return -errno;
 
 	char f[PATHLEN_MAX];
-	strcpy(f, roots[i]);
-	strcat(f, from);
+	snprintf(f, PATHLEN_MAX, "%s%s", roots[i], from);
 
 	char t[PATHLEN_MAX];
-	strcpy(t, roots[i]);
-	strcat(t, to);
+	snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
 
 	int res = rename(f, t);
 	if (res == -1) {
@@ -508,11 +486,8 @@ static int unionfs_rename(const char *from, const char *to) {
 			i = findroot(from);
 			if (i == -1) return -errno;
 
-			strcpy(f, roots[i]);
-			strcat(f, from);
-
-			strcpy(t, roots[i]);
-			strcat(t, to);
+			snprintf(f, PATHLEN_MAX, "%s%s", roots[i], from);
+			snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
 
 			res = rename(f, t);
 			if (res == -1) return -errno;
@@ -534,8 +509,7 @@ static int unionfs_rmdir(const char *path) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = rmdir(p);
 	if (res == -1) {
@@ -545,8 +519,7 @@ static int unionfs_rmdir(const char *path) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = rmdir(p);
 			if (res == -1) return -errno;
@@ -604,8 +577,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 	}
 
 	char t[PATHLEN_MAX];
-	strcpy(t, roots[i]);
-	strcat(t, to);
+	snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
 
 	int res = symlink(from, t);
 	if (res == -1) {
@@ -615,8 +587,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 			i = findroot(to);
 			if (i == -1) return -errno;
 
-			strcpy(t, roots[i]);
-			strcat(t, to);
+			snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
 
 			res = symlink(from, t);
 			if (res == -1) return -errno;
@@ -635,8 +606,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = truncate(p, size);
 	if (res == -1) {
@@ -646,8 +616,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = truncate(p, size);
 			if (res == -1) return -errno;
@@ -666,8 +635,7 @@ static int unionfs_unlink(const char *path) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = unlink(p);
 	if (res == -1) {
@@ -677,8 +645,7 @@ static int unionfs_unlink(const char *path) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = unlink(p);
 			if (res == -1) return -errno;
@@ -700,8 +667,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = utime(p, buf);
 	if (res == -1) {
@@ -711,8 +677,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = utime(p, buf);
 			if (res == -1) return -errno;
@@ -743,8 +708,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = lgetxattr(p, name, value, size);
 	if (res == -1) {
@@ -754,8 +718,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = lgetxattr(p, name, value, size);
 			if (res == -1) return 
@@ -774,8 +737,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = llistxattr(p, list, size);
 	if (res == -1) {
@@ -785,8 +747,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = llistxattr(p, list, size);
 			if (res == -1) return -errno;
@@ -805,8 +766,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = lremovexattr(p, name);
 	if (res == -1) {
@@ -816,8 +776,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpy(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = lremovexattr(p, name);
 			if (res == -1) return -errno;
@@ -836,8 +795,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	strcpy(p, roots[i]);
-	strcat(p, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 	int res = lsetxattr(p, name, value, size, flags);
 	if (res == -1) {
@@ -847,8 +805,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			strcpu(p, roots[i]);
-			strcat(p, path);
+			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = lsetxattr(p, name, value, size, flags);
 			if (res == -1) return -errno;
@@ -918,8 +875,9 @@ int main(int argc, char *argv[]) {
 	int i = 0;
 	for (i = 0; i < argc; i++) {
 		if (strncmp(argv[i], "--roots=", strlen("--roots=")) == 0) {
-			char tmp[strlen(argv[i])-strlen("--roots=")+1];
-			strcpy(tmp, argv[i]+strlen("--roots="));
+			int len = strlen(argv[i]) - strlen("--roots=");
+			char tmp[len+1];
+			strncpy(tmp, argv[i]+len, len);
 
 			while (strlen(tmp) > 0 && nroots < ROOTS_MAX) {
 				char *ri = rindex(tmp, ',');
