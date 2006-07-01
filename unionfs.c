@@ -133,14 +133,10 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	return 0;
 }
 
+// Just a stub. This method is optional and can safely be left unimplemented
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
 	DBG("fsync\n");
 
-	// Just a stub. This method is optional and can safely be left unimplemented
-
-	(void) path;
-	(void) isdatasync;
-	(void) fi;
 	return 0;
 }
 
@@ -281,12 +277,6 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
 	DBG("readdir\n");
 
-	DIR *dp;
-	struct dirent *de;
-
-	(void) offset;
-	(void) fi;
-
 	int nadded = 0;
 	char **added;
 	added = malloc(1);
@@ -297,9 +287,10 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 		strcpy(p, roots[i]);
 		strcat(p, path);
 
-		dp = opendir(p);
+		DIR *dp = opendir(p);
 		if (dp == NULL) continue;
 
+		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
 			int j = 0;
 			for (j = 0; j < nadded; j++)
@@ -352,8 +343,6 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 	DBG("release\n");
 
-	///(void) path;
-
 	close(fi->fh);
 
 	return 0;
@@ -393,7 +382,6 @@ static int unionfs_rmdir(const char *path) {
 	strcat(p, path);
 
 	int res = rmdir(p);
-
 	if (res == -1) return -errno;
 
 	// The path should no longer exist
@@ -481,7 +469,6 @@ static int unionfs_unlink(const char *path) {
 	strcat(p, path);
 
 	int res = unlink(p);
-
 	if (res == -1) return -errno;
 
 	// The path should no longer exist
