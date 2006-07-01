@@ -27,6 +27,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include "unionfs.h"
 #include "cache.h"
 #include "stats.h"
+#include "debug.h"
 
 
 int findroot(const char *path) {
@@ -52,6 +53,8 @@ int findroot(const char *path) {
 }
 
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
+	DBG("getattr\n");
+
 	if (stats_enabled && strcmp(path, "/stats") == 0) {
 		memset(stbuf, 0, sizeof(stbuf));
 		stbuf->st_mode = S_IFREG | 0444;
@@ -78,6 +81,8 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 }
 
 static int unionfs_readlink(const char *path, char *buf, size_t size) {
+	DBG("readlink\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -99,6 +104,8 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 
 
 static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+	DBG("readdir\n");
+
 	DIR *dp;
 	struct dirent *de;
 
@@ -150,6 +157,8 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 }
 
 static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
+	DBG("mknod\n");
+
 	int res;
 
 	int i = 0;
@@ -172,6 +181,8 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
 /*
 static int unionfs_mkdir(const char *path, mode_t mode) {
+	DBG("mkdir\n");
+
 	int res;
 
 	res = mkdir(path, mode);
@@ -182,6 +193,8 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 */
 
 static int unionfs_unlink(const char *path) {
+	DBG("unlink\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -203,6 +216,8 @@ static int unionfs_unlink(const char *path) {
 }
 
 static int unionfs_rmdir(const char *path) {
+	DBG("rmdir\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -225,6 +240,8 @@ static int unionfs_rmdir(const char *path) {
 
 /**/
 static int unionfs_symlink(const char *from, const char *to) {
+	DBG("symlink\n");
+
 	int i = findroot(from);
 	if (i == -1) return -errno;
 
@@ -242,6 +259,8 @@ static int unionfs_symlink(const char *from, const char *to) {
 }
 
 static int unionfs_rename(const char *from, const char *to) {
+	DBG("rename\n");
+
 	int i = findroot(from);
 	if (i == -1) return -errno;
 
@@ -269,6 +288,8 @@ static int unionfs_rename(const char *from, const char *to) {
 
 /*
 static int unionfs_link(const char *from, const char *to) {
+	DBG("link\n");
+
 	int res;
 
 	res = link(from, to);
@@ -279,6 +300,8 @@ static int unionfs_link(const char *from, const char *to) {
 */
 
 static int unionfs_chmod(const char *path, mode_t mode) {
+	DBG("chmod\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -297,6 +320,8 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 }
 
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
+	DBG("chown\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -315,6 +340,8 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 }
 
 static int unionfs_truncate(const char *path, off_t size) {
+	DBG("truncate\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -333,6 +360,8 @@ static int unionfs_truncate(const char *path, off_t size) {
 }
 
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
+	DBG("utime\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -352,6 +381,8 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 
 
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
+	DBG("open\n");
+
 	if (stats_enabled && strcmp(path, "/stats") == 0) {
 		if ((fi->flags & 3) == O_RDONLY) return 0;
 		return -EACCES;
@@ -377,6 +408,8 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	DBG("read\n");
+
 	if (stats_enabled && strcmp(path, "/stats") == 0) {
 		char out[STATS_SIZE] = "";
 		stats_sprint(out);
@@ -416,6 +449,8 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 }
 
 static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	DBG("write\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -442,6 +477,8 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 
 /**/
 static int unionfs_statfs(const char *path, struct statfs *stbuf) {
+	DBG("statfs\n");
+
 	int i = 0;
 	for (i = 0; i < nroots; i++) {
 		struct statfs stb;
@@ -466,6 +503,8 @@ static int unionfs_statfs(const char *path, struct statfs *stbuf) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
+	DBG("release\n");
+
 	// Just a stub. This method is optional and can safely be left unimplemented
 
 	(void) path;
@@ -474,6 +513,8 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
+	DBG("fsync\n");
+
 	// Just a stub. This method is optional and can safely be left unimplemented
 
 	(void) path;
@@ -485,6 +526,8 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 #ifdef HAVE_SETXATTR
 // xattr operations are optional and can safely be left unimplemented
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
+	DBG("sexattr\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -503,6 +546,8 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 }
 
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
+	DBG("getxattr\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -521,6 +566,8 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 }
 
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
+	DBG("listxattr\n");
+
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -539,6 +586,8 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 }
 
 static int unionfs_removexattr(const char *path, const char *name) {
+	DBG("removexattr\n");
+	
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
@@ -589,6 +638,17 @@ static struct fuse_operations unionfs_oper = {
 int main(int argc, char *argv[]) {
 	printf("unionfs-fuse by Radek Podgorny\n");
 	printf("version 0.10\n");
+
+#ifdef DEBUG
+	char *dbgpath = "./unionfs_debug.log";
+	printf("Debug mode, log will be written to %s\n", dbgpath);
+
+	dbgfile = fopen(dbgpath, "w");
+	if (!dbgfile) {
+		printf("Failed to open %s for writing, exitting\n", dbgpath);
+		return 2;
+	}
+#endif
 
 	stats_init();
 	cache_init();
