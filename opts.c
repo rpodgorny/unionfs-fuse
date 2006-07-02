@@ -44,9 +44,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 					if (strlen(root) == 0) continue;
 
 					roots = realloc(roots, (nroots+1) * sizeof(root));
-					roots[nroots++] = root;
-
-					printf("%s\n", root);
+					roots[nroots++] = make_absolute(root);
 				}
 				return 0;
 			}
