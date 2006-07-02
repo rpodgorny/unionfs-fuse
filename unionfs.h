@@ -2,12 +2,12 @@
 #define UNIONFS_H
 
 
-#define ROOTS_MAX 20
 #define PATHLEN_MAX 1024
 
+int doexit;
 
 int nroots;
-char *roots[ROOTS_MAX];
+char** roots;
 
 
 #endif

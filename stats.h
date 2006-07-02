@@ -1,4 +1,5 @@
 #ifndef STATS_H
+#define STATS_H
 
 
 #define STATS_SIZE 2048

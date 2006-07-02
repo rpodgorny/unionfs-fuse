@@ -25,6 +25,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 #endif
 
 #include "unionfs.h"
+#include "opts.h"
 #include "cache.h"
 #include "stats.h"
 #include "debug.h"
@@ -847,8 +848,7 @@ static struct fuse_operations unionfs_oper = {
 };
 
 int main(int argc, char *argv[]) {
-	printf("unionfs-fuse by Radek Podgorny\n");
-	printf("version 0.13\n");
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
 #ifdef DEBUG
 	char *dbgpath = "./unionfs_debug.log";
@@ -862,70 +862,19 @@ int main(int argc, char *argv[]) {
 #endif
 
 	stats_init();
-	cache_init();
 
-	nroots = 0;
+	doexit = 0;
 
-	int argc_new = 0;
-	char *argv_new[argc];
+	if (fuse_opt_parse(&args, NULL, unionfs_opts, unionfs_opt_proc) == -1) return 1;
 
-	int i = 0;
-	for (i = 0; i < argc; i++) {
-		if (strncmp(argv[i], "--roots=", strlen("--roots=")) == 0) {
-			int len = strlen(argv[i]) - strlen("--roots=");
-			char tmp[len+1];
-			strncpy(tmp, argv[i]+strlen("--roots="), len);
-			tmp[len] = '\0';
-
-			while (strlen(tmp) > 0 && nroots < ROOTS_MAX) {
-				char *ri = rindex(tmp, ',');
-				roots[nroots] = malloc(PATHLEN_MAX);
-				if (ri) {
-					strncpy(roots[nroots], ri+1, PATHLEN_MAX);
-					ri[0] = '\0';
-				} else {
-					strncpy(roots[nroots], tmp, PATHLEN_MAX);
-					tmp[0] = '\0';
-				}
-/*
-				char *ind = index(tmp, ',');
-				int len;
-				if (ind) {
-					len = ind - tmp;
-				} else {
-					len = strlen(tmp);
-				}
-
-				roots[nroots] = malloc(len+1);
-				strncpy(roots[nroots], tmp, len);
-				nroots++;
-
-				if (ind) {
-					char tmp2[strlen(tmp)+1];
-					strcpy(tmp2, tmp);
-					strcpy(tmp, tmp2+len+1);
-				} else {
-					tmp[0] = '\0';
-				}
-*/
-				printf("root %d is %s\n", nroots, roots[nroots]);
-
-				nroots++;
-			}
-		} else if (strcmp(argv[i], "--stats") == 0) {
-			stats_enabled = 1;
-		} else {
-			argv_new[argc_new++] = argv[i];
+	if (!doexit) {
+		if (nroots == 0) {
+			printf("You need to specify at least one root!\n");
+			return 1;
 		}
+		cache_init();
 	}
-
-	if (nroots == 0) {
-		printf("You have to specify at least one root!\n");
-		return 1;
-	}
-
-	printf("Stats %s\n", stats_enabled?"enabled":"disabled");
 
 	umask(0);
-	return fuse_main(argc_new, argv_new, &unionfs_oper);
+	return fuse_main(args.argc, args.argv, &unionfs_oper);
 }
