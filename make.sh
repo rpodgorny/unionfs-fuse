@@ -1,1 +1,7 @@
-gcc -o unionfs *.c -Wall -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26 -lfuse $@
+#!/bin/sh
+
+CFLAGS="${CFLAGS:--Wall}"
+CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26"
+LDFLAGS="$LDFLAGS -lfuse"
+
+gcc $CPPFLAGS $CFLAGS $LDFLAGS -o unionfs *.c "$@"
