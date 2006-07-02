@@ -706,9 +706,9 @@ static int unionfs_unlink(const char *path) {
 }
 
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
-	(void)path;
-
 	DBG("utime\n");
+
+	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
