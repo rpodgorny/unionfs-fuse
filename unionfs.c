@@ -155,9 +155,9 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 
 /* flush may be called multiple times for an open file, this must not really close the file. This is important if used on a network filesystem like NFS which flush the data/metadata on close() */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
-	(void)path;
-
 	DBG("flush\n");
+
+	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
 
 	int fd = dup(fi->fh);
 
