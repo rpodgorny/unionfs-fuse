@@ -22,6 +22,7 @@ char *make_absolute(char *name) {
 
 	if (cwdlen) {
 		char *save = name;
+		// We do not free this one as it may go to roots
 		name = (char *)malloc(cwdlen + strlen(save) + 2);
 		strcpy (name, cwd);
 		name[cwdlen] = '/';
@@ -38,7 +39,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 	switch (key) {
 		case FUSE_OPT_KEY_NONOPT:
 			if (!nroots) {
-				char **ptr = (char **)&arg;
+				// We don't free the buf as parts of it may go to roots
+				char *buf = strdup(arg);
+				char **ptr = (char **)&buf;
 				char *root;
 				while ((root = strsep(ptr, ROOT_SEP)) != NULL) {
 					if (strlen(root) == 0) continue;
