@@ -18,7 +18,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
-#include <sys/statfs.h>
+#include <sys/statvfs.h>
 
 #ifdef HAVE_SETXATTR
 	#include <sys/xattr.h>
@@ -548,30 +548,51 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 
 	int first = 1;
 
+	dev_t* devno = (dev_t *)malloc(sizeof(dev_t) * nroots);
+
 	int i = 0;
 	for (i = 0; i < nroots; i++) {
 		struct statvfs stb;
+		struct stat st;
+
 		int res = statvfs(roots[i], &stb);
 		if (res == -1) continue;
+		res = stat(roots[i], &st);
+		if (res == -1) continue;
+		devno[i] = st.st_dev;
 
 		if (first) {
 			memcpy(stbuf, &stb, sizeof(*stbuf));
 			first = 0;
 		} else {
-			// Filesystem can have different block sizes -> normalize to first's block size
-			double ratio = (double)stb.f_bsize / (double)stbuf->f_bsize;
+			// Eliminate same devices
+			int j = 0;
+			for (j = 0; j < i; j ++) {
+				if (st.st_dev == devno[j]) break;
+			}
 
-			stbuf->f_blocks += stb.f_blocks * ratio;
-			stbuf->f_bfree += stb.f_bfree * ratio;
-			stbuf->f_bavail += stb.f_bavail * ratio;
+			if (j == i) {
+				// Filesystem can have different block sizes -> normalize to first's block size
+				double ratio = (double)stb.f_bsize / (double)stbuf->f_bsize;
 
-			stbuf->f_files += stb.f_files;
-			stbuf->f_ffree += stb.f_ffree;
-			stbuf->f_favail += stb.f_favail;
+				stbuf->f_blocks += stb.f_blocks * ratio;
+				stbuf->f_bfree += stb.f_bfree * ratio;
+				stbuf->f_bavail += stb.f_bavail * ratio;
 
-			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
+				stbuf->f_files += stb.f_files;
+				stbuf->f_ffree += stb.f_ffree;
+				stbuf->f_favail += stb.f_favail;
+
+				if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;
+				if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
+
+				if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
+			}
 		}
 	}
+
+	stbuf->f_fsid = 0;
+	free(devno);
 
 	return 0;
 }
