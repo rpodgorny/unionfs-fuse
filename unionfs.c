@@ -885,16 +885,8 @@ static struct fuse_operations unionfs_oper = {
 int main(int argc, char *argv[]) {
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-#ifdef DEBUG
-	char *dbgpath = "./unionfs_debug.log";
-	printf("Debug mode, log will be written to %s\n", dbgpath);
-
-	dbgfile = fopen(dbgpath, "w");
-	if (!dbgfile) {
-		printf("Failed to open %s for writing, exitting\n", dbgpath);
-		return 2;
-	}
-#endif
+	int res = debug_init();
+	if (res != 0) return res;
 
 	stats_init();
 
