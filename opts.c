@@ -65,8 +65,6 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			"\n"
 			"UnionFS options:\n"
 			"    -o stats               show statistics in the file 'stats' under the mountpoint\n"
-			"    --stats                equivalent to -o stats, for backward compatibility\n"
-			"    --roots                equivalent to the first argument, for backward compatibility\n"
 			"\n",
 			outargs->argv[0]);
 			fuse_opt_add_arg(outargs, "-ho");
