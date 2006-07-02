@@ -325,7 +325,10 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	DBG("open\n");
 
 	if (stats_enabled && strcmp(path, "/stats") == 0) {
-		if ((fi->flags & 3) == O_RDONLY) return 0;
+		if ((fi->flags & 3) == O_RDONLY) {
+			fi->direct_io = 1;
+			return 0;
+		}
 		return -EACCES;
 	}
 
