@@ -746,6 +746,8 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 }
 
 static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	(void)path;
+
 	DBG("write\n");
 
 	int res = pwrite(fi->fh, buf, size, offset);
