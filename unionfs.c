@@ -478,8 +478,6 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
-	(void)path;
-
 	DBG("release\n");
 
 	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
