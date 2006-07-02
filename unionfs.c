@@ -174,6 +174,16 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
 	DBG("fsync\n");
 
+	int res;
+
+	if (isdatasync) {
+		res = fdatasync(fi->fh);
+	} else {
+		res = fsync(fi->fh);
+	}
+
+	if (res == -1) return -errno;
+
 	return 0;
 }
 
@@ -346,6 +356,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 		}
 	}
 
+	fi->direct_io = 1;
 	fi->fh = (unsigned long)fd;
 
 	return 0;
