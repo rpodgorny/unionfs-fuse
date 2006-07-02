@@ -6,7 +6,7 @@
 #include "unionfs.h"
 
 
-#define ROOT_SEP ':'
+#define ROOT_SEP ":"
 
 enum {
 	KEY_STATS,

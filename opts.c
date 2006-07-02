@@ -36,27 +36,15 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 	switch (key) {
 		case FUSE_OPT_KEY_NONOPT:
 			if (!nroots) {
-				char* tmp = strdup(arg);
-				char* scan = tmp;
-				nroots = 1;
-				for (;;) {
-					char* i = index(scan, ROOT_SEP);
-					if (i) {
-						nroots++;
-						scan = i + 1;
-					} else {
-						break;
-					}
-				}
-				roots = (char **)malloc(nroots * sizeof(char *));
-				scan = tmp;
-				size_t rootnum = 0;
-				for (;;) {
-					char *i = index(scan, ROOT_SEP);
-					if (i) *i = '\0';
-					roots[rootnum++] = make_absolute(scan);
-					if (!i) break;
-					scan = i + 1;
+				char **ptr = (char **)&arg;
+				char *root;
+				while ((root = strsep(ptr, ROOT_SEP)) != NULL) {
+					if (strlen(root) == 0) continue;
+
+					roots = realloc(roots, (nroots+1) * sizeof(root));
+					roots[nroots++] = root;
+
+					printf("%s\n", root);
 				}
 				return 0;
 			}
