@@ -2,6 +2,18 @@
 
 #include "cache.h"
 #include "stats.h"
+#include "unionfs.h"
+
+
+#define CACHE_SIZE 1000
+
+
+static struct cache_entry {
+	char path[PATHLEN_MAX];
+	int root;
+} cache[CACHE_SIZE];
+
+static int cache_pos;
 
 
 void cache_init() {
