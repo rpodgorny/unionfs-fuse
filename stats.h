@@ -2,6 +2,7 @@
 #define STATS_H
 
 
+#define STATS_FILENAME "/stats"
 #define STATS_SIZE 2048
 
 

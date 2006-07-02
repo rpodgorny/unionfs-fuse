@@ -157,7 +157,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	DBG("flush\n");
 
-	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
+	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int fd = dup(fi->fh);
 
@@ -176,7 +176,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
 	DBG("fsync\n");
 
-	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
+	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int res;
 	if (isdatasync) {
@@ -193,7 +193,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	DBG("getattr\n");
 
-	if (stats_enabled && strcmp(path, "/stats") == 0) {
+	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		memset(stbuf, 0, sizeof(stbuf));
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_nlink = 1;
@@ -327,7 +327,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	DBG("open\n");
 
-	if (stats_enabled && strcmp(path, "/stats") == 0) {
+	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		if ((fi->flags & 3) == O_RDONLY) {
 			fi->direct_io = 1;
 			return 0;
@@ -371,7 +371,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	DBG("read\n");
 
-	if (stats_enabled && strcmp(path, "/stats") == 0) {
+	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		char out[STATS_SIZE] = "";
 		stats_sprint(out);
 
@@ -479,7 +479,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 	DBG("release\n");
 
-	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
+	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int res = close(fi->fh);
 	if (res == -1) return -errno;
@@ -707,7 +707,7 @@ static int unionfs_unlink(const char *path) {
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	DBG("utime\n");
 
-	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
+	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
