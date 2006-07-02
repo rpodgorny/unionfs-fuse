@@ -57,7 +57,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_HELP:
 			fprintf (stderr,
-			"unionfs-fuse version 0.14 by Radek Podgorny\n"
+			"unionfs-fuse version 0.14\n"
+			"by Radek Podgorny <radek@podgorny.cz>\n"
+			"\n"
 			"Usage: %s [options] root[:root...] mountpoint\n"
 			"The first argument is a colon separated list of directories to merge\n"
 			"\n"
