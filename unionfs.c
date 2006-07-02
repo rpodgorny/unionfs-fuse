@@ -155,6 +155,8 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 
 /* flush may be called multiple times for an open file, this must not really close the file. This is important if used on a network filesystem like NFS which flush the data/metadata on close() */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
+	(void)path;
+
 	DBG("flush\n");
 
 	int fd = dup(fi->fh);
@@ -172,6 +174,8 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 
 /* Just a stub. This method is optional and can safely be left unimplemented */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
+	(void)path;
+
 	DBG("fsync\n");
 
 	int res;
@@ -392,6 +396,9 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 }
 
 static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+	(void)offset;
+	(void)fi;
+
 	DBG("readdir\n");
 
 	int nadded = 0;
@@ -471,6 +478,8 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
+	(void)path;
+
 	DBG("release\n");
 
 	close(fi->fh);
@@ -547,6 +556,8 @@ static int unionfs_rmdir(const char *path) {
 }
 
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
+	(void)path;
+
 	DBG("statfs\n");
 
 	int first = 1;
@@ -694,6 +705,8 @@ static int unionfs_unlink(const char *path) {
 }
 
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
+	(void)path;
+
 	DBG("utime\n");
 
 	int i = findroot(path);
