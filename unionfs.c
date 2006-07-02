@@ -743,7 +743,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	int res = lgetxattr(p, name, value, size);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_ivalidate(path);
+			cache_invalidate(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -751,7 +751,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
 
 			res = lgetxattr(p, name, value, size);
-			if (res == -1) return 
+			if (res == -1) return -errno;
 		} else {
 			return -errno;
 		}
@@ -772,7 +772,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	int res = llistxattr(p, list, size);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_ivaliedate(path);
+			cache_invalidate(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -801,7 +801,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	int res = lremovexattr(p, name);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_ivalidate(path);
+			cache_invalidate(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -830,7 +830,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	int res = lsetxattr(p, name, value, size, flags);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_ivalidate(path);
+			cache_invalidate(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
