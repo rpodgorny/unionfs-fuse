@@ -174,12 +174,11 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 
 /* Just a stub. This method is optional and can safely be left unimplemented */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
-	(void)path;
-
 	DBG("fsync\n");
 
-	int res;
+	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
 
+	int res;
 	if (isdatasync) {
 		res = fdatasync(fi->fh);
 	} else {
