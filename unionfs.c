@@ -31,6 +31,16 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include "debug.h"
 
 
+static struct fuse_opt unionfs_opts[] = {
+	FUSE_OPT_KEY("--help", KEY_HELP),
+	FUSE_OPT_KEY("--version", KEY_VERSION),
+	FUSE_OPT_KEY("-h", KEY_HELP),
+	FUSE_OPT_KEY("-V", KEY_VERSION),
+	FUSE_OPT_KEY("stats", KEY_STATS),
+	FUSE_OPT_END
+};
+
+
 int findroot(const char *path) {
 	int i = cache_lookup(path);
 
