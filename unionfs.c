@@ -482,7 +482,10 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 
 	DBG("release\n");
 
-	close(fi->fh);
+	if (stats_enabled && strcmp(path, "/stats") == 0) return 0;
+
+	int res = close(fi->fh);
+	if (res == -1) return -errno;
 
 	return 0;
 }
