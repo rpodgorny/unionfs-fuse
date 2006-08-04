@@ -928,5 +928,5 @@ int main(int argc, char *argv[]) {
 	}
 
 	umask(0);
-	return fuse_main(args.argc, args.argv, &unionfs_oper);
+	return fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
 }
