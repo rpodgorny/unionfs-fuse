@@ -57,7 +57,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_HELP:
 			fprintf (stderr,
-			"unionfs-fuse version 0.14\n"
+			"unionfs-fuse version 0.15\n"
 			"by Radek Podgorny <radek@podgorny.cz>\n"
 			"\n"
 			"Usage: %s [options] root[:root...] mountpoint\n"
@@ -76,7 +76,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			doexit = 1;
 			return 0;
 		case KEY_VERSION:
-			printf("unionfs-fuse version: 0.14\n");
+			printf("unionfs-fuse version: 0.15\n");
 			doexit = 1;
 			return 1;
 		default:
