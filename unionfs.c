@@ -85,7 +85,7 @@ static int unionfs_access(const char *path, int mask) {
 
 	int res = access(p, mask);
 	if (res == -1) {
-		if (res == ENOENT) {
+		if (errno == ENOENT) {
 			// The user may have moved the file among roots
 			cache_invalidate(path);
 
