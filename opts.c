@@ -8,6 +8,16 @@
 #include "version.h"
 
 
+uopt_t uopt;
+
+
+void uopt_init() {
+	uopt.doexit = 0;
+	uopt.nroots = 0;
+	uopt.stats_enabled = 0;
+	uopt.cache_time = 60; // default cache entry validity
+}
+
 // Take a relative path as argument and return the absolute path by using the current working directory. The return string is malloc'ed with this function.
 char *make_absolute(char *relpath) {
 	// Already an absolute path
@@ -59,9 +69,11 @@ void print_help(const char *progname) {
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs) {
 	(void)data;
 
+	int res = 0; // for general purposes
+
 	switch (key) {
 		case FUSE_OPT_KEY_NONOPT:
-			if (!nroots) {
+			if (!uopt.nroots) {
 				// We don't free the buf as parts of it may go to roots
 				char *buf = strdup(arg);
 				char **ptr = (char **)&buf;
@@ -69,23 +81,31 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 				while ((root = strsep(ptr, ROOT_SEP)) != NULL) {
 					if (strlen(root) == 0) continue;
 
-					roots = realloc(roots, (nroots+1) * sizeof(root));
-					roots[nroots++] = make_absolute(root);
+					uopt.roots[uopt.nroots++] = make_absolute(root);
 				}
 				return 0;
 			}
 			return 1;
 		case KEY_STATS:
-			stats_enabled = 1;
+			uopt.stats_enabled = 1;
+			return 0;
+		case KEY_CACHE_TIME:
+			// TODO: get rid of the ugly string
+			res = sscanf(arg, "cache-time=%i", &uopt.cache_time);
+			if (res != 1) {
+				fprintf(stderr, "Failed to parse cache time\n");
+				uopt.doexit = 1;
+				return 1;
+			}
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
 			fuse_opt_add_arg(outargs, "-ho");
-			doexit = 1;
+			uopt.doexit = 1;
 			return 0;
 		case KEY_VERSION:
 			printf("unionfs-fuse version: "VERSION"\n");
-			doexit = 1;
+			uopt.doexit = 1;
 			return 1;
 		default:
 			return 1;

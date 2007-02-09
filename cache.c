@@ -4,10 +4,7 @@
 #include "cache.h"
 #include "stats.h"
 #include "unionfs.h"
-
-
-#define CACHE_SIZE 1000
-#define MAX_CACHE_TIME 60
+#include "opts.h"
 
 
 static struct cache_entry {
@@ -16,8 +13,7 @@ static struct cache_entry {
 	time_t time; // timestamp of cache entry creation
 } cache[CACHE_SIZE];
 
-static int cache_pos;
-
+static int cache_pos; // position where to save next entry
 
 void cache_init() {
 	int i = 0;
@@ -38,7 +34,7 @@ int cache_lookup(const char *path) {
 		int pos = cache_pos - i;
 		if (pos < 0) pos += CACHE_SIZE;
 
-		if ((tv.tv_sec - cache[pos].time) > MAX_CACHE_TIME) {
+		if ((tv.tv_sec - cache[pos].time) > uopt.cache_time) {
 			// too old
 			cache_invalidate(pos);
 			continue;
@@ -46,12 +42,12 @@ int cache_lookup(const char *path) {
 
 		if (strcmp(cache[pos].path, path) == 0) {
 			// found in cache
-			if (stats_enabled) stats_cache_hits++;
+			if (uopt.stats_enabled) stats_cache_hits++;
 			return cache[pos].root;
 		}
 	}
 
-	if (stats_enabled) stats_cache_misses++;
+	if (uopt.stats_enabled) stats_cache_misses++;
 
 	return -1;
 }

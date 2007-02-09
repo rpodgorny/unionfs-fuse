@@ -37,6 +37,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("-h", KEY_HELP),
 	FUSE_OPT_KEY("-V", KEY_VERSION),
 	FUSE_OPT_KEY("stats", KEY_STATS),
+	FUSE_OPT_KEY("cache-time=", KEY_CACHE_TIME),
 	FUSE_OPT_END
 };
 
@@ -48,9 +49,9 @@ int findroot(const char *path) {
 	if (i != -1) return i;
 
 	// create a new cache entry, if path exists
-	for (i = 0; i < nroots; i++) {
+	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
-		snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 		struct stat stbuf;
 		int res = lstat(p, &stbuf);
@@ -83,7 +84,7 @@ static int unionfs_access(const char *path, int mask) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = access(p, mask);
 	if (res == -1) {
@@ -94,7 +95,7 @@ static int unionfs_access(const char *path, int mask) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = access(p, mask);
 			if (res == -1) return -errno;
@@ -113,7 +114,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = chmod(p, mode);
 	if (res == -1) {
@@ -124,7 +125,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = chmod(p, mode);
 			if (res == -1) return -errno;
@@ -143,7 +144,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = lchown(p, uid, gid);
 	if (res == -1) {
@@ -153,7 +154,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = lchown(p, uid, gid);
 			if (res == -1) return -errno;
@@ -169,7 +170,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	DBG("flush\n");
 
-	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int fd = dup(fi->fh);
 
@@ -188,7 +189,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
 	DBG("fsync\n");
 
-	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int res;
 	if (isdatasync) {
@@ -209,7 +210,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	DBG("getattr\n");
 
-	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		memset(stbuf, 0, sizeof(stbuf));
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_nlink = 1;
@@ -221,7 +222,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = lstat(p, stbuf);
 	if (res == -1) {
@@ -231,7 +232,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = lstat(p, stbuf);
 			if (res == -1) return -errno;
@@ -253,7 +254,7 @@ static int unionfs_link(const char *from, const char *to) {
 	}
 
 	char t[PATHLEN_MAX];
-	snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
+	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i], to);
 
 	int res = link(from, t);
 	if (res == -1) {
@@ -263,7 +264,7 @@ static int unionfs_link(const char *from, const char *to) {
 			i = findroot(to);
 			if (i == -1) return -errno;
 
-			snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
+			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i], to);
 
 			res = link(from, t);
 			if (res == -1) return -errno;
@@ -285,7 +286,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = mkdir(p, mode);
 	if (res == -1) {
@@ -295,7 +296,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = mkdir(p, mode);
 			if (res == -1) return -errno;
@@ -317,7 +318,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = mknod(p, mode, rdev);
 	if (res == -1) {
@@ -327,7 +328,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = mknod(p, mode, rdev);
 			if (res == -1) return -errno;
@@ -342,7 +343,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	DBG("open\n");
 
-	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		if ((fi->flags & 3) == O_RDONLY) {
 			fi->direct_io = 1;
 			return 0;
@@ -357,7 +358,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int fd = open(p, fi->flags);
 	if (fd == -1) {
@@ -368,7 +369,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 		
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			fd = open(p, fi->flags);
 			if (fd == -1) return -errno;
@@ -386,7 +387,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	DBG("read\n");
 
-	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		char out[STATS_SIZE] = "";
 		stats_sprint(out);
 
@@ -404,7 +405,7 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 	int res = pread(fi->fh, buf, size, offset);
 	if (res == -1) return -errno;
 
-	if (stats_enabled) stats_add_read(size);
+	if (uopt.stats_enabled) stats_add_read(size);
 
 	return res;
 }
@@ -420,9 +421,9 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 	added = malloc(1);
 
 	int i = 0;
-	for (i = 0; i < nroots; i++) {
+	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
-		snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 		DIR *dp = opendir(p);
 		if (dp == NULL) continue;
@@ -453,7 +454,7 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 	for (i = 0; i < nadded; i++) free(added[i]);
 	free(added);
 
-	if (stats_enabled && strcmp(path, "/") == 0) {
+	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
 	}
 
@@ -467,7 +468,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = readlink(p, buf, size - 1);
 	if (res == -1) {
@@ -477,7 +478,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = readlink(p, buf, size - 1);
 			if (res == -1) return -errno;
@@ -494,7 +495,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 	DBG("release\n");
 
-	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int res = close(fi->fh);
 	if (res == -1) return -errno;
@@ -509,10 +510,10 @@ static int unionfs_rename(const char *from, const char *to) {
 	if (i == -1) return -errno;
 
 	char f[PATHLEN_MAX];
-	snprintf(f, PATHLEN_MAX, "%s%s", roots[i], from);
+	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i], from);
 
 	char t[PATHLEN_MAX];
-	snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
+	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i], to);
 
 	int res = rename(f, t);
 	if (res == -1) {
@@ -522,8 +523,8 @@ static int unionfs_rename(const char *from, const char *to) {
 			i = findroot(from);
 			if (i == -1) return -errno;
 
-			snprintf(f, PATHLEN_MAX, "%s%s", roots[i], from);
-			snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
+			snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i], from);
+			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i], to);
 
 			res = rename(f, t);
 			if (res == -1) return -errno;
@@ -545,7 +546,7 @@ static int unionfs_rmdir(const char *path) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = rmdir(p);
 	if (res == -1) {
@@ -555,7 +556,7 @@ static int unionfs_rmdir(const char *path) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = rmdir(p);
 			if (res == -1) return -errno;
@@ -577,16 +578,16 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 
 	int first = 1;
 
-	dev_t* devno = (dev_t *)malloc(sizeof(dev_t) * nroots);
+	dev_t* devno = (dev_t *)malloc(sizeof(dev_t) * uopt.nroots);
 
 	int i = 0;
-	for (i = 0; i < nroots; i++) {
+	for (i = 0; i < uopt.nroots; i++) {
 		struct statvfs stb;
 		struct stat st;
 
-		int res = statvfs(roots[i], &stb);
+		int res = statvfs(uopt.roots[i], &stb);
 		if (res == -1) continue;
-		res = stat(roots[i], &st);
+		res = stat(uopt.roots[i], &st);
 		if (res == -1) continue;
 		devno[i] = st.st_dev;
 
@@ -636,7 +637,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 	}
 
 	char t[PATHLEN_MAX];
-	snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
+	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i], to);
 
 	int res = symlink(from, t);
 	if (res == -1) {
@@ -646,7 +647,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 			i = findroot(to);
 			if (i == -1) return -errno;
 
-			snprintf(t, PATHLEN_MAX, "%s%s", roots[i], to);
+			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i], to);
 
 			res = symlink(from, t);
 			if (res == -1) return -errno;
@@ -665,7 +666,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = truncate(p, size);
 	if (res == -1) {
@@ -675,7 +676,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = truncate(p, size);
 			if (res == -1) return -errno;
@@ -694,7 +695,7 @@ static int unionfs_unlink(const char *path) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = unlink(p);
 	if (res == -1) {
@@ -704,7 +705,7 @@ static int unionfs_unlink(const char *path) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = unlink(p);
 			if (res == -1) return -errno;
@@ -722,13 +723,13 @@ static int unionfs_unlink(const char *path) {
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	DBG("utime\n");
 
-	if (stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 	int res = utime(p, buf);
 	if (res == -1) {
@@ -738,7 +739,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 			i = findroot(path);
 			if (i == -1) return -errno;
 
-			snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
+			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i], path);
 
 			res = utime(p, buf);
 			if (res == -1) return -errno;
@@ -758,7 +759,7 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 	int res = pwrite(fi->fh, buf, size, offset);
 	if (res == -1) return -errno;
 
-	if (stats_enabled) stats_add_written(size);
+	if (uopt.stats_enabled) stats_add_written(size);
 
 	return res;
 }
@@ -918,17 +919,17 @@ int main(int argc, char *argv[]) {
 	int res = debug_init();
 	if (res != 0) return res;
 
-	stats_init();
-
-	doexit = 0;
+	uopt_init();
 
 	if (fuse_opt_parse(&args, NULL, unionfs_opts, unionfs_opt_proc) == -1) return 1;
 
-	if (!doexit) {
-		if (nroots == 0) {
+	if (!uopt.doexit) {
+		if (uopt.nroots == 0) {
 			printf("You need to specify at least one root!\n");
 			return 1;
 		}
+
+		stats_init();
 		cache_init();
 	}
 
