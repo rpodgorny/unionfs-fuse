@@ -47,6 +47,45 @@ char *make_absolute(char *relpath) {
 	return abspath;
 }
 
+void add_root(char *root) {
+	uopt.roots = realloc(uopt.roots, (uopt.nroots+1) * sizeof(root_entry_t));
+
+	char *res;
+	char **ptr = (char **)&root;
+
+	res = strsep(ptr, "=");
+	if (!res) return;
+
+	uopt.roots[uopt.nroots].path = make_absolute(res);
+
+	res = strsep(ptr, "=");
+	if (res) {
+		if (strcasecmp(res, "rw") == 0) {
+			uopt.roots[uopt.nroots].rw = 1;
+		} else {
+			uopt.roots[uopt.nroots].rw = 0;
+		}
+	}
+
+	uopt.nroots++;
+}
+
+int parse_roots(const char *arg) {
+	if (uopt.nroots) return 0;
+
+	// We don't free the buf as parts of it may go to roots
+	char *buf = strdup(arg);
+	char **ptr = (char **)&buf;
+	char *root;
+	while ((root = strsep(ptr, ROOT_SEP)) != NULL) {
+		if (strlen(root) == 0) continue;
+
+		add_root(root);
+	}
+
+	return uopt.nroots;
+}
+
 void print_help(const char *progname) {
 	fprintf (stderr,
 	"unionfs-fuse version "VERSION"\n"
@@ -73,23 +112,8 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 
 	switch (key) {
 		case FUSE_OPT_KEY_NONOPT:
-			if (!uopt.nroots) {
-				// We don't free the buf as parts of it may go to roots
-				char *buf = strdup(arg);
-				char **ptr = (char **)&buf;
-				char *root;
-				while ((root = strsep(ptr, ROOT_SEP)) != NULL) {
-					if (strlen(root) == 0) continue;
-
-					uopt.roots = realloc(uopt.roots, (uopt.nroots+1) * sizeof(root_entry_t));
-
-					uopt.roots[uopt.nroots].path = make_absolute(root);
-					uopt.roots[uopt.nroots].rw = 0;
-
-					uopt.nroots++;
-				}
-				return 0;
-			}
+			res = parse_roots(arg);
+			if (res > 0) return 0;
 			return 1;
 		case KEY_STATS:
 			uopt.stats_enabled = 1;
