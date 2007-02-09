@@ -84,7 +84,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			doexit = 1;
 			return 0;
 		case KEY_VERSION:
-			printf("unionfs-fuse version: 0.15\n");
+			printf("unionfs-fuse version: "VERSION"\n");
 			doexit = 1;
 			return 1;
 		default:
