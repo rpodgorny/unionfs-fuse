@@ -10,7 +10,7 @@
 
 typedef struct {
 	int nroots;
-	char *roots[30];
+	root_entry_t *roots;
 
 	char stats_enabled;
 	int cache_time;

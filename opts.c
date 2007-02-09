@@ -81,7 +81,12 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 				while ((root = strsep(ptr, ROOT_SEP)) != NULL) {
 					if (strlen(root) == 0) continue;
 
-					uopt.roots[uopt.nroots++] = make_absolute(root);
+					uopt.roots = realloc(uopt.roots, (uopt.nroots+1) * sizeof(root_entry_t));
+
+					uopt.roots[uopt.nroots].path = make_absolute(root);
+					uopt.roots[uopt.nroots].rw = 0;
+
+					uopt.nroots++;
 				}
 				return 0;
 			}
