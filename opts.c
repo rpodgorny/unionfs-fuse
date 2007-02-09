@@ -5,32 +5,55 @@
 
 #include "opts.h"
 #include "stats.h"
+#include "version.h"
 
 
-char *make_absolute(char *name) {
-	static char cwd[PATHLEN_MAX];
-	static size_t cwdlen = 0;
-	if (*name == '/') return name;
+// Take a relative path as argument and return the absolute path by using the current working directory. The return string is malloc'ed with this function.
+char *make_absolute(char *relpath) {
+	// Already an absolute path
+	if (*relpath == '/') return relpath;
 
+	char cwd[PATHLEN_MAX];
+	if (!getcwd(cwd, PATHLEN_MAX)) {
+		perror("Unable to get current working directory");
+		return NULL;
+	}
+
+	size_t cwdlen = strlen(cwd);
 	if (!cwdlen) {
-		if (!getcwd(cwd, PATHLEN_MAX)) {
-			perror("Unable to get current working directory");
-		} else {
-			cwdlen = strlen(cwd);
-		}
+		fprintf(stderr, "Zero-sized length of CWD!\n");
+		return NULL;
 	}
 
-	if (cwdlen) {
-		char *save = name;
-		// We do not free this one as it may go to roots
-		name = (char *)malloc(cwdlen + strlen(save) + 2);
-		strcpy (name, cwd);
-		name[cwdlen] = '/';
-		name[cwdlen+1] = '\0';
-		strcat (name, save);
+	int abslen = cwdlen + strlen(relpath) + 2;
+	if (abslen > PATHLEN_MAX) {
+		fprintf(stderr, "Absolute path too long!\n");
+		return NULL;
 	}
 
-	return name;
+	char *abspath = malloc(abslen);
+	sprintf(abspath, "%s/%s", cwd, relpath);
+
+	return abspath;
+}
+
+void print_help(const char *progname) {
+	fprintf (stderr,
+	"unionfs-fuse version "VERSION"\n"
+	"by Radek Podgorny <radek@podgorny.cz>\n"
+	"\n"
+	"Usage: %s [options] root[:root...] mountpoint\n"
+	"The first argument is a colon separated list of directories to merge\n"
+	"\n"
+	"general options:\n"
+	"    -o opt,[opt...]        mount options\n"
+	"    -h   --help            print help\n"
+	"    -V   --version         print version\n"
+	"\n"
+	"UnionFS options:\n"
+	"    -o stats               show statistics in the file 'stats' under the mountpoint\n"
+	"\n",
+	progname);
 }
 
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs) {
@@ -56,22 +79,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			stats_enabled = 1;
 			return 0;
 		case KEY_HELP:
-			fprintf (stderr,
-			"unionfs-fuse version 0.16\n"
-			"by Radek Podgorny <radek@podgorny.cz>\n"
-			"\n"
-			"Usage: %s [options] root[:root...] mountpoint\n"
-			"The first argument is a colon separated list of directories to merge\n"
-			"\n"
-			"general options:\n"
-			"    -o opt,[opt...]        mount options\n"
-			"    -h   --help            print help\n"
-			"    -V   --version         print version\n"
-			"\n"
-			"UnionFS options:\n"
-			"    -o stats               show statistics in the file 'stats' under the mountpoint\n"
-			"\n",
-			outargs->argv[0]);
+			print_help(outargs->argv[0]);
 			fuse_opt_add_arg(outargs, "-ho");
 			doexit = 1;
 			return 0;
