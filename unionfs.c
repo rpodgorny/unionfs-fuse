@@ -89,7 +89,7 @@ static int unionfs_access(const char *path, int mask) {
 	if (res == -1) {
 		if (errno == ENOENT) {
 			// The user may have moved the file among roots
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -119,7 +119,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	if (res == -1) {
 		if (errno == ENOENT) {
 			// The user may have moved the file among roots
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -148,7 +148,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	int res = lchown(p, uid, gid);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -226,7 +226,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	int res = lstat(p, stbuf);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -258,7 +258,7 @@ static int unionfs_link(const char *from, const char *to) {
 	int res = link(from, t);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(to);
+			cache_invalidate_path(to);
 
 			i = findroot(to);
 			if (i == -1) return -errno;
@@ -290,7 +290,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	int res = mkdir(p, mode);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -322,7 +322,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	int res = mknod(p, mode, rdev);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -363,7 +363,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	if (fd == -1) {
 		if (errno == ENOENT) {
 			// The user may have moved the file among roots
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -472,7 +472,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	int res = readlink(p, buf, size - 1);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -517,7 +517,7 @@ static int unionfs_rename(const char *from, const char *to) {
 	int res = rename(f, t);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(from);
+			cache_invalidate_path(from);
 
 			i = findroot(from);
 			if (i == -1) return -errno;
@@ -533,7 +533,7 @@ static int unionfs_rename(const char *from, const char *to) {
 	}
 
 	// The path should no longer exist
-	cache_invalidate(from);
+	cache_invalidate_path(from);
 
 	return 0;
 }
@@ -550,7 +550,7 @@ static int unionfs_rmdir(const char *path) {
 	int res = rmdir(p);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -565,7 +565,7 @@ static int unionfs_rmdir(const char *path) {
 	}
 
 	// The path should no longer exist
-	cache_invalidate(path);
+	cache_invalidate_path(path);
 
 	return 0;
 }
@@ -641,7 +641,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 	int res = symlink(from, t);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(to);
+			cache_invalidate_path(to);
 
 			i = findroot(to);
 			if (i == -1) return -errno;
@@ -670,7 +670,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 	int res = truncate(p, size);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -699,7 +699,7 @@ static int unionfs_unlink(const char *path) {
 	int res = unlink(p);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -714,7 +714,7 @@ static int unionfs_unlink(const char *path) {
 	}
 
 	// The path should no longer exist
-	cache_invalidate(path);
+	cache_invalidate_path(path);
 
 	return 0;
 }
@@ -733,7 +733,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	int res = utime(p, buf);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -776,7 +776,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	int res = lgetxattr(p, name, value, size);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -805,7 +805,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	int res = llistxattr(p, list, size);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -834,7 +834,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	int res = lremovexattr(p, name);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
@@ -863,7 +863,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	int res = lsetxattr(p, name, value, size, flags);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate(path);
+			cache_invalidate_path(path);
 
 			i = findroot(path);
 			if (i == -1) return -errno;
