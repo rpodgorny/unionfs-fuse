@@ -5,7 +5,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 */
 
 #ifdef linux
-	/* For pread()/pwrite() */
+	// For pread()/pwrite()
 	#define _XOPEN_SOURCE 500
 #endif
 
@@ -41,11 +41,13 @@ static struct fuse_opt unionfs_opts[] = {
 };
 
 
+// If path exists, return the root number that has path. Also create a cache entry.
 int findroot(const char *path) {
 	int i = cache_lookup(path);
 
 	if (i != -1) return i;
 
+	// create a new cache entry, if path exists
 	for (i = 0; i < nroots; i++) {
 		char p[PATHLEN_MAX];
 		snprintf(p, PATHLEN_MAX, "%s%s", roots[i], path);
@@ -62,9 +64,9 @@ int findroot(const char *path) {
 	return -1;
 }
 
-/* Try to find root when we cut the last path element */
+// Try to find root when we cut the last path element
 int findroot_cutlast(const char *path) {
-	char* ri = rindex(path, '/'); //this char should always be found
+	char* ri = rindex(path, '/'); // this char should always be found
 	int len = ri - path;
 
 	char p[PATHLEN_MAX];
@@ -163,7 +165,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	return 0;
 }
 
-/* flush may be called multiple times for an open file, this must not really close the file. This is important if used on a network filesystem like NFS which flush the data/metadata on close() */
+// flush may be called multiple times for an open file, this must not really close the file. This is important if used on a network filesystem like NFS which flush the data/metadata on close()
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	DBG("flush\n");
 
@@ -182,7 +184,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	return 0;
 }
 
-/* Just a stub. This method is optional and can safely be left unimplemented */
+// Just a stub. This method is optional and can safely be left unimplemented
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
 	DBG("fsync\n");
 
@@ -236,7 +238,6 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 
 	return 0;
 }
-
 
 static int unionfs_link(const char *from, const char *to) {
 	DBG("link\n");
@@ -874,7 +875,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 
 	return 0;
 }
-#endif /* HAVE_SETXATTR */
+#endif // HAVE_SETXATTR
 
 static struct fuse_operations unionfs_oper = {
 	.access	= unionfs_access,
