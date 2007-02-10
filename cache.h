@@ -2,14 +2,17 @@
 #define CACHE_H
 
 
-#define CACHE_SIZE 1000
+typedef struct {
+	int root;
+	time_t time; // timestamp of cache entry creation
+} cache_entry_t;
 
 
-extern int cache_time; // cache entry validity time
+extern struct hashtable *cache;
+
 
 void cache_init();
 int cache_lookup(const char *path);
-void cache_invalidate(int);
 void cache_invalidate_path(const char *path);
 void cache_save(const char *path, int root);
 

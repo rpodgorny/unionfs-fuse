@@ -24,6 +24,8 @@
 #include "stats.h"
 #include "debug.h"
 #include "elfhash.h"
+#include "hashtable.h"
+#include "hash.h"
 
 typedef struct node {
 	char fname[PATHLEN_MAX];
@@ -163,9 +165,11 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void)fi;
 	int i = 0;
 	list_t *hides = init_list();
-	list_t *files = init_list();
 
 	DBG("readdir\n");
+
+	// we will store already added files here to handle same file names across different roots
+	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
@@ -180,13 +184,17 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
+			// already added in some other root
+			if (hashtable_search(files, de->d_name) != NULL) continue;
 		
-			if (!in_list(de->d_name, hides) &&
-						  !in_list(de->d_name, files)) {
+
+			if (!in_list(de->d_name, hides)) {
 				/* file is not hidden and file is not already 
 				* added by an upper level root, add it now */
 				
-				add_to_list(files, de->d_name);
+				/* fill with something dummy, we're interested 
+				 * in key existence only */
+				hashtable_insert(files, strdup(de->d_name), malloc(1));
 
 				struct stat st;
 				memset(&st, 0, sizeof(st));
@@ -201,12 +209,13 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		closedir(dp);
 	}
 
+	hashtable_destroy(files, 1);
+	
 	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
 	}
 
 	free_list(hides);
-	free_list(files);
 	return 0;
 }
 
