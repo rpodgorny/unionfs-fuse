@@ -18,8 +18,11 @@ void uopt_init() {
 	uopt.cache_time = 60; // default cache entry validity
 }
 
-// Take a relative path as argument and return the absolute path by using the current working directory. The return string is malloc'ed with this function.
-char *make_absolute(char *relpath) {
+/**
+ * Take a relative path as argument and return the absolute path by using the 
+ * current working directory. The return string is malloc'ed with this function.
+ */
+static char *make_absolute(char *relpath) {
 	// Already an absolute path
 	if (*relpath == '/') return relpath;
 
@@ -47,7 +50,11 @@ char *make_absolute(char *relpath) {
 	return abspath;
 }
 
-void add_root(char *root) {
+/**
+ * Add a given root and its options to the array of available roots.
+ * example root string "root1=RO" or "/path/path2=RW"
+ */
+static void add_root(char *root) {
 	uopt.roots = realloc(uopt.roots, (uopt.nroots+1) * sizeof(root_entry_t));
 
 	char *res;
@@ -73,7 +80,11 @@ void add_root(char *root) {
 	uopt.nroots++;
 }
 
-int parse_roots(const char *arg) {
+/**
+ * Options without any -X prefix, so these options define our root pathes.
+ * example arg string: "root1=RW:root2=RO:root3=RO"
+ */
+static int parse_roots(const char *arg) {
 	if (uopt.nroots) return 0;
 
 	// We don't free the buf as parts of it may go to roots
@@ -89,7 +100,7 @@ int parse_roots(const char *arg) {
 	return uopt.nroots;
 }
 
-void print_help(const char *progname) {
+static void print_help(const char *progname) {
 	fprintf (stderr,
 	"unionfs-fuse version "VERSION"\n"
 	"by Radek Podgorny <radek@podgorny.cz>\n"
