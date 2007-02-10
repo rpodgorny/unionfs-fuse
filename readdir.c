@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/statvfs.h>
+#include <stdbool.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -43,30 +44,24 @@ static char *hide_tag(const char *fname)
 }
 
 /**
- * read a directory and add files with the hiddenflag to the 
- * list of hidden files
- * TODO: this should be handled in the readdir()'s loop but we'll
- * loose ability to hide files within the same dir. I don't see
- * a reason why unionfs would do this but I'm leaving it here for now...
+ * Check if fname has a hiding tag and return its status.
+ * Also, add this file and to the hiding hash table.
+ * Warning: If fname has the tag, fname gets modified.
  */
-static void read_hides(struct hashtable *hides, DIR *dp)
+static bool is_hiding(struct hashtable *hides, char *fname)
 {
-	struct dirent *de;
 	char *tag;
 	
-	while ((de = readdir(dp)) != NULL) {
-		tag = hide_tag(de->d_name);
-		if (tag) {
-			// ignore this file
-			hashtable_insert(hides, strdup(de->d_name), malloc(1));
-			
-			// even more important, ignore the file without the tag!
-			// hint: tag is a pointer to the flag-suffix within de->d_name
-			*tag = '\0';
-			hashtable_insert(hides, strdup(de->d_name), malloc(1));
-		}
+	tag = hide_tag(fname);
+	if (tag) {
+		// even more important, ignore the file without the tag!
+		// hint: tag is a pointer to the flag-suffix within de->d_name
+		*tag = '\0'; // this modifies fname!
+		hashtable_insert(hides, strdup(fname), malloc(1));
+		
+		return true;
 	}
-	rewinddir (dp);
+	return false;
 }
 
 /**
@@ -92,8 +87,6 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		DIR *dp = opendir(p);
 		if (dp == NULL) continue;
 
-		read_hides(hides, dp);
-
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
 			// already added in some other root
@@ -101,6 +94,9 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 			// file should be hidden from the user
 			if (hashtable_search(hides, de->d_name) != NULL) continue;
+			
+			// file itself has the hiding tag
+			if (is_hiding(hides, de->d_name)) continue;
 
 			// fill with something dummy, we're interested in key existence only
 			hashtable_insert(files, strdup(de->d_name), malloc(1));
