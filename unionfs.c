@@ -29,6 +29,8 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include "cache.h"
 #include "stats.h"
 #include "debug.h"
+#include "hashtable.h"
+#include "hash.h"
 
 
 static struct fuse_opt unionfs_opts[] = {
@@ -416,9 +418,8 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 
 	DBG("readdir\n");
 
-	int nadded = 0;
-	char **added;
-	added = malloc(1);
+	// we will store already added files here to handle same file names across different roots
+	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 
 	int i = 0;
 	for (i = 0; i < uopt.nroots; i++) {
@@ -430,16 +431,11 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
-			int j = 0;
-			for (j = 0; j < nadded; j++) {
-				if (strcmp(added[j], de->d_name) == 0) break;
-			}
-			if (j < nadded) continue;
+			// already added in some other root
+			if (hashtable_search(files, de->d_name) != NULL) continue;
 
-			added = (char**)realloc(added, (nadded+1)*sizeof(char*));
-			added[nadded] = malloc(PATHLEN_MAX);
-			strncpy(added[nadded], de->d_name, PATHLEN_MAX);
-			nadded++;
+			// fill with something dummy, we're interested in key existence only
+			hashtable_insert(files, strdup(de->d_name), malloc(1));
 
 			struct stat st;
 			memset(&st, 0, sizeof(st));
@@ -451,8 +447,7 @@ static int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, 
 		closedir(dp);
 	}
 
-	for (i = 0; i < nadded; i++) free(added[i]);
-	free(added);
+	hashtable_destroy(files, 1);
 
 	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
