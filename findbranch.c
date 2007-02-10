@@ -34,7 +34,7 @@ int findroot(const char *path) {
 		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 		struct stat stbuf;
-		int res     = lstat(p, &stbuf);
+		int res = lstat(p, &stbuf);
 		bool hidden = file_hidden(p);
 
 		if (res == 0 && !hidden) {
