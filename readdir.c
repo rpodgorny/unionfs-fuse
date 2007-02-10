@@ -45,6 +45,9 @@ static char *hide_tag(const char *fname)
 /**
  * read a directory and add files with the hiddenflag to the 
  * list of hidden files
+ * TODO: this should be handled in the readdir()'s loop but we'll
+ * loose ability to hide files within the same dir. I don't see
+ * a reason why unionfs would do this but I'm leaving it here for now...
  */
 static void read_hides(struct hashtable *hides, DIR *dp)
 {
@@ -65,7 +68,6 @@ static void read_hides(struct hashtable *hides, DIR *dp)
 	}
 	rewinddir (dp);
 }
-
 
 /**
  * unionfs-fuse readdir function
