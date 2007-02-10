@@ -33,9 +33,8 @@ static char  *hide_tag(const char *fname)
 {
 	char *tag = strstr(fname, HIDETAG);
 
-	/* check if fname has tag, fname is not only the tag, file name ends 
-	* with the tag
-	* TODO: static strlen(HIDETAG) */
+	// check if fname has tag, fname is not only the tag, file name ends with the tag
+	// TODO: static strlen(HIDETAG)
 	if (tag && tag != fname && strlen(tag) == strlen(HIDETAG)) {
 		return tag;
 	}
@@ -58,9 +57,8 @@ static void read_hides(struct hashtable *hides, DIR *dp)
 			// ignore this file
 			hashtable_insert(hides, strdup(de->d_name), malloc(1));
 			
-			/* even more important, ignore the file without the tag!
-			* hint: tag is a pointer to the flag-suffix within 
-			*       de->d_name */
+			// even more important, ignore the file without the tag!
+			// hint: tag is a pointer to the flag-suffix within de->d_name
 			*tag = '\0';
 			hashtable_insert(hides, strdup(de->d_name), malloc(1));
 		}
@@ -100,13 +98,11 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		while ((de = readdir(dp)) != NULL) {
 			// already added in some other root
 			if (hashtable_search(files, de->d_name) != NULL) continue;
+
+			// file should be hidden from the user
 			if (hashtable_search(hides, de->d_name) != NULL) continue;
 
-			/* file is not hidden and file is not already 
-			* added by an upper level root, add it now */
-			
-			/* fill with something dummy, we're interested 
-			* in key existence only */
+			// fill with something dummy, we're interested in key existence only
 			hashtable_insert(files, strdup(de->d_name), malloc(1));
 
 			struct stat st;
