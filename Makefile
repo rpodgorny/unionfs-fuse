@@ -4,7 +4,7 @@ LDFLAGS += -lfuse
 
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
-UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o cache.o findbranch.o
+UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o cache.o findbranch.o readdir.o
 
 
 unionfs: $(UNIONFS_OBJ) $(HASHTABLE_OBJ)
