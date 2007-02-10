@@ -3,6 +3,7 @@
 
 #include "stats.h"
 #include "opts.h"
+#include "cache.h"
 
 
 unsigned int stats_read_b, stats_read_k, stats_read_m, stats_read_g, stats_read_t;
@@ -21,6 +22,8 @@ void stats_init() {
 void stats_sprint(char *s) {
 	sprintf(s, "Cache hits/misses: %u/%u\n", stats_cache_hits, stats_cache_misses);
 	sprintf(s+strlen(s), "Cache hit ratio: %.3f%%\n", (double)stats_cache_hits*100/(double)(stats_cache_hits + stats_cache_misses));
+	sprintf(s+strlen(s), "Cache timeout: %ds\n", uopt.cache_time);
+	sprintf(s+strlen(s), "Current cache size: %d\n", cache_size());
 
 	sprintf(s+strlen(s), "Bytes read: %u,%03u,%03u,%03u,%03u\n", stats_read_t, stats_read_g, stats_read_m, stats_read_k, stats_read_b);
 	sprintf(s+strlen(s), "Bytes written: %u,%03u,%03u,%03u,%03u\n", stats_written_t, stats_written_g, stats_written_m, stats_written_k, stats_written_b);
