@@ -70,7 +70,6 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw)
 	
 }
 
-
 /**
   * l_nroot (lower nroot than nroot) is write protected, create the dir path on
   * nroot for an other COW operation.
@@ -101,7 +100,6 @@ int path_create(const char *path, int nroot_ro, int nroot_rw)
 		walk++;
 
 	do {
-	
 		while (*walk != '\0' && *walk != '/') walk++;
 	
 		// +1 due to \0, which gets added automatically
