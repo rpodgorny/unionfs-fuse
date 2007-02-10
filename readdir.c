@@ -29,7 +29,7 @@
 /**
  * Check if the given fname suffixes the hide tag
  */
-static char  *hide_tag(const char *fname)
+static char *hide_tag(const char *fname)
 {
 	char *tag = strstr(fname, HIDETAG);
 
@@ -70,8 +70,7 @@ static void read_hides(struct hashtable *hides, DIR *dp)
 /**
  * unionfs-fuse readdir function
  */
-int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-		    off_t offset, struct fuse_file_info *fi) 
+int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) 
 {
 	(void)offset;
 	(void)fi;
@@ -89,8 +88,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 		DIR *dp = opendir(p);
-		if (dp == NULL) 
-			continue;
+		if (dp == NULL) continue;
 
 		read_hides(hides, dp);
 
@@ -110,8 +108,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			st.st_ino = de->d_ino;
 			st.st_mode = de->d_type << 12;
 			
-			if (filler(buf, de->d_name, &st, 0))
-				break;
+			if (filler(buf, de->d_name, &st, 0)) break;
 		}
 
 		closedir(dp);
@@ -126,4 +123,3 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	return 0;
 }
-
