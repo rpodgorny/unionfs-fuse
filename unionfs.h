@@ -4,7 +4,7 @@
 #include <fuse.h>
 
 #define PATHLEN_MAX 1024
-
+#define HIDETAG "_HIDDEN~"
 
 typedef struct {
 	char *path;
