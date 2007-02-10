@@ -31,8 +31,7 @@ bool file_hidden(const char *path)
 	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG);
 
 	res = lstat(p, &stbuf);
-	if (res == 0)
-		return true;
+	if (res == 0) return true;
 
 	return false;
 }
@@ -47,30 +46,21 @@ int remove_hidden(const char *path, int maxroot)
 	char p[PATHLEN_MAX];
 	struct stat buf;
 	int res;
-	
-	if (maxroot == -1)
-		maxroot = uopt.nroots;
-	
+
+	if (maxroot == -1) maxroot = uopt.nroots;
+
 	for (i = 0; i <= maxroot; i++) {
-		snprintf(p, PATHLEN_MAX, "%s%s%s",
-		         uopt.roots[i].path, path, HIDETAG);
-		
+		snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[i].path, path, HIDETAG);
+
 		res = lstat(p, &buf);
-		if (res == -1)
-			continue;
-		
+		if (res == -1) continue;
+
 		switch (buf.st_mode & S_IFMT) {
-			
-			case S_IFDIR:
-				rmdir(p);
-				break;
-				
-			default:
-				unlink(p);
-				break;
+			case S_IFDIR: rmdir(p); break;
+			default: unlink(p); break;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -102,10 +92,9 @@ int hide_file(const char *path, int root_rw)
 
 	res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 
-	if (res == -1) {
-		return res;
-	} else
-		close(res);
+	if (res == -1) return res;
+
+	close(res);
 
 	return 0;
 }
