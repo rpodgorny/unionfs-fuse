@@ -9,7 +9,6 @@
 *
 */
 
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -17,7 +16,6 @@
 #include <utime.h>
 #include <syslog.h>
 #include <string.h>
-
 
 #include "unionfs.h"
 #include "opts.h"
