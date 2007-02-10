@@ -32,6 +32,9 @@ int cache_lookup(const char *path) {
 			return -1;
 		}
 
+		// refresh the cache entry (to improve cache hit ratio)
+		e->time = tv.tv_sec;
+
 		if (uopt.stats_enabled) stats_cache_hits++;
 		return e->root;
 	}
