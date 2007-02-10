@@ -41,7 +41,8 @@ int cache_lookup(const char *path) {
 }
 
 void cache_invalidate_path(const char *path) {
-	hashtable_remove(cache, (void *)path);
+	cache_entry_t *e = hashtable_remove(cache, (void *)path);
+	free(e);
 }
 
 void cache_save(const char *path, int root) {
