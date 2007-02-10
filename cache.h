@@ -5,8 +5,6 @@
 #define CACHE_SIZE 1000
 
 
-extern int cache_time; // cache entry validity time
-
 void cache_init();
 int cache_lookup(const char *path);
 void cache_invalidate(int);
