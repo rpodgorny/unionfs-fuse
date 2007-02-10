@@ -23,77 +23,8 @@
 #include "cache.h"
 #include "stats.h"
 #include "debug.h"
-#include "elfhash.h"
 #include "hashtable.h"
 #include "hash.h"
-
-typedef struct node {
-	char fname[PATHLEN_MAX];
-	int hash;
-	struct node *next;
-} node_t;
-
-
-typedef struct list {
-	node_t *first;
-	node_t *last;
-} list_t;
-
-
-/**
- * Initialize the list.
- */
-static list_t * init_list(void)
-{
-	list_t *list = malloc(sizeof(*list));
-	
-	if (list)
-		memset(list, 0, sizeof(*list));
-
-	return list;
-}
-
-/**
- * Initialize one element and add it to the list and add it to the end of 
- * the given list.
- */
-static void add_to_list(list_t *list, const char *fname)
-{
-	node_t *new = malloc (sizeof(*new));
-	
-	if (!new) {
-		// out of memory?
-		return;
-	}
-	
-	strncpy(new->fname, fname, PATHLEN_MAX);
-	new->hash = ELFHash(fname, strlen(fname));
-	new->next  = NULL;
-	
-	if (!list->first) {
-		list->first = new;
-		list->last  = new;
-	} else {
-		// list already initialized previously
-		list->last->next = new;
-		list->last = new;
-	}
-}
-
-/**
- * Free the entire list.
- */
-static void free_list(list_t *list)
-{
-	node_t *current, *next;
-
-	current = list->first;
-	while (current) {
-		next = current->next;
-		free (current);
-		current = next;
-	}
-}
 
 /**
  * Check if the given fname suffixes the hide tag
@@ -116,7 +47,7 @@ static char  *hide_tag(const char *fname)
  * read a directory and add files with the hiddenflag to the 
  * list of hidden files
  */
-static void read_hidden(list_t *list, DIR *dp)
+static void read_hides(struct hashtable *hides, DIR *dp)
 {
 	struct dirent *de;
 	char *tag;
@@ -125,35 +56,18 @@ static void read_hidden(list_t *list, DIR *dp)
 		tag = hide_tag(de->d_name);
 		if (tag) {
 			// ignore this file
-			add_to_list(list, de->d_name);
+			hashtable_insert(hides, strdup(de->d_name), malloc(1));
 			
 			/* even more important, ignore the file without the tag!
 			* hint: tag is a pointer to the flag-suffix within 
 			*       de->d_name */
 			*tag = '\0';
-			add_to_list(list, de->d_name);
+			hashtable_insert(hides, strdup(de->d_name), malloc(1));
 		}
 	}
 	rewinddir (dp);
 }
 
-/**
- * Check if fname is in the given list.
- */
-static int in_list(char *fname, list_t *list)
-{
-	node_t *cur = list->first; // current element
-	int hash   = ELFHash(fname, strlen(fname));
-
-	while (cur) {
-		if (cur->hash == hash &&
-				  strncmp(cur->fname, fname, PATHLEN_MAX) == 0)
-			return 1;
-		cur = cur->next;
-	};
-
-	return 0;
-}
 
 /**
  * unionfs-fuse readdir function
@@ -164,12 +78,12 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void)offset;
 	(void)fi;
 	int i = 0;
-	list_t *hides = init_list();
 
 	DBG("readdir\n");
 
 	// we will store already added files here to handle same file names across different roots
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
+	struct hashtable *hides = create_hashtable(16, string_hash, string_equal);
 
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
@@ -180,42 +94,40 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		if (dp == NULL) 
 			continue;
 
-		read_hidden(hides, dp);
+		read_hides(hides, dp);
 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
 			// already added in some other root
 			if (hashtable_search(files, de->d_name) != NULL) continue;
-		
+			if (hashtable_search(hides, de->d_name) != NULL) continue;
 
-			if (!in_list(de->d_name, hides)) {
-				/* file is not hidden and file is not already 
-				* added by an upper level root, add it now */
-				
-				/* fill with something dummy, we're interested 
-				 * in key existence only */
-				hashtable_insert(files, strdup(de->d_name), malloc(1));
+			/* file is not hidden and file is not already 
+			* added by an upper level root, add it now */
+			
+			/* fill with something dummy, we're interested 
+			* in key existence only */
+			hashtable_insert(files, strdup(de->d_name), malloc(1));
 
-				struct stat st;
-				memset(&st, 0, sizeof(st));
-				st.st_ino = de->d_ino;
-				st.st_mode = de->d_type << 12;
-				
-				if (filler(buf, de->d_name, &st, 0))
-					break;
-						  }
+			struct stat st;
+			memset(&st, 0, sizeof(st));
+			st.st_ino = de->d_ino;
+			st.st_mode = de->d_type << 12;
+			
+			if (filler(buf, de->d_name, &st, 0))
+				break;
 		}
 
 		closedir(dp);
 	}
 
 	hashtable_destroy(files, 1);
+	hashtable_destroy(hides, 1);
 	
 	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
 	}
 
-	free_list(hides);
 	return 0;
 }
 
