@@ -12,11 +12,12 @@
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "unionfs.h"
 #include "cache.h"
 #include "opts.h"
-
+#include "general.h"
 
 
 /**
@@ -33,9 +34,10 @@ int findroot(const char *path) {
 		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 		struct stat stbuf;
-		int res = lstat(p, &stbuf);
+		int res     = lstat(p, &stbuf);
+		bool hidden = file_hidden(p);
 
-		if (res == 0) {
+		if (res == 0 && !hidden) {
 			cache_save(path, i);
 			return i;
 		}
