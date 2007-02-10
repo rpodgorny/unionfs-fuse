@@ -11,4 +11,7 @@ typedef struct {
 } root_entry_t;
 
 
+int findroot(const char *path);
+int findroot_cutlast(const char *path);
+
 #endif
