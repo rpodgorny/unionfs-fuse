@@ -64,7 +64,6 @@ int remove_hidden(const char *path, int maxroot)
 	return 0;
 }
 
-
 /**
  * dirname() in libc might not be thread-save, at least the man page states
  * "may return pointers to statically allocated memory", so we need our own
