@@ -48,8 +48,7 @@ int findroot(const char *path) {
 			if (uopt.cache_enabled) cache_save(path, i);
 			return i;
 		} else if (hidden) {
-			/* the file is hidden in this root, we also ignore it
-			* in all roots below this level */
+			// the file is hidden in this root, we also ignore it in all roots below this level
 			return -1;
 		}
 		// check check for a hide file
@@ -58,7 +57,6 @@ int findroot(const char *path) {
 
 	return -1;
 }
-
 
 /**
  * Find a writable root. If file does not existent, we check for 
@@ -90,20 +88,6 @@ int find_rw_root_with_cow(const char *path) {
 	}
 
 	return root;
-}
-
-/**
- * Try to find root when we cut the last path element
- */
-int findroot_cutlast(const char *path) {
-	char* ri = rindex(path, '/'); // this char should always be found
-	int len = ri - path;
-
-	char p[PATHLEN_MAX];
-	strncpy(p, path, len);
-	p[len] = '\0';
-
-	return findroot(p);
 }
 
 /**
