@@ -24,13 +24,13 @@
 #include "stats.h"
 #include "debug.h"
 #include "hashtable.h"
+#include "hashtable_itr.h"
 #include "hash.h"
 
 /**
  * Check if the given fname suffixes the hide tag
  */
-static char *hide_tag(const char *fname)
-{
+static char *hide_tag(const char *fname) {
 	char *tag = strstr(fname, HIDETAG);
 
 	// check if fname has tag, fname is not only the tag, file name ends with the tag
@@ -43,37 +43,11 @@ static char *hide_tag(const char *fname)
 }
 
 /**
- * read a directory and add files with the hiddenflag to the 
- * list of hidden files
- * TODO: this should be handled in the readdir()'s loop but we'll
- * loose ability to hide files within the same dir. I don't see
- * a reason why unionfs would do this but I'm leaving it here for now...
- */
-static void read_hides(struct hashtable *hides, DIR *dp)
-{
-	struct dirent *de;
-	char *tag;
-	
-	while ((de = readdir(dp)) != NULL) {
-		tag = hide_tag(de->d_name);
-		if (tag) {
-			// ignore this file
-			hashtable_insert(hides, strdup(de->d_name), malloc(1));
-			
-			// even more important, ignore the file without the tag!
-			// hint: tag is a pointer to the flag-suffix within de->d_name
-			*tag = '\0';
-			hashtable_insert(hides, strdup(de->d_name), malloc(1));
-		}
-	}
-	rewinddir (dp);
-}
-
-/**
  * unionfs-fuse readdir function
+ *
+ * We first read the directory contents for all roots and filter it on the run (for hidden files and stuff). This could be connected into a single loop even with the hiding but then the hiding file has to be on a root prior to the one that contains the file we are to hide. This two-round soulution gives an oportunity to hide anything from anywhere...
  */
-int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) 
-{
+int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
 	(void)offset;
 	(void)fi;
 	int i = 0;
@@ -86,39 +60,63 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
-		
 		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 		DIR *dp = opendir(p);
 		if (dp == NULL) continue;
 
-		read_hides(hides, dp);
-
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
+			char *tag = hide_tag(de->d_name);
+			if (tag) {
+				// a file indicating we should hide something
+				*tag = '\0';
+
+				// add to hides (only if not there already)
+				if (!hashtable_search(hides, de->d_name)) {
+					hashtable_insert(hides, strdup(de->d_name), malloc(1));
+				}
+
+				// try to remove from files to be displayed
+				struct stat *st = hashtable_remove(files, de->d_name);
+				free(st);
+
+				continue;
+			}
+
 			// already added in some other root
 			if (hashtable_search(files, de->d_name) != NULL) continue;
 
 			// file should be hidden from the user
 			if (hashtable_search(hides, de->d_name) != NULL) continue;
 
-			// fill with something dummy, we're interested in key existence only
-			hashtable_insert(files, strdup(de->d_name), malloc(1));
+			struct stat *st = malloc(sizeof(struct stat));
+			memset(st, 0, sizeof(struct stat));
+			st->st_ino = de->d_ino;
+			st->st_mode = de->d_type << 12;
 
-			struct stat st;
-			memset(&st, 0, sizeof(st));
-			st.st_ino = de->d_ino;
-			st.st_mode = de->d_type << 12;
-			
-			if (filler(buf, de->d_name, &st, 0)) break;
+			hashtable_insert(files, strdup(de->d_name), st);
 		}
 
 		closedir(dp);
 	}
 
+	// now really return filtered the entries
+	struct hashtable_itr *itr = hashtable_iterator(files);
+	do {
+		// The hashtable routines are somewhat broken so we need to handle this ourselves
+		if (itr->e == NULL) break;
+
+		char *fname = hashtable_iterator_key(itr);
+		struct stat *st = hashtable_iterator_value(itr);
+
+		if (filler(buf, fname, st, 0)) break;
+	} while (hashtable_iterator_advance(itr) != 0);
+	free(itr);
+
 	hashtable_destroy(files, 1);
 	hashtable_destroy(hides, 1);
-	
+
 	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
 	}
