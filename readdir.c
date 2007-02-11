@@ -57,7 +57,12 @@ static bool is_hiding(struct hashtable *hides, char *fname)
 		// even more important, ignore the file without the tag!
 		// hint: tag is a pointer to the flag-suffix within de->d_name
 		*tag = '\0'; // this modifies fname!
-		hashtable_insert(hides, strdup(fname), malloc(1));
+
+		// add to hides (only if not there already)
+		if (!hashtable_search(hides, fname)) {
+			hashtable_insert(hides, strdup(fname), malloc(1));
+		}
+
 		
 		return true;
 	}
