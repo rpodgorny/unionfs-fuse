@@ -95,7 +95,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 			// file should be hidden from the user
 			if (hashtable_search(hides, de->d_name) != NULL) continue;
-			
+
 			// file itself has the hiding tag
 			if (is_hiding(hides, de->d_name)) continue;
 
