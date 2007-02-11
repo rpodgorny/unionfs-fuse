@@ -104,11 +104,11 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 
 /**
  * As path_create(), but ignore the last segment in path,
- * i.e. in the calling function it might be a filename.
+ * i.e. it might be a filename.
  **/
 int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
 	char *dname = u_dirname(path);
-	int ret = path_create(u_dirname(path), nroot_ro, nroot_rw);
+	int ret = path_create(dname, nroot_ro, nroot_rw);
 	free(dname);
 
 	return ret;
