@@ -10,3 +10,6 @@ Christopher Clark <christopher.clark@cl.cam.ac.uk>
 
 Hash routines taken from:
 Arash Partow
+
+COW routines taken from:
+OpenBSD
