@@ -604,38 +604,6 @@ static int unionfs_truncate(const char *path, off_t size) {
 	return 0;
 }
 
-static int unionfs_unlink(const char *path) {
-	DBG("unlink\n");
-
-	int i = findroot(path);
-	if (i == -1) return -errno;
-
-	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
-
-	int res = unlink(p);
-	if (res == -1) {
-		if (errno == ENOENT) {
-			cache_invalidate_path(path);
-
-			i = findroot(path);
-			if (i == -1) return -errno;
-
-			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
-
-			res = unlink(p);
-			if (res == -1) return -errno;
-		} else {
-			return -errno;
-		}
-	}
-
-	// The path should no longer exist
-	cache_invalidate_path(path);
-
-	return 0;
-}
-
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	DBG("utime\n");
 
