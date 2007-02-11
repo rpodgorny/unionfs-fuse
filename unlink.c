@@ -44,7 +44,7 @@ static int unlink_rw(const char *path, int root_rw)
 	int res = unlink(p);
 	if (res == -1) {
 		if (errno == ENOENT) {
-			cache_invalidate_path(path);
+			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			root_rw = findroot(path);
 			if (root_rw == -1) return -errno;
@@ -64,7 +64,7 @@ static int unlink_rw(const char *path, int root_rw)
 	}
 
 	// The path should no longer exist
-	cache_invalidate_path(path);
+	if (uopt.cache_enabled) cache_invalidate_path(path);
 
 	return 0;
 }

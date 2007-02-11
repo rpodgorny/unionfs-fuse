@@ -26,7 +26,9 @@
  *       and should mainly be for internal usage, only.
 */
 int findroot(const char *path) {
-	int i = cache_lookup(path);
+	int i = -1;
+	
+	if (uopt.cache_enabled) cache_lookup(path);
 
 	if (i != -1) return i;
 
@@ -40,7 +42,7 @@ int findroot(const char *path) {
 		int res = lstat(p, &stbuf);
 
 		if (res == 0 && !hidden) {
-			cache_save(path, i);
+			if (uopt.cache_enabled) cache_save(path, i);
 			return i;
 		} else if (hidden) {
 			/* the file is hidden in this root, we also ignore it

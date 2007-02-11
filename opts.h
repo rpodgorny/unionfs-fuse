@@ -3,6 +3,8 @@
 
 
 #include <fuse.h>
+#include <stdbool.h>
+
 #include "unionfs.h"
 
 
@@ -13,6 +15,7 @@ typedef struct {
 	root_entry_t *roots;
 
 	char stats_enabled;
+	bool cache_enabled;
 	int cache_time;
 
 	int doexit;
@@ -20,6 +23,7 @@ typedef struct {
 
 enum {
 	KEY_STATS,
+	KEY_CACHE,
 	KEY_CACHE_TIME,
 	KEY_HELP,
 	KEY_VERSION

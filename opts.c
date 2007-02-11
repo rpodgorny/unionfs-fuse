@@ -15,6 +15,7 @@ void uopt_init() {
 	uopt.doexit = 0;
 	uopt.nroots = 0;
 	uopt.stats_enabled = 0;
+	uopt.cache_enabled = false;
 	uopt.cache_time = 60; // default cache entry validity
 }
 
@@ -131,6 +132,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 1;
 		case KEY_STATS:
 			uopt.stats_enabled = 1;
+			return 0;
+		case KEY_CACHE:
+			uopt.cache_enabled = true;
 			return 0;
 		case KEY_CACHE_TIME:
 			// TODO: get rid of the ugly string
