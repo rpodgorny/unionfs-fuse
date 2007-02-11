@@ -79,7 +79,10 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 	// we will store already added files here to handle same file names across different roots
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
-	struct hashtable *hides = create_hashtable(16, string_hash, string_equal);
+	
+	struct hashtable *hides;
+	
+	if (uopt.cow_enabled) create_hashtable(16, string_hash, string_equal);
 
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
@@ -117,7 +120,8 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	}
 
 	hashtable_destroy(files, 1);
-	hashtable_destroy(hides, 1);
+	
+	if (uopt.cow_enabled) hashtable_destroy(hides, 1);
 	
 	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
