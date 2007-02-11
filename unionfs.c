@@ -817,7 +817,7 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}
 
-		stats_init();
+		if (uopt.stats_enabled) stats_init();
 		if (uopt.cache_enabled) cache_init();
 	}
 
