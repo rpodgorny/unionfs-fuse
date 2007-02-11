@@ -41,7 +41,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("-h", KEY_HELP),
 	FUSE_OPT_KEY("-V", KEY_VERSION),
 	FUSE_OPT_KEY("stats", KEY_STATS),
-	FUSE_OPT_KEY("cache", KEY_STATS),
+	FUSE_OPT_KEY("cache", KEY_CACHE),
 	FUSE_OPT_KEY("cache-time=", KEY_CACHE_TIME),
 	FUSE_OPT_END
 };
