@@ -15,7 +15,5 @@ typedef struct {
 int findroot(const char *path);
 int findroot_cutlast(const char *path);
 int wroot_from_list(int root_ro);
-int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
-int unionfs_unlink(const char *path);
 
 #endif

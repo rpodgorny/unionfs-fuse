@@ -103,8 +103,7 @@ static int unlink_ro(const char *path, int root_ro)
 /**
   * unlink() call
   */
-int unionfs_unlink(const char *path)
-{
+int unionfs_unlink(const char *path) {
 	DBG("unlink\n");
 
 	int i = findroot(path);
@@ -114,4 +113,3 @@ int unionfs_unlink(const char *path)
 
 	return unlink_rw(path, i);
 }
-

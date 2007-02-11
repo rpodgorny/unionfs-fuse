@@ -30,6 +30,9 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include "stats.h"
 #include "debug.h"
 
+#include "unlink.h"
+#include "readdir.h"
+
 
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("--help", KEY_HELP),
