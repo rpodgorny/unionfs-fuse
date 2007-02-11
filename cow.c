@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <unistd.h>
 #include <syslog.h>
@@ -27,7 +26,7 @@ static int cow_cp(const char *path, int root_ro, int root_rw) {
 
 	cow.uid = getuid();
 
-	/* Copy the umask for explicit mode setting. */
+	// Copy the umask for explicit mode setting.
 	cow.umask = umask(0);
 	(void)umask(cow.umask);
 
