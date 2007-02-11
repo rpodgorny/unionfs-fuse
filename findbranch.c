@@ -63,7 +63,7 @@ int findroot(const char *path) {
  * Find a writable root. If file does not existent, we check for 
  * the parent directory.
  **/
-int find_wroot(const char *path) {
+int find_rw_root_with_cow(const char *path) {
 	int root;
 
 	root = cow(path); // copy-on-write

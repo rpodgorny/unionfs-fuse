@@ -325,7 +325,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 
 	int i;
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
-		i = find_wroot(path);
+		i = find_rw_root_with_cow(path);
 	} else {
 		i = findroot(path);
 	}
@@ -341,7 +341,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			// The user may have moved the file among roots
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_wroot(path);
+			i = find_rw_root_with_cow(path);
 			if (i == -1) return -errno;
 		
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
