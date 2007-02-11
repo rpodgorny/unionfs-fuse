@@ -87,7 +87,7 @@ char* u_dirname(char *path)
 }
 
 /**
- * Create a file that hides path in in all roots in and below root_rw
+ * Create a file that hides path below root_rw
  */
 int hide_file(const char *path, int root_rw)
 {
