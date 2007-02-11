@@ -30,6 +30,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include "stats.h"
 #include "debug.h"
 #include "findbranch.h"
+#include "general.h"
 
 #include "unlink.h"
 #include "readdir.h"
@@ -322,12 +323,15 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 		return -EACCES;
 	}
 
-	int i = findroot(path);
-	if (i == -1) {
-		if (errno == ENOENT && fi->flags & O_CREAT) i = findroot_cutlast(path);
-		if (i == -1) return -errno;
+	int i;
+	if (fi->flags & (O_WRONLY | O_RDWR)) {
+		i = find_wroot(path);
+	} else {
+		i = findroot(path);
 	}
-
+	
+	if (i == -1) return -errno;
+	
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
@@ -337,7 +341,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			// The user may have moved the file among roots
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_wroot(path);
 			if (i == -1) return -errno;
 		
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -348,6 +352,13 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			return -errno;
 		}
 	}
+	
+	if (fi->flags & (O_WRONLY | O_RDWR)) {
+		/* There might have been a hide file, but since we successfully 
+		* wrote to the real file, a hide file must not exist anymore */
+		remove_hidden(path, i);
+	}
+
 
 	fi->direct_io = 1;
 	fi->fh = (unsigned long)fd;

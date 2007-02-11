@@ -47,6 +47,8 @@ bool file_hidden(const char *path)
  */
 int remove_hidden(const char *path, int maxroot)
 {
+	if (!uopt.cow_enabled) return 0;
+	
 	int i;
 	char p[PATHLEN_MAX];
 	struct stat buf;

@@ -13,12 +13,14 @@
 #include <strings.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include "unionfs.h"
 #include "cache.h"
 #include "opts.h"
 #include "general.h"
-
+#include "cow.h"
+#include "findbranch.h"
 
 /**
  * If path exists, return the root number that has path. Also create a cache entry.
@@ -55,6 +57,48 @@ int findroot(const char *path) {
 
 	return -1;
 }
+
+
+/**
+ * Find a writable root. If file does not existent, we check for 
+ * the parent directory.
+ **/
+int find_wroot(const char *path)
+{
+	int root;
+	
+	root = cow(path); // copy-on-write
+	
+	if ((root < 0) && (errno == ENOENT)) {
+		// So path does not exist, now again, but with dirname only
+		
+		char tmppath[PATHLEN_MAX];
+		strncpy(tmppath, path, PATHLEN_MAX);
+		
+		// u_dirname() modifies its argument
+		char *dname = u_dirname(tmppath);
+		
+		int root_ro = findroot(dname);
+		if ((root_ro < 0) || uopt.roots[root_ro].rw || !uopt.cow_enabled) {
+			// root does not exist or is already writable or cow disabled
+			return root_ro;
+		}
+		
+		int root_rw = wroot_from_list(root_ro);
+		int res = path_create(dname, root_ro, root_rw);
+		
+		if (res) {
+			// creating the path failed
+			return -1;
+		}
+			
+		return root_rw;
+		
+	}
+	
+	return root;
+}
+
 
 /**
  * Try to find root when we cut the last path element

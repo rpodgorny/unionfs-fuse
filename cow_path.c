@@ -74,6 +74,8 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw)
   */
 int path_create(const char *path, int nroot_ro, int nroot_rw)
 {
+	if (!uopt.cow_enabled) return 0;
+	
 	char *walk;
 	char p[PATHLEN_MAX]; // temp string, with elements of path
 	int res;
