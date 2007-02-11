@@ -77,7 +77,7 @@ int remove_hidden(const char *path, int maxroot)
  * "may return pointers to statically allocated memory", so we need our own
  * implementation
  */
-char *u_dirname(char *path) {
+char *u_dirname(const char *path) {
 	char *ret = strdup(path);
 
 	char *ri = rindex(ret, '/'); //this char should always be found
