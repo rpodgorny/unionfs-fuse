@@ -84,10 +84,7 @@ int find_rw_root_with_cow(const char *path) {
 
 		free(dname);
 
-		if (res) {
-			// creating the path failed
-			return -1;
-		}
+		if (res) return -1; // creating the path failed
 
 		return root_rw;
 	}
