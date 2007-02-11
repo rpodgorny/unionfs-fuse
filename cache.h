@@ -1,6 +1,7 @@
 #ifndef CACHE_H
 #define CACHE_H
 
+#include <time.h>
 
 typedef struct {
 	int root;

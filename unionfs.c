@@ -29,6 +29,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include "cache.h"
 #include "stats.h"
 #include "debug.h"
+#include "findbranch.h"
 
 #include "unlink.h"
 #include "readdir.h"

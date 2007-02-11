@@ -28,6 +28,7 @@
 #include "cache.h"
 #include "cow.h"
 #include "general.h"
+#include "findbranch.h"
 
 static int unlink_ro(const char *path, int root_ro);
 
