@@ -47,7 +47,6 @@ static struct fuse_opt unionfs_opts[] = {
 };
 
 
-
 static int unionfs_access(const char *path, int mask) {
 	DBG("access\n");
 
