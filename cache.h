@@ -16,7 +16,7 @@ void cache_init();
 int cache_lookup(const char *path);
 void cache_invalidate_path(const char *path);
 void cache_save(const char *path, int root);
-int cache_size();
+unsigned int cache_size();
 
 
 #endif

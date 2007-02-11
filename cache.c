@@ -90,6 +90,6 @@ void cache_save(const char *path, int root) {
 	hashtable_insert(cache, strdup(path), e);
 }
 
-int cache_size() {
+unsigned int cache_size() {
 	return hashtable_count(cache);
 }

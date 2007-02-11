@@ -26,7 +26,7 @@ void stats_sprint(char *s) {
 		sprintf(s+strlen(s), "Cache hits/misses: %u/%u\n", stats_cache_hits, stats_cache_misses);
 		sprintf(s+strlen(s), "Cache hit ratio: %.3f%%\n", (double)stats_cache_hits*100/(double)(stats_cache_hits + stats_cache_misses));
 		sprintf(s+strlen(s), "Cache timeout: %ds\n", uopt.cache_time);
-		sprintf(s+strlen(s), "Current cache size: %d\n", cache_size());
+		sprintf(s+strlen(s), "Current cache size: %u\n", cache_size());
 	} else {
 		sprintf(s+strlen(s), "Cache disabled\n");
 	}
