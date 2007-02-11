@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/statvfs.h>
+#include <stdbool.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -24,7 +25,6 @@
 #include "stats.h"
 #include "debug.h"
 #include "hashtable.h"
-#include "hashtable_itr.h"
 #include "hash.h"
 
 /**
@@ -43,9 +43,32 @@ static char *hide_tag(const char *fname) {
 }
 
 /**
+ * Check if fname has a hiding tag and return its status.
+ * Also, add this file and to the hiding hash table.
+ * Warning: If fname has the tag, fname gets modified.
+ */
+static bool is_hiding(struct hashtable *hides, char *fname) {
+	char *tag;
+	
+	tag = hide_tag(fname);
+	if (tag) {
+		// even more important, ignore the file without the tag!
+		// hint: tag is a pointer to the flag-suffix within de->d_name
+		*tag = '\0'; // this modifies fname!
+
+		// add to hides (only if not there already)
+		if (!hashtable_search(hides, fname)) {
+			hashtable_insert(hides, strdup(fname), malloc(1));
+		}
+
+		
+		return true;
+	}
+	return false;
+}
+
+/**
  * unionfs-fuse readdir function
- *
- * We first read the directory contents for all roots and filter it on the run (for hidden files and stuff). This could be connected into a single loop even with the hiding but then the hiding file has to be on a root prior to the one that contains the file we are to hide. This two-round soulution gives an oportunity to hide anything from anywhere...
  */
 int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
 	(void)offset;
@@ -67,56 +90,32 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
-			char *tag = hide_tag(de->d_name);
-			if (tag) {
-				// a file indicating we should hide something
-				*tag = '\0';
-
-				// add to hides (only if not there already)
-				if (!hashtable_search(hides, de->d_name)) {
-					hashtable_insert(hides, strdup(de->d_name), malloc(1));
-				}
-
-				// try to remove from files to be displayed
-				struct stat *st = hashtable_remove(files, de->d_name);
-				free(st);
-
-				continue;
-			}
-
 			// already added in some other root
 			if (hashtable_search(files, de->d_name) != NULL) continue;
 
 			// file should be hidden from the user
 			if (hashtable_search(hides, de->d_name) != NULL) continue;
+			
+			// file itself has the hiding tag
+			if (is_hiding(hides, de->d_name)) continue;
 
-			struct stat *st = malloc(sizeof(struct stat));
-			memset(st, 0, sizeof(struct stat));
-			st->st_ino = de->d_ino;
-			st->st_mode = de->d_type << 12;
+			// fill with something dummy, we're interested in key existence only
+			hashtable_insert(files, strdup(de->d_name), malloc(1));
 
-			hashtable_insert(files, strdup(de->d_name), st);
+			struct stat st;
+			memset(&st, 0, sizeof(st));
+			st.st_ino = de->d_ino;
+			st.st_mode = de->d_type << 12;
+			
+			if (filler(buf, de->d_name, &st, 0)) break;
 		}
 
 		closedir(dp);
 	}
 
-	// now really return filtered the entries
-	struct hashtable_itr *itr = hashtable_iterator(files);
-	do {
-		// The hashtable routines are somewhat broken so we need to handle this ourselves
-		if (itr->e == NULL) break;
-
-		char *fname = hashtable_iterator_key(itr);
-		struct stat *st = hashtable_iterator_value(itr);
-
-		if (filler(buf, fname, st, 0)) break;
-	} while (hashtable_iterator_advance(itr) != 0);
-	free(itr);
-
 	hashtable_destroy(files, 1);
 	hashtable_destroy(hides, 1);
-
+	
 	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
 	}
