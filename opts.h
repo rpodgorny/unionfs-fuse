@@ -16,6 +16,7 @@ typedef struct {
 
 	bool stats_enabled;
 	bool cache_enabled;
+	bool cow_enabled;
 	int cache_time;
 
 	int doexit;
@@ -25,6 +26,7 @@ enum {
 	KEY_STATS,
 	KEY_CACHE,
 	KEY_CACHE_TIME,
+	KEY_COW,
 	KEY_HELP,
 	KEY_VERSION
 };

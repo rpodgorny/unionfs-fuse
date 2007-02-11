@@ -24,6 +24,11 @@
  */
 bool file_hidden(const char *path)
 {
+	if (!uopt.cow_enabled) {
+		// cow mode disabled, no need for hidden files
+		return false;
+	}
+	
 	char p[PATHLEN_MAX];
 	struct stat stbuf;
 	int res;

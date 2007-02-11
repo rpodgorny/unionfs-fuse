@@ -110,7 +110,10 @@ int unionfs_unlink(const char *path) {
 	int i = findroot(path);
 	if (i == -1) return -errno;
 
-	if (!uopt.roots[i].rw) return unlink_ro(path, i);
+	if (!uopt.roots[i].rw || !uopt.cow_enabled) {
+		// root is writable or cow disabled
+		return unlink_ro(path, i);
+	}
 
 	return unlink_rw(path, i);
 }

@@ -43,6 +43,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("stats", KEY_STATS),
 	FUSE_OPT_KEY("cache", KEY_CACHE),
 	FUSE_OPT_KEY("cache-time=", KEY_CACHE_TIME),
+	FUSE_OPT_KEY("cow", KEY_COW),
 	FUSE_OPT_END
 };
 

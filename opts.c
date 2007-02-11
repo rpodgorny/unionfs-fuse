@@ -17,6 +17,7 @@ void uopt_init() {
 	uopt.stats_enabled = false;
 	uopt.cache_enabled = false;
 	uopt.cache_time = 60; // default cache entry validity
+	uopt.cow_enabled = false; // copy-on-write
 }
 
 /**
@@ -144,6 +145,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 				uopt.doexit = 1;
 				return 1;
 			}
+			return 0;
+		case KEY_COW:
+			uopt.cow_enabled = true;
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);

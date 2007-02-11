@@ -93,11 +93,14 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 			// already added in some other root
 			if (hashtable_search(files, de->d_name) != NULL) continue;
 
-			// file should be hidden from the user
-			if (hashtable_search(hides, de->d_name) != NULL) continue;
-
-			// file itself has the hiding tag
-			if (is_hiding(hides, de->d_name)) continue;
+			// check if we need file hiding
+			if (uopt.cow_enabled) {
+				// file should be hidden from the user
+				if (hashtable_search(hides, de->d_name) != NULL) continue;
+	
+				// file itself has the hiding tag
+				if (is_hiding(hides, de->d_name)) continue;
+			}
 
 			// fill with something dummy, we're interested in key existence only
 			hashtable_insert(files, strdup(de->d_name), malloc(1));
