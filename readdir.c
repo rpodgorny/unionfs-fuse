@@ -82,7 +82,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	
 	struct hashtable *hides;
 	
-	if (uopt.cow_enabled) create_hashtable(16, string_hash, string_equal);
+	if (uopt.cow_enabled) hides = create_hashtable(16, string_hash, string_equal);
 
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
