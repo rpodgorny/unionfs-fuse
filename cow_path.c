@@ -28,19 +28,17 @@
   */
 static int do_create(const char *path, int nroot_ro, int nroot_rw)
 {
-	int res;
-	struct stat buf;
 	char dirp[PATHLEN_MAX]; // dir path to create
-
 	sprintf(dirp, "%s%s", uopt.roots[nroot_rw].path, path);
-	res = stat(dirp, &buf);
+
+	struct stat buf;
+	int res = stat(dirp, &buf);
 	if (res != -1) {
 		// already exists
 		return 0;
 	}
 
-	/* root does not exist yet, create it with stat data
-	 * from the root */
+	// root does not exist yet, create it with stat data from the root
 	char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
 
 	sprintf(o_dirp, "%s%s", uopt.roots[nroot_ro].path, path);
@@ -72,17 +70,15 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw)
   * l_nroot (lower nroot than nroot) is write protected, create the dir path on
   * nroot for an other COW operation.
   */
-int path_create(const char *path, int nroot_ro, int nroot_rw)
-{
+int path_create(const char *path, int nroot_ro, int nroot_rw) {
 	if (!uopt.cow_enabled) return 0;
-	
-	char *walk;
+
 	char p[PATHLEN_MAX]; // temp string, with elements of path
 	int res;
 	struct stat buf;
 
-	if (strlen(path) + strlen(uopt.roots[nroot_rw].path)  > PATHLEN_MAX ||
-	    strlen(path) + strlen(uopt.roots[nroot_ro].path) > PATHLEN_MAX) {
+	if (strlen(path) + strlen(uopt.roots[nroot_rw].path) > PATHLEN_MAX
+	|| strlen(path) + strlen(uopt.roots[nroot_ro].path) > PATHLEN_MAX) {
 		// TODO: how to handle that?
 		return 1;
 	}
@@ -93,11 +89,10 @@ int path_create(const char *path, int nroot_ro, int nroot_rw)
 		return 0;
 	}
 
-	walk = (char *)path;
-	
+	char *walk = (char *)path;
+
 	// first slashes
-	while (*walk != '\0' && *walk == '/')
-		walk++;
+	while (*walk != '\0' && *walk == '/') walk++;
 
 	do {
 		while (*walk != '\0' && *walk != '/') walk++;
@@ -119,14 +114,13 @@ int path_create(const char *path, int nroot_ro, int nroot_rw)
  * As path_create(), but ignore the last segment in path,
  * i.e. in the calling function it might be a filename.
  **/
-int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw)
-{
+int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
 	char tmppath[PATHLEN_MAX];
-		
-	strncpy(tmppath, path, PATHLEN_MAX); 
+	strncpy(tmppath, path, PATHLEN_MAX);
+
 	// u_dirname() modifies its argument
 	char *dname = u_dirname(tmppath);
-		
+
 	return path_create(dname, nroot_ro, nroot_rw);
 }
 

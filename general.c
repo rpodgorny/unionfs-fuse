@@ -12,6 +12,7 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -76,24 +77,22 @@ int remove_hidden(const char *path, int maxroot)
  * "may return pointers to statically allocated memory", so we need our own
  * implementation
  */
-char* u_dirname(char *path) 
-{
-	char* ri = rindex(path, '/'); //this char should always be found
-	int len = ri - path;
+char *u_dirname(char *path) {
+	char *ret = strdup(path);
 
-	path[len] = '\0';
+	char *ri = rindex(ret, '/'); //this char should always be found
+	*ri = '\0';
 
-	return path;
+	return ret;
 }
 
 /**
  * Create a file that hides path below root_rw
  */
-int hide_file(const char *path, int root_rw)
-{
+int hide_file(const char *path, int root_rw) {
 	char p[PATHLEN_MAX];
 	int res;
-	
+
 	snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[root_rw].path, path, HIDETAG);
 
 	res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
