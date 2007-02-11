@@ -16,14 +16,13 @@
 /**
  * initiate the cow-copy action
  */
-static int cow_cp(const char *path, int root_ro, int root_rw)
-{
+static int cow_cp(const char *path, int root_ro, int root_rw) {
 	struct cow cow;
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
 
 	snprintf(from, PATHLEN_MAX, "%s%s", uopt.roots[root_ro].path, path);
-	snprintf(to,   PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
-	
+	snprintf(to, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
+
 	(void)setlocale(LC_ALL, "");
 
 	cow.uid = getuid();
@@ -37,10 +36,10 @@ static int cow_cp(const char *path, int root_ro, int root_rw)
 
 	struct stat buf;
 	int res;
-	
+
 	res = lstat(cow.from_path, &buf);
 	cow.stat = &buf;
-	
+
 	switch (buf.st_mode & S_IFMT) {
 		case S_IFLNK:
 			return copy_link(&cow);
@@ -65,8 +64,7 @@ static int cow_cp(const char *path, int root_ro, int root_rw)
  * Find path in a union branch and if this branch is read-only, 
  * copy the file to a read-write branch.
  */
-int cow(const char *path)
-{
+int cow(const char *path) {
 	int root_ro = findroot(path);
 
 	if (!uopt.cow_enabled || root_ro < 0 || uopt.roots[root_ro].rw) {
@@ -75,7 +73,7 @@ int cow(const char *path)
 	}
 
 	int root_rw = wroot_from_list(root_ro);
-	
+
 	if (root_rw < 0) {
 		// no writable root found
 		errno = EACCES;
@@ -84,7 +82,7 @@ int cow(const char *path)
 
 	// create the path to the file
 	path_create_cutlast(path, root_ro, root_rw);
-	
+
 	// copy the file from root_ro to root_rw
 	if (cow_cp(path, root_ro, root_rw)) {
 		// some error
@@ -102,4 +100,3 @@ int cow(const char *path)
 
 	return root_rw;
 }
-

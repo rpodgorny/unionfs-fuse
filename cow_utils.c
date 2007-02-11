@@ -270,5 +270,3 @@ int copy_special(struct cow *cow)
 	}
 	return setfile(cow->to_path, cow->stat);
 }
-
-

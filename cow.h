@@ -6,11 +6,11 @@
 struct cow {
 	mode_t umask;
 	uid_t uid;
-	
+
 	// source file
 	char  *from_path;
 	struct stat *stat;
-	
+
 	// destination file
 	char *to_path;
 };
