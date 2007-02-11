@@ -50,6 +50,7 @@ int cache_lookup(const char *path) {
 	if ((tv.tv_sec - last_clean_time) > uopt.cache_time) {
 		// it's time for the cleanup
 		cache_clean_old();
+		last_clean_time = tv.tv_sec;
 	}
 
 	cache_entry_t *e = hashtable_search(cache, (void *)path);
