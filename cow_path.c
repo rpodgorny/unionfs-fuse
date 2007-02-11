@@ -34,20 +34,14 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw)
 
 	struct stat buf;
 	int res = stat(dirp, &buf);
-	if (res != -1) {
-		// already exists
-		return 0;
-	}
+	if (res != -1) return 0; // already exists
 
 	// root does not exist yet, create it with stat data from the root
 	char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
 
 	sprintf(o_dirp, "%s%s", uopt.roots[nroot_ro].path, path);
 	res = stat(o_dirp, &buf);
-	if (res == -1) {
-		// lower level root removed in the mean time?
-		return 1;
-	}
+	if (res == -1) return 1; // lower level root removed in the mean time?
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
@@ -56,10 +50,7 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw)
 	}
 	
 	res = chown(dirp, buf.st_uid, buf.st_gid);
-	if (res == -1) {
-		// directory already removed by another process?
-		return 1;
-	}
+	if (res == -1) return 1; // directory already removed by another process?
 
 	// TODO: time, but its values are modified by the next dir/file creation steps?
 
