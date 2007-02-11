@@ -34,6 +34,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 
 #include "unlink.h"
 #include "readdir.h"
+#include "cow.h"
 
 
 static struct fuse_opt unionfs_opts[] = {
@@ -82,7 +83,7 @@ static int unionfs_access(const char *path, int mask) {
 static int unionfs_chmod(const char *path, mode_t mode) {
 	DBG("chmod\n");
 
-	int i = findroot(path);
+	int i = cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -94,7 +95,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 			// The user may have moved the file among roots
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -112,7 +113,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	DBG("chown\n");
 
-	int i = findroot(path);
+	int i = cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -123,7 +124,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -218,27 +219,26 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 
 static int unionfs_link(const char *from, const char *to) {
 	DBG("link\n");
+	
+	// hardlinks do not work across different filesystems,so we need a copy of from first.
+	int i = cow(from);
+	if (i == -1)  return -errno; // copying from failed;
 
-	int i = findroot(to);
-	if (i == -1) {
-		if (errno == ENOENT) i = findroot_cutlast(to);
-		if (i == -1) return -errno;
-	}
-
-	char t[PATHLEN_MAX];
+	char f[PATHLEN_MAX], t[PATHLEN_MAX];
+	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
-	int res = link(from, t);
+	int res = link(f, t);
 	if (res == -1) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(to);
 
-			i = findroot(to);
+			i = cow(from);
 			if (i == -1) return -errno;
 
 			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
-			res = link(from, t);
+			res = link(f, t);
 			if (res == -1) return -errno;
 		} else {
 			return -errno;
@@ -251,11 +251,8 @@ static int unionfs_link(const char *from, const char *to) {
 static int unionfs_mkdir(const char *path, mode_t mode) {
 	DBG("mkdir\n");
 
-	int i = findroot(path);
-	if (i == -1) {
-		if (errno == ENOENT) i = findroot_cutlast(path);
-		if (i == -1) return -errno;
-	}
+	int i = find_rw_root_with_cow(path);
+	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -265,7 +262,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rw_root_with_cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -283,11 +280,8 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	DBG("mknod\n");
 
-	int i = findroot(path);
-	if (i == -1) {
-		if (errno == ENOENT) i = findroot_cutlast(path);
-		if (i == -1) return -errno;
-	}
+	int i = find_rw_root_with_cow(path);
+	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -297,7 +291,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rw_root_with_cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -308,6 +302,8 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 			return -errno;
 		}
 	}
+	
+	remove_hidden(path, i);
 
 	return 0;
 }
@@ -438,8 +434,18 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 static int unionfs_rename(const char *from, const char *to) {
 	DBG("rename\n");
 
-	int i = findroot(from);
+	int i = cow(from);
 	if (i == -1) return -errno;
+	
+	if (!uopt.roots[i].rw) {
+		i = cow(from);
+		if (i == -1) return -errno;
+		
+		/* since original file is on a read-only root, we copied the
+		* from file to a writable root, but since we will rename from,
+		* we also need to hide the from file on the read-only root */
+		hide_file(from, i);
+	}
 
 	char f[PATHLEN_MAX];
 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
@@ -452,9 +458,16 @@ static int unionfs_rename(const char *from, const char *to) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(from);
 
-			i = findroot(from);
+			i = cow(from);
 			if (i == -1) return -errno;
 
+			if (!uopt.roots[i].rw) {
+				i = cow(from);
+				if (i == -1) return -errno;
+		
+				hide_file(from, i);
+			}
+			
 			snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
 			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
@@ -473,6 +486,8 @@ static int unionfs_rename(const char *from, const char *to) {
 
 static int unionfs_rmdir(const char *path) {
 	DBG("rmdir\n");
+	
+	// FIXME: no proper cow support yet
 
 	int i = findroot(path);
 	if (i == -1) return -errno;
@@ -562,11 +577,8 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 static int unionfs_symlink(const char *from, const char *to) {
 	DBG("symlink\n");
 
-	int i = findroot(to);
-	if (i == -1) {
-		if (errno == ENOENT) i = findroot_cutlast(to);
-		if (i == -1) return -errno;
-	}
+	int i = find_rw_root_with_cow(to);
+	if (i == -1) return -errno;
 
 	char t[PATHLEN_MAX];
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
@@ -576,7 +588,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(to);
 
-			i = findroot(to);
+			i = find_rw_root_with_cow(to);
 			if (i == -1) return -errno;
 
 			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
@@ -594,7 +606,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 static int unionfs_truncate(const char *path, off_t size) {
 	DBG("truncate\n");
 
-	int i = findroot(path);
+	int i = cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -605,7 +617,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -625,7 +637,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
-	int i = findroot(path);
+	int i = cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -636,7 +648,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -726,7 +738,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 static int unionfs_removexattr(const char *path, const char *name) {
 	DBG("removexattr\n");
 	
-	int i = findroot(path);
+	int i = cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -737,7 +749,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
@@ -755,7 +767,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
 	DBG("sexattr\n");
 
-	int i = findroot(path);
+	int i = cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -766,7 +778,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);

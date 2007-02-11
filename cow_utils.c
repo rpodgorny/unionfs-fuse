@@ -130,7 +130,8 @@ int copy_file(struct cow *cow)
 {
 	static char buf[MAXBSIZE];
 	struct stat to_stat, *fs;
-	int from_fd, rcount, rval, to_fd, wcount;
+	int from_fd, rcount, to_fd, wcount;
+	int rval = 0;
 #ifdef VM_AND_BUFFER_CACHE_SYNCHRONIZED
 	char *p;
 #endif
@@ -157,7 +158,7 @@ int copy_file(struct cow *cow)
 	 * wins some CPU back.
 	 */
 #ifdef VM_AND_BUFFER_CACHE_SYNCHRONIZED
-	if (fs->st_size <= 8 * 1048576) {
+	if (fs->st_size > 0 && fs->st_size <= 8 * 1048576) {
 		if ((p = mmap(NULL, (size_t)fs->st_size, PROT_READ,
 		    MAP_FILE|MAP_SHARED, from_fd, (off_t)0)) == MAP_FAILED) {
 			syslog(LOG_WARNING,   "mmap: %s", cow->from_path);
