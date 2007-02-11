@@ -65,9 +65,7 @@ int findroot(const char *path) {
  * the parent directory.
  **/
 int find_rw_root_with_cow(const char *path) {
-	int root;
-
-	root = cow(path); // copy-on-write
+	int root = cow(path); // copy-on-write
 
 	if ((root < 0) && (errno == ENOENT)) {
 		// So path does not exist, now again, but with dirname only
