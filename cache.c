@@ -20,6 +20,7 @@ static void cache_clean_old() {
 	gettimeofday(&tv, NULL);
 
 	struct hashtable_itr *itr = hashtable_iterator(cache);
+	int res = 1;
 	do {
 		// Maybe a bug in hastable library? We solve it this way
 		if (!itr->e) break;
@@ -28,13 +29,12 @@ static void cache_clean_old() {
 
 		if ((tv.tv_sec - e->time) > uopt.cache_time) {
 			// too old
-			hashtable_iterator_remove(itr);
+			res = hashtable_iterator_remove(itr);
 			free(e);
-
-			// continue since the iterator_remove advances the iterator
-			continue;
+		} else {
+			res = hashtable_iterator_advance(itr);
 		}
-	} while (hashtable_iterator_advance(itr) != 0);
+	} while (res != 0);
 	free(itr);
 }
 
