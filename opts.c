@@ -14,7 +14,7 @@ uopt_t uopt;
 void uopt_init() {
 	uopt.doexit = 0;
 	uopt.nroots = 0;
-	uopt.stats_enabled = 0;
+	uopt.stats_enabled = false;
 	uopt.cache_enabled = false;
 	uopt.cache_time = 60; // default cache entry validity
 }

@@ -14,7 +14,7 @@ typedef struct {
 	int nroots;
 	root_entry_t *roots;
 
-	char stats_enabled;
+	bool stats_enabled;
 	bool cache_enabled;
 	int cache_time;
 
