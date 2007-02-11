@@ -115,12 +115,9 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
  * i.e. in the calling function it might be a filename.
  **/
 int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
-	char tmppath[PATHLEN_MAX];
-	strncpy(tmppath, path, PATHLEN_MAX);
+	char *dname = u_dirname(path);
+	int ret = path_create(u_dirname(path), nroot_ro, nroot_rw);
+	free(dname);
 
-	// u_dirname() modifies its argument
-	char *dname = u_dirname(tmppath);
-
-	return path_create(dname, nroot_ro, nroot_rw);
+	return ret;
 }
-

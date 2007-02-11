@@ -63,42 +63,38 @@ int findroot(const char *path) {
  * Find a writable root. If file does not existent, we check for 
  * the parent directory.
  **/
-int find_wroot(const char *path)
-{
+int find_wroot(const char *path) {
 	int root;
-	
+
 	root = cow(path); // copy-on-write
-	
+
 	if ((root < 0) && (errno == ENOENT)) {
 		// So path does not exist, now again, but with dirname only
-		
-		char tmppath[PATHLEN_MAX];
-		strncpy(tmppath, path, PATHLEN_MAX);
-		
-		// u_dirname() modifies its argument
-		char *dname = u_dirname(tmppath);
-		
+		char *dname = u_dirname(path);
+
 		int root_ro = findroot(dname);
+
 		if ((root_ro < 0) || uopt.roots[root_ro].rw || !uopt.cow_enabled) {
 			// root does not exist or is already writable or cow disabled
+			free(dname);
 			return root_ro;
 		}
-		
+
 		int root_rw = wroot_from_list(root_ro);
 		int res = path_create(dname, root_ro, root_rw);
-		
+
+		free(dname);
+
 		if (res) {
 			// creating the path failed
 			return -1;
 		}
-			
+
 		return root_rw;
-		
 	}
-	
+
 	return root;
 }
-
 
 /**
  * Try to find root when we cut the last path element
