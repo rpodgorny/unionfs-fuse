@@ -96,7 +96,7 @@ static int unlink_ro(const char *path, int root_ro)
 	}
 	
 	// path is invalid now
-	cache_invalidate_path(path);
+	if (uopt.cache_enabled) cache_invalidate_path(path);
 	
 	return 0;
 }
