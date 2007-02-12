@@ -441,16 +441,12 @@ static int unionfs_rename(const char *from, const char *to) {
 		i = find_rw_root_cow_cutlast(from);
 		if (i == -1) return -errno;
 		
-		/* since original file is on a read-only root, we copied the
-		* from file to a writable root, but since we will rename from,
-		* we also need to hide the from file on the read-only root */
+		// since original file is on a read-only root, we copied the from file to a writable root, but since we will rename from, we also need to hide the from file on the read-only root
 		hide_file(from, i);
 	}
 
-	char f[PATHLEN_MAX];
+	char f[PATHLEN_MAX], t[PATHLEN_MAX];
 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
-
-	char t[PATHLEN_MAX];
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
 	int res = rename(f, t);
@@ -525,15 +521,15 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 
 	int first = 1;
 
-	dev_t* devno = (dev_t *)malloc(sizeof(dev_t) * uopt.nroots);
+	dev_t *devno = (dev_t *)malloc(sizeof(dev_t) * uopt.nroots);
 
 	int i = 0;
 	for (i = 0; i < uopt.nroots; i++) {
 		struct statvfs stb;
-		struct stat st;
-
 		int res = statvfs(uopt.roots[i].path, &stb);
 		if (res == -1) continue;
+
+		struct stat st;
 		res = stat(uopt.roots[i].path, &st);
 		if (res == -1) continue;
 		devno[i] = st.st_dev;
