@@ -6,6 +6,7 @@
 
 typedef struct {
 	char *path;
+	int fd; // used to prevent accidental umounts of path
 	unsigned char rw; // the writable flag
 } root_entry_t;
 

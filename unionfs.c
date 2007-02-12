@@ -909,6 +909,12 @@ int main(int argc, char *argv[]) {
 		if (uopt.stats_enabled) stats_init();
 		if (uopt.cache_enabled) cache_init();
 	}
+	
+	// Prevent accidental umounts. Especially system shutdown scripts tend to umount 
+	// everything they can. If we don't have an open file descriptor, 
+	// this might cause unexpected behaviour. 
+	int i;
+	for (i = 0; i < uopt.nroots; i++) uopt.roots[i].fd = open(uopt.roots[i].path, O_RDONLY);
 
 	umask(0);
 	return fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
