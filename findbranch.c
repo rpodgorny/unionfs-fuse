@@ -77,7 +77,7 @@ int find_rw_root_with_cow(const char *path) {
 			return root_ro;
 		}
 
-		int root_rw = wroot_from_list(root_ro);
+		int root_rw = find_lowest_rw_root(root_ro);
 		int res = path_create(dname, root_ro, root_rw);
 
 		free(dname);
@@ -91,11 +91,10 @@ int find_rw_root_with_cow(const char *path) {
 }
 
 /**
- * Get a writable root in from our branch list, but only above root_ro.
+ * Find lowest possible writable root but only lower than root_ro.
  */
-int wroot_from_list(int root_ro) {
-	// take the first read-write root available
-	int i;
+int find_lowest_rw_root(int root_ro) {
+	int i = 0;
 	for (i = 0; i < root_ro; i++) {
 		if (uopt.roots[i].rw) return i; // found it it.
 	}

@@ -80,7 +80,7 @@ static int unlink_ro(const char *path, int root_ro)
 	int i = -1;
 
 	// find a writable root above root_ro
-	int root_rw = wroot_from_list(root_ro);
+	int root_rw = find_lowest_rw_root(root_ro);
 	
 	if (root_rw >= 0) i = path_create_cutlast(path, root_ro, root_rw);
 

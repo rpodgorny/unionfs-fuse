@@ -72,7 +72,7 @@ int cow(const char *path) {
 	// cow is disabled, return whatever was found
 	if (!uopt.cow_enabled) return root_ro;
 
-	int root_rw = wroot_from_list(root_ro);
+	int root_rw = find_lowest_rw_root(root_ro);
 	if (root_rw < 0) {
 		// no writable root found
 		errno = EACCES;
