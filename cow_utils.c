@@ -44,7 +44,7 @@
 #include <sys/stat.h>
 
 #include "unionfs.h"
-#include "cow.h"
+#include "cow_utils.h"
 
 // BSD seems to know S_ISTXT itself
 #ifndef S_ISTXT
