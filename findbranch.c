@@ -93,14 +93,12 @@ int find_rw_root_with_cow(const char *path) {
 /**
  * Get a writable root in from our branch list, but only above root_ro.
  */
-int wroot_from_list(int root_ro)
-{
-	int i;
-	
+int wroot_from_list(int root_ro) {
 	// take the first read-write root available
-	for (i = 0; i < root_ro; i++)
-		if (uopt.roots[i].rw) 
-			return i; // found it it.
+	int i;
+	for (i = 0; i < root_ro; i++) {
+		if (uopt.roots[i].rw) return i; // found it it.
+	}
 
 	return -1;
 }

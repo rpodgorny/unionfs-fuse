@@ -34,7 +34,7 @@ static int cow_cp(const char *path, int root_ro, int root_rw) {
 	cow.to_path = to;
 
 	struct stat buf;
-	int res = lstat(cow.from_path, &buf);
+	lstat(cow.from_path, &buf);
 	cow.stat = &buf;
 
 	switch (buf.st_mode & S_IFMT) {
@@ -63,13 +63,16 @@ static int cow_cp(const char *path, int root_ro, int root_rw) {
 int cow(const char *path) {
 	int root_ro = findroot(path);
 
-	if (!uopt.cow_enabled || root_ro < 0 || uopt.roots[root_ro].rw) {
-		// cow disabled or no such file or root is writable, so no need for COW
-		return root_ro; // returning the first root that has the file
-	}
+	// not found anywhere
+	if (root_ro < 0) return -1;
+
+	// the found root is writable, good!
+	if (uopt.roots[root_ro].rw) return root_ro;
+
+	// cow is disabled, return whatever was found
+	if (!uopt.cow_enabled) return root_ro;
 
 	int root_rw = wroot_from_list(root_ro);
-
 	if (root_rw < 0) {
 		// no writable root found
 		errno = EACCES;
