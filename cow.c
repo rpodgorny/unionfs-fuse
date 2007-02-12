@@ -10,12 +10,13 @@
 #include "cache.h"
 #include "general.h"
 #include "cow.h"
+#include "cow_utils.h"
 
 
 /**
  * initiate the cow-copy action
  */
-static int cow_cp(const char *path, int root_ro, int root_rw) {
+int cow_cp(const char *path, int root_ro, int root_rw) {
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
 	snprintf(from, PATHLEN_MAX, "%s%s", uopt.roots[root_ro].path, path);
 	snprintf(to, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
@@ -53,49 +54,4 @@ static int cow_cp(const char *path, int root_ro, int root_rw) {
 		default:
 			return copy_file(&cow);
 	}	
-}
-
-/**
- * copy-one-write
- * Find path in a union branch and if this branch is read-only, 
- * copy the file to a read-write branch.
- */
-int cow(const char *path) {
-	int root_ro = find_rorw_root(path);
-
-	// not found anywhere
-	if (root_ro < 0) return -1;
-
-	// the found root is writable, good!
-	if (uopt.roots[root_ro].rw) return root_ro;
-
-	// cow is disabled, return whatever was found
-	if (!uopt.cow_enabled) return root_ro;
-
-	int root_rw = find_lowest_rw_root(root_ro);
-	if (root_rw < 0) {
-		// no writable root found
-		errno = EACCES;
-		return -1;
-	}
-
-	// create the path to the file
-	path_create_cutlast(path, root_ro, root_rw);
-
-	// copy the file from root_ro to root_rw
-	if (cow_cp(path, root_ro, root_rw)) {
-		// some error
-		return -1;
-	}
-
-	// remove a file that might hide the copied file
-	remove_hidden(path, root_rw);
-
-	if (uopt.cache_enabled) {
-		// update the cache
-		cache_invalidate_path(path);
-		cache_save(path, root_rw);
-	}
-
-	return root_rw;
 }

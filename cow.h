@@ -20,11 +20,8 @@ struct cow {
 
 int path_create(const char *path, int nroot_ro, int nroot_rw);
 int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw);
-int cow(const char *path);
 
-int copy_special(struct cow *cow);
-int copy_fifo(struct cow *cow);
-int copy_link(struct cow *cow);
-int copy_file(struct cow *cow);
+int cow_cp(const char *path, int root_ro, int root_rw);
+
 
 #endif

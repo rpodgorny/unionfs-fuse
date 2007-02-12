@@ -63,31 +63,81 @@ int find_rorw_root(const char *path) {
  * the parent directory.
  **/
 int find_rw_root_cow(const char *path) {
-	int root = cow(path); // copy-on-write
+	int root = find_rw_root_cow_cutlast(path);
 
-	if ((root < 0) && (errno == ENOENT)) {
+	if (root < 0 && errno == ENOENT) {
 		// So path does not exist, now again, but with dirname only
 		char *dname = u_dirname(path);
-
 		int root_ro = find_rorw_root(dname);
-
-		if ((root_ro < 0) || uopt.roots[root_ro].rw || !uopt.cow_enabled) {
-			// root does not exist or is already writable or cow disabled
-			free(dname);
-			return root_ro;
-		}
-
-		int root_rw = find_lowest_rw_root(root_ro);
-		int res = path_create(dname, root_ro, root_rw);
-
 		free(dname);
 
-		if (res) return -1; // creating the path failed
+		// nothing found
+		if (root_ro < 0) return -1;
+
+		// the returned root is writable, good!
+		if (uopt.roots[root_ro].rw) return root_ro;
+		
+		// cow is disabled, return whatever was found
+		if (!uopt.cow_enabled) return root_ro;
+
+		int root_rw = find_lowest_rw_root(root_ro);
+
+		dname = u_dirname(path);
+		int res = path_create(dname, root_ro, root_rw);
+		free(dname);
+
+		// creating the path failed
+		if (res) return -1;
 
 		return root_rw;
 	}
 
 	return root;
+}
+
+/**
+ * copy-one-write
+ * Find path in a union branch and if this branch is read-only, 
+ * copy the file to a read-write branch.
+ */
+int find_rw_root_cow_cutlast(const char *path) {
+	int root_ro = find_rorw_root(path);
+
+	// not found anywhere
+	if (root_ro < 0) return -1;
+
+	// the found root is writable, good!
+	if (uopt.roots[root_ro].rw) return root_ro;
+
+	// cow is disabled, return whatever was found
+	if (!uopt.cow_enabled) return root_ro;
+
+	int root_rw = find_lowest_rw_root(root_ro);
+	if (root_rw < 0) {
+		// no writable root found
+		errno = EACCES;
+		return -1;
+	}
+
+	// create the path to the file
+	path_create_cutlast(path, root_ro, root_rw);
+
+	// copy the file from root_ro to root_rw
+	if (cow_cp(path, root_ro, root_rw)) {
+		// some error
+		return -1;
+	}
+
+	// remove a file that might hide the copied file
+	remove_hidden(path, root_rw);
+
+	if (uopt.cache_enabled) {
+		// update the cache
+		cache_invalidate_path(path);
+		cache_save(path, root_rw);
+	}
+
+	return root_rw;
 }
 
 /**

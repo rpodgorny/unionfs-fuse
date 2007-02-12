@@ -4,5 +4,6 @@
 int find_rorw_root(const char *path);
 int find_lowest_rw_root(int root_ro);
 int find_rw_root_cow(const char *path);
+int find_rw_root_cow_cutlast(const char *path);
 
 #endif
