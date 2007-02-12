@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "hashtable.h"
 #include "hash.h"
+#include "general.h"
 
 /**
  * Check if the given fname suffixes the hide tag
@@ -76,6 +77,8 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	int i = 0;
 
 	DBG("readdir\n");
+	
+	to_user();
 
 	// we will store already added files here to handle same file names across different roots
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
@@ -127,5 +130,6 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		filler(buf, "stats", NULL, 0);
 	}
 
+	to_root();
 	return 0;
 }

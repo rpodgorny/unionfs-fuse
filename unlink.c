@@ -100,12 +100,21 @@ static int unlink_rw(const char *path, int root_rw) {
   */
 int unionfs_unlink(const char *path) {
 	DBG("unlink\n");
+	
+	to_user();
 
 	int i = find_rorw_root(path);
-	if (i == -1) return -errno;
+	if (i == -1) RETURN_ERROR;
 
+	int res;
 	// root is read-only and cow is enabled
-	if (!uopt.roots[i].rw && uopt.cow_enabled) return unlink_ro(path, i);
+	if (!uopt.roots[i].rw && uopt.cow_enabled) {
+		res = unlink_ro(path, i);
+		to_root();
+		return res;
+	}
 
-	return unlink_rw(path, i);
+	res = unlink_rw(path, i);
+	to_root();
+	return res;
 }

@@ -16,9 +16,13 @@
 #include <strings.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <syslog.h>
 
 #include "unionfs.h"
 #include "opts.h"
+
+static uid_t daemon_uid = -1; // the uid the daemon is running as
+
 
 /**
  * Check if a file with the hidden flag exists.
@@ -102,4 +106,36 @@ int hide_file(const char *path, int root_rw) {
 	close(res);
 
 	return 0;
+}
+
+/**
+ * Set the euid of the user performing the fs operation.
+ */
+void to_user(void)
+{
+	static bool first = true;
+
+	if (first)
+		daemon_uid = getuid();
+
+	if (daemon_uid == 0) {
+		struct fuse_context *ctx = fuse_get_context();
+		if (ctx) {
+			if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+			if (seteuid(ctx->uid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->uid);
+		}
+	}
+}
+
+/**
+ * Switch back to the root user.
+ */
+void to_root(void)
+{
+	static uid_t uid = 0;
+
+	if (uid == 0) {
+		if (seteuid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+		if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+	}
 }

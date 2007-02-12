@@ -59,7 +59,7 @@ int find_rorw_root(const char *path) {
 }
 
 /**
- * Find a writable root. If file does not existent, we check for 
+ * Find a writable root. If file does not exist, we check for 
  * the parent directory.
  **/
 int find_rw_root_cow(const char *path) {
