@@ -132,9 +132,7 @@ void to_user(void)
  */
 void to_root(void)
 {
-	static uid_t uid = 0;
-
-	if (uid == 0) {
+	if (daemon_uid == 0) {
 		if (seteuid(0)) syslog(LOG_WARNING, "setegid(0) failed");
 		if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
 	}
