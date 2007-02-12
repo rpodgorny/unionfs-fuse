@@ -30,14 +30,40 @@
 #include "general.h"
 #include "findbranch.h"
 
-static int unlink_ro(const char *path, int root_ro);
+/**
+  * If the root that has the file to be unlinked is in read-only mode,
+  * we create a file with a HIDE tag in an upper level root.
+  * To other fuse functions this tag means, not to expose the 
+  * lower level file.
+  */
+static int unlink_ro(const char *path, int root_ro) {
+	int i = -1;
+
+	// find a writable root above root_ro
+	int root_rw = find_lowest_rw_root(root_ro);
+
+	if (root_rw >= 0) i = path_create_cutlast(path, root_ro, root_rw);
+
+	// no writable path, or some other error
+	if (i < 0) return -EACCES;
+
+	if (hide_file(path, root_rw) == -1) {
+		// creating the file with the hide tag failed
+		// TODO: open() error messages are not optimal on unlink()
+		return -errno;
+	}
+
+	// path is invalid now
+	if (uopt.cache_enabled) cache_invalidate_path(path);
+
+	return 0;
+}
 
 /**
   * If the root that has the file to be unlinked is in read-write mode,
   * we can really delete the file.
   */
-static int unlink_rw(const char *path, int root_rw)
-{
+static int unlink_rw(const char *path, int root_rw) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
 
@@ -70,38 +96,6 @@ static int unlink_rw(const char *path, int root_rw)
 }
 
 /**
-  * If the root that has the file to be unlinked is in read-only mode,
-  * we create a file with a HIDE tag in an upper level root.
-  * To other fuse functions this tag means, not to expose the 
-  * lower level file.
-  */
-static int unlink_ro(const char *path, int root_ro)
-{
-	int i = -1;
-
-	// find a writable root above root_ro
-	int root_rw = find_lowest_rw_root(root_ro);
-	
-	if (root_rw >= 0) i = path_create_cutlast(path, root_ro, root_rw);
-
-	if (i < 0) {
-		// no writable path, or some other error
-		return -EACCES;
-	}
-
-	if (hide_file(path, root_rw) == -1) {
-		// creating the file with the hide tag failed
-		// TODO: open() error messages are not optimal on unlink()
-		return -errno;
-	}
-	
-	// path is invalid now
-	if (uopt.cache_enabled) cache_invalidate_path(path);
-	
-	return 0;
-}
-
-/**
   * unlink() call
   */
 int unionfs_unlink(const char *path) {
@@ -110,10 +104,8 @@ int unionfs_unlink(const char *path) {
 	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
-	if (!uopt.roots[i].rw || !uopt.cow_enabled) {
-		// root is writable or cow disabled
-		return unlink_ro(path, i);
-	}
+	// root is writable or cow disabled
+	if (!uopt.roots[i].rw || !uopt.cow_enabled) return unlink_ro(path, i);
 
 	return unlink_rw(path, i);
 }
