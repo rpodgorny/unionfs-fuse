@@ -71,18 +71,19 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 
 	char *walk = (char *)path;
 
-	// first slashes
+	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
 	while (*walk != '\0' && *walk == '/') walk++;
 
 	do {
+		// walk over the directory name, walk will now be /dir2
 		while (*walk != '\0' && *walk != '/') walk++;
 	
 		// +1 due to \0, which gets added automatically
-		snprintf(p, (walk - path) + 1, path);
+		snprintf(p, (walk - path) + 1, path); // walk - path = strlen(/dir1)
 		int res = do_create(p, nroot_ro, nroot_rw);
 		if (res) return res; // creating the direcory failed
 
-		// slashes between path names
+		// as above the do loop, walk over the next slashes, walk = dir2/
 		while (*walk != '\0' && *walk == '/') walk++;
 	} while (*walk != '\0');
 
