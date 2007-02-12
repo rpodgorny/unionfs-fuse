@@ -119,8 +119,6 @@ int find_rw_root_cow_cutlast(const char *path) {
 		return -1;
 	}
 
-	// create the path to the file
-	path_create_cutlast(path, root_ro, root_rw);
 
 	// copy the file from root_ro to root_rw
 	if (cow_cp(path, root_ro, root_rw)) {

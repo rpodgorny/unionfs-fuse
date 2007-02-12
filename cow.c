@@ -17,6 +17,9 @@
  * initiate the cow-copy action
  */
 int cow_cp(const char *path, int root_ro, int root_rw) {
+	// create the path to the file
+	path_create_cutlast(path, root_ro, root_rw);
+
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
 	snprintf(from, PATHLEN_MAX, "%s%s", uopt.roots[root_ro].path, path);
 	snprintf(to, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
