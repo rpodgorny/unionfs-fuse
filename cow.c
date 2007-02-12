@@ -28,8 +28,8 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 
 	// root does not exist yet, create it with stat data from the root
 	char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
-
 	sprintf(o_dirp, "%s%s", uopt.roots[nroot_ro].path, path);
+
 	res = stat(o_dirp, &buf);
 	if (res == -1) return 1; // lower level root removed in the mean time?
 
@@ -54,18 +54,17 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 int path_create(const char *path, int nroot_ro, int nroot_rw) {
 	if (!uopt.cow_enabled) return 0;
 
-	char p[PATHLEN_MAX]; // temp string, with elements of path
-	int res;
-	struct stat buf;
-
 	if (strlen(path) + strlen(uopt.roots[nroot_rw].path) > PATHLEN_MAX
 	|| strlen(path) + strlen(uopt.roots[nroot_ro].path) > PATHLEN_MAX) {
 		// TODO: how to handle that?
 		return 1;
 	}
 
+	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[nroot_rw].path, path);
-	if (!stat(p, &buf)) {
+
+	struct stat st;
+	if (!stat(p, &st)) {
 		// path does already exists, no need to create it
 		return 0;
 	}
@@ -80,12 +79,11 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 	
 		// +1 due to \0, which gets added automatically
 		snprintf(p, (walk - path) + 1, path);
-		res = do_create(p, nroot_ro, nroot_rw);
+		int res = do_create(p, nroot_ro, nroot_rw);
 		if (res) return res; // creating the direcory failed
 
 		// slashes between path names
 		while (*walk != '\0' && *walk == '/') walk++;
-
 	} while (*walk != '\0');
 
 	return 0;
