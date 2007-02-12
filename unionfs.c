@@ -53,7 +53,7 @@ static struct fuse_opt unionfs_opts[] = {
 static int unionfs_access(const char *path, int mask) {
 	DBG("access\n");
 
-	int i = findroot(path);
+	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -65,7 +65,7 @@ static int unionfs_access(const char *path, int mask) {
 			// The user may have moved the file among roots
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rorw_root(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -191,7 +191,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 		return 0;
 	}
 
-	int i = findroot(path);
+	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -202,7 +202,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rorw_root(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -251,7 +251,7 @@ static int unionfs_link(const char *from, const char *to) {
 static int unionfs_mkdir(const char *path, mode_t mode) {
 	DBG("mkdir\n");
 
-	int i = find_rw_root_with_cow(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -262,7 +262,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_with_cow(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -280,7 +280,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	DBG("mknod\n");
 
-	int i = find_rw_root_with_cow(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -291,7 +291,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_with_cow(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -321,9 +321,9 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 
 	int i;
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
-		i = find_rw_root_with_cow(path);
+		i = find_rw_root_cow(path);
 	} else {
-		i = findroot(path);
+		i = find_rorw_root(path);
 	}
 	
 	if (i == -1) return -errno;
@@ -337,7 +337,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			// The user may have moved the file among roots
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_with_cow(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) return -errno;
 		
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -392,7 +392,7 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	DBG("readlink\n");
 
-	int i = findroot(path);
+	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -403,7 +403,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rorw_root(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -489,7 +489,7 @@ static int unionfs_rmdir(const char *path) {
 	
 	// FIXME: no proper cow support yet
 
-	int i = findroot(path);
+	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -500,7 +500,7 @@ static int unionfs_rmdir(const char *path) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rorw_root(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -577,7 +577,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 static int unionfs_symlink(const char *from, const char *to) {
 	DBG("symlink\n");
 
-	int i = find_rw_root_with_cow(to);
+	int i = find_rw_root_cow(to);
 	if (i == -1) return -errno;
 
 	char t[PATHLEN_MAX];
@@ -588,7 +588,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(to);
 
-			i = find_rw_root_with_cow(to);
+			i = find_rw_root_cow(to);
 			if (i == -1) return -errno;
 
 			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
@@ -680,7 +680,7 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
 	DBG("getxattr\n");
 
-	int i = findroot(path);
+	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -691,7 +691,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rorw_root(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
@@ -709,7 +709,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	DBG("listxattr\n");
 
-	int i = findroot(path);
+	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
@@ -720,7 +720,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 		if (errno == ENOENT) {
 			if (uopt.cahce_enabled) cache_invalidate_path(path);
 
-			i = findroot(path);
+			i = find_rorw_root(path);
 			if (i == -1) return -errno;
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);

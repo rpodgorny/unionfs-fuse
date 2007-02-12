@@ -28,7 +28,7 @@
  * TODO: We can still stat() fname_~HIDDEN, though these are hidden by readdir()
  *       and should mainly be for internal usage, only.
 */
-int findroot(const char *path) {
+int find_rorw_root(const char *path) {
 	int i = -1;
 	
 	if (uopt.cache_enabled) cache_lookup(path);
@@ -62,14 +62,14 @@ int findroot(const char *path) {
  * Find a writable root. If file does not existent, we check for 
  * the parent directory.
  **/
-int find_rw_root_with_cow(const char *path) {
+int find_rw_root_cow(const char *path) {
 	int root = cow(path); // copy-on-write
 
 	if ((root < 0) && (errno == ENOENT)) {
 		// So path does not exist, now again, but with dirname only
 		char *dname = u_dirname(path);
 
-		int root_ro = findroot(dname);
+		int root_ro = find_rorw_root(dname);
 
 		if ((root_ro < 0) || uopt.roots[root_ro].rw || !uopt.cow_enabled) {
 			// root does not exist or is already writable or cow disabled

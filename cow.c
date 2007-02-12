@@ -61,7 +61,7 @@ static int cow_cp(const char *path, int root_ro, int root_rw) {
  * copy the file to a read-write branch.
  */
 int cow(const char *path) {
-	int root_ro = findroot(path);
+	int root_ro = find_rorw_root(path);
 
 	// not found anywhere
 	if (root_ro < 0) return -1;

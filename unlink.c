@@ -46,7 +46,7 @@ static int unlink_rw(const char *path, int root_rw)
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			root_rw = findroot(path);
+			root_rw = find_rorw_root(path);
 			if (root_rw == -1) return -errno;
 			
 			if (uopt.roots[root_rw].rw == 1) {
@@ -107,7 +107,7 @@ static int unlink_ro(const char *path, int root_ro)
 int unionfs_unlink(const char *path) {
 	DBG("unlink\n");
 
-	int i = findroot(path);
+	int i = find_rorw_root(path);
 	if (i == -1) return -errno;
 
 	if (!uopt.roots[i].rw || !uopt.cow_enabled) {
