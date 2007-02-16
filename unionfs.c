@@ -98,7 +98,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 
 	to_user();
 
-	int i = find_rw_root_cow_cutlast(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -113,7 +113,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 			// The user may have moved the file among roots
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow_cutlast(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -141,7 +141,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 
 	to_user();
 
-	int i = find_rw_root_cow_cutlast(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -155,7 +155,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow_cutlast(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -287,7 +287,7 @@ static int unionfs_link(const char *from, const char *to) {
 	to_user();
 
 	// hardlinks do not work across different filesystems,so we need a copy of from first.
-	int i = find_rw_root_cow_cutlast(from);
+	int i = find_rw_root_cow(from);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -302,7 +302,7 @@ static int unionfs_link(const char *from, const char *to) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(to);
 
-			i = find_rw_root_cow_cutlast(from);
+			i = find_rw_root_cow(from);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -330,7 +330,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_root_cutlast(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -344,7 +344,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow(path);
+			i = find_rw_root_cutlast(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -372,7 +372,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_root_cutlast(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -386,7 +386,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow(path);
+			i = find_rw_root_cutlast(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -426,7 +426,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 
 	int i;
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
-		i = find_rw_root_cow(path);
+		i = find_rw_root_cutlast(path);
 	} else {
 		i = find_rorw_root(path);
 	}
@@ -445,7 +445,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			// The user may have moved the file among roots
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow(path);
+			i = find_rw_root_cutlast(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -577,14 +577,14 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	to_user();
 
-	int i = find_rw_root_cow_cutlast(from);
+	int i = find_rw_root_cow(from);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 	
 	if (!uopt.roots[i].rw) {
-		i = find_rw_root_cow_cutlast(from);
+		i = find_rw_root_cow(from);
 		if (i == -1) {
 			to_root();
 			return -errno;
@@ -603,14 +603,14 @@ static int unionfs_rename(const char *from, const char *to) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(from);
 
-			i = find_rw_root_cow_cutlast(from);
+			i = find_rw_root_cow(from);
 			if (i == -1) {
 				to_root();
 				return -errno;
 			}
 
 			if (!uopt.roots[i].rw) {
-				i = find_rw_root_cow_cutlast(from);
+				i = find_rw_root_cow(from);
 				if (i == -1) {
 					to_root();
 					return -errno;
@@ -750,7 +750,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 
 	to_user();
 
-	int i = find_rw_root_cow(to);
+	int i = find_rw_root_cutlast(to);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -764,7 +764,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(to);
 
-			i = find_rw_root_cow(to);
+			i = find_rw_root_cutlast(to);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -792,7 +792,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 
 	to_user();
 
-	int i = find_rw_root_cow_cutlast(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -806,7 +806,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow_cutlast(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -836,7 +836,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
-	int i = find_rw_root_cow_cutlast(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -850,7 +850,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow_cutlast(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -979,7 +979,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	
 	to_user();
 
-	int i = find_rw_root_cow_cutlast(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -993,7 +993,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow_cutlast(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) {
 				to_root();
 				return -errno;
@@ -1021,7 +1021,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 
 	to_user();
 
-	int i = find_rw_root_cow_cutlast(path);
+	int i = find_rw_root_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
@@ -1035,7 +1035,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 		if (errno == ENOENT) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			i = find_rw_root_cow_cutlast(path);
+			i = find_rw_root_cow(path);
 			if (i == -1) {
 				to_root();
 				return -errno;

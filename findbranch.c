@@ -62,8 +62,8 @@ int find_rorw_root(const char *path) {
  * Find a writable root. If file does not exist, we check for 
  * the parent directory.
  **/
-int find_rw_root_cow(const char *path) {
-	int root = find_rw_root_cow_cutlast(path);
+int find_rw_root_cutlast(const char *path) {
+	int root = find_rw_root_cow(path);
 
 	if (root < 0 && errno == ENOENT) {
 		// So path does not exist, now again, but with dirname only
@@ -100,7 +100,7 @@ int find_rw_root_cow(const char *path) {
  * Find path in a union branch and if this branch is read-only, 
  * copy the file to a read-write branch.
  */
-int find_rw_root_cow_cutlast(const char *path) {
+int find_rw_root_cow(const char *path) {
 	int root_ro = find_rorw_root(path);
 
 	// not found anywhere
