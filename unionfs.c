@@ -56,7 +56,10 @@ static int unionfs_access(const char *path, int mask) {
 	to_user();
 
 	int i = find_rorw_root(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -68,14 +71,21 @@ static int unionfs_access(const char *path, int mask) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rorw_root(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = access(p, mask);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -89,7 +99,10 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	to_user();
 
 	int i = find_rw_root_cow_cutlast(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -101,14 +114,21 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow_cutlast(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = chmod(p, mode);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -122,7 +142,10 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	to_user();
 
 	int i = find_rw_root_cow_cutlast(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -133,14 +156,21 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow_cutlast(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = lchown(p, uid, gid);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -167,7 +197,10 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 		return 0;
 	}
 
-	if (close(fd) == -1) RETURN_ERROR;
+	if (close(fd) == -1) {
+		to_root();
+		return -errno;
+	}
 
 	to_root();
 	return 0;
@@ -190,7 +223,10 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 		res = fsync(fi->fh);
 	}
 
-	if (res == -1) RETURN_ERROR;
+	if (res == -1) {
+		to_root(); // TODO: really needed here?
+		return -errno;
+	}
 
 	return 0;
 }
@@ -209,7 +245,10 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	}
 
 	int i = find_rorw_root(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -220,14 +259,21 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rorw_root(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = lstat(p, stbuf);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -242,7 +288,10 @@ static int unionfs_link(const char *from, const char *to) {
 
 	// hardlinks do not work across different filesystems,so we need a copy of from first.
 	int i = find_rw_root_cow_cutlast(from);
-	if (i == -1)  RETURN_ERROR; // copying from failed;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
@@ -254,14 +303,21 @@ static int unionfs_link(const char *from, const char *to) {
 			if (uopt.cache_enabled) cache_invalidate_path(to);
 
 			i = find_rw_root_cow_cutlast(from);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
 			res = link(f, t);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -275,7 +331,10 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	to_user();
 
 	int i = find_rw_root_cow(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -286,14 +345,21 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = mkdir(p, mode);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -307,7 +373,10 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	to_user();
 
 	int i = find_rw_root_cow(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -318,14 +387,21 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = mknod(p, mode, rdev);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 	
@@ -355,7 +431,10 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 		i = find_rorw_root(path);
 	}
 	
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 	
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -367,14 +446,21 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 		
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			fd = open(p, fi->flags);
-			if (fd == -1) RETURN_ERROR;
+			if (fd == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 	
@@ -413,7 +499,10 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 	}
 
 	int res = pread(fi->fh, buf, size, offset);
-	if (res == -1) RETURN_ERROR;
+	if (res == -1) {
+		to_root();
+		return -errno;
+	}
 
 	if (uopt.stats_enabled) stats_add_read(size);
 
@@ -428,7 +517,10 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	to_user();
 
 	int i = find_rorw_root(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -439,14 +531,21 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rorw_root(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = readlink(p, buf, size - 1);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -464,7 +563,10 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int res = close(fi->fh);
-	if (res == -1) RETURN_ERROR;
+	if (res == -1) {
+		to_root();
+		return -errno;
+	}
 
 	to_root();
 	return 0;
@@ -476,11 +578,17 @@ static int unionfs_rename(const char *from, const char *to) {
 	to_user();
 
 	int i = find_rw_root_cow_cutlast(from);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 	
 	if (!uopt.roots[i].rw) {
 		i = find_rw_root_cow_cutlast(from);
-		if (i == -1) RETURN_ERROR;
+		if (i == -1) {
+			to_root();
+			return -errno;
+		}
 		
 		// since original file is on a read-only root, we copied the from file to a writable root, but since we will rename from, we also need to hide the from file on the read-only root
 		hide_file(from, i);
@@ -496,11 +604,17 @@ static int unionfs_rename(const char *from, const char *to) {
 			if (uopt.cache_enabled) cache_invalidate_path(from);
 
 			i = find_rw_root_cow_cutlast(from);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			if (!uopt.roots[i].rw) {
 				i = find_rw_root_cow_cutlast(from);
-				if (i == -1) RETURN_ERROR;
+				if (i == -1) {
+					to_root();
+					return -errno;
+				}
 		
 				hide_file(from, i);
 			}
@@ -509,9 +623,13 @@ static int unionfs_rename(const char *from, const char *to) {
 			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
 			res = rename(f, t);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -530,7 +648,10 @@ static int unionfs_rmdir(const char *path) {
 	// FIXME: no proper cow support yet
 
 	int i = find_rorw_root(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -541,14 +662,21 @@ static int unionfs_rmdir(const char *path) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rorw_root(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = rmdir(p);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -624,7 +752,10 @@ static int unionfs_symlink(const char *from, const char *to) {
 	to_user();
 
 	int i = find_rw_root_cow(to);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char t[PATHLEN_MAX];
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
@@ -635,14 +766,21 @@ static int unionfs_symlink(const char *from, const char *to) {
 			if (uopt.cache_enabled) cache_invalidate_path(to);
 
 			i = find_rw_root_cow(to);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
 			res = symlink(from, t);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -656,7 +794,10 @@ static int unionfs_truncate(const char *path, off_t size) {
 	to_user();
 
 	int i = find_rw_root_cow_cutlast(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -667,14 +808,21 @@ static int unionfs_truncate(const char *path, off_t size) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow_cutlast(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = truncate(p, size);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -690,7 +838,10 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
 	int i = find_rw_root_cow_cutlast(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -701,14 +852,21 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow_cutlast(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 			res = utime(p, buf);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -722,7 +880,10 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 	DBG("write\n");
 
 	int res = pwrite(fi->fh, buf, size, offset);
-	if (res == -1) RETURN_ERROR;
+	if (res == -1) {
+		to_root();
+		return -errno;
+	}
 
 	if (uopt.stats_enabled) stats_add_written(size);
 
@@ -736,7 +897,10 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	to_user();
 
 	int i = find_rorw_root(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
@@ -747,14 +911,21 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rorw_root(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
 
 			res = lgetxattr(p, name, value, size);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -768,7 +939,10 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	to_user();
 
 	int i = find_rorw_root(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
@@ -779,14 +953,21 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 			if (uopt.cahce_enabled) cache_invalidate_path(path);
 
 			i = find_rorw_root(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
 
 			res = llistxattr(p, list, size);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -800,7 +981,10 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	to_user();
 
 	int i = find_rw_root_cow_cutlast(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
@@ -811,14 +995,21 @@ static int unionfs_removexattr(const char *path, const char *name) {
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow_cutlast(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
 
 			res = lremovexattr(p, name);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 
@@ -832,7 +1023,10 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	to_user();
 
 	int i = find_rw_root_cow_cutlast(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
@@ -843,14 +1037,21 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 			if (uopt.cache_enabled) cache_invalidate_path(path);
 
 			i = find_rw_root_cow_cutlast(path);
-			if (i == -1) RETURN_ERROR;
+			if (i == -1) {
+				to_root();
+				return -errno;
+			}
 
 			snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
 
 			res = lsetxattr(p, name, value, size, flags);
-			if (res == -1) RETURN_ERROR;
+			if (res == -1) {
+				to_root();
+				return -errno;
+			}
 		} else {
-			RETURN_ERROR;
+			to_root();
+			return -errno;
 		}
 	}
 	

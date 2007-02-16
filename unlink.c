@@ -104,7 +104,10 @@ int unionfs_unlink(const char *path) {
 	to_user();
 
 	int i = find_rorw_root(path);
-	if (i == -1) RETURN_ERROR;
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
 
 	int res;
 	// root is read-only and cow is enabled
