@@ -31,7 +31,7 @@
 int find_rorw_root(const char *path) {
 	int i = -1;
 	
-	if (uopt.cache_enabled) cache_lookup(path);
+	if (uopt.cache_enabled) i = cache_lookup(path);
 
 	if (i != -1) return i;
 
