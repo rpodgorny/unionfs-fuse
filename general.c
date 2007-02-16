@@ -21,26 +21,22 @@
 #include "unionfs.h"
 #include "opts.h"
 
+
 static uid_t daemon_uid = -1; // the uid the daemon is running as
 
 
 /**
  * Check if a file with the hidden flag exists.
  */
-bool file_hidden(const char *path)
-{
-	if (!uopt.cow_enabled) {
-		// cow mode disabled, no need for hidden files
-		return false;
-	}
+bool file_hidden(const char *path) {
+	// cow mode disabled, no need for hidden files
+	if (!uopt.cow_enabled) return false;
 	
 	char p[PATHLEN_MAX];
-	struct stat stbuf;
-	int res;
-
 	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG);
 
-	res = lstat(p, &stbuf);
+	struct stat stbuf;
+	int res = lstat(p, &stbuf);
 	if (res == 0) return true;
 
 	return false;
@@ -50,21 +46,18 @@ bool file_hidden(const char *path)
  * Remove a hide-file in all roots up to maxroot
  * If maxroot == -1, try to delete it in all roots.
  */
-int remove_hidden(const char *path, int maxroot)
-{
+int remove_hidden(const char *path, int maxroot) {
 	if (!uopt.cow_enabled) return 0;
-	
-	int i;
-	char p[PATHLEN_MAX];
-	struct stat buf;
-	int res;
 
 	if (maxroot == -1) maxroot = uopt.nroots;
 
+	int i;
 	for (i = 0; i <= maxroot; i++) {
+		char p[PATHLEN_MAX];
 		snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[i].path, path, HIDETAG);
 
-		res = lstat(p, &buf);
+		struct stat buf;
+		int res = lstat(p, &buf);
 		if (res == -1) continue;
 
 		switch (buf.st_mode & S_IFMT) {
@@ -95,12 +88,9 @@ char *u_dirname(const char *path) {
  */
 int hide_file(const char *path, int root_rw) {
 	char p[PATHLEN_MAX];
-	int res;
-
 	snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[root_rw].path, path, HIDETAG);
 
-	res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-
+	int res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 	if (res == -1) return res;
 
 	close(res);
@@ -111,29 +101,25 @@ int hide_file(const char *path, int root_rw) {
 /**
  * Set the euid of the user performing the fs operation.
  */
-void to_user(void)
-{
+void to_user(void) {
 	static bool first = true;
 
-	if (first)
-		daemon_uid = getuid();
+	if (first) daemon_uid = getuid();
+	if (daemon_uid != 0) return;
 
-	if (daemon_uid == 0) {
-		struct fuse_context *ctx = fuse_get_context();
-		if (ctx) {
-			if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
-			if (seteuid(ctx->uid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->uid);
-		}
-	}
+	struct fuse_context *ctx = fuse_get_context();
+	if (!ctx) return;
+
+	if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+	if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
 }
 
 /**
  * Switch back to the root user.
  */
-void to_root(void)
-{
-	if (daemon_uid == 0) {
-		if (seteuid(0)) syslog(LOG_WARNING, "setegid(0) failed");
-		if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
-	}
+void to_root(void) {
+	if (daemon_uid != 0) return;
+
+	if (seteuid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+	if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
 }
