@@ -696,7 +696,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 
 	int first = 1;
 
-	dev_t *devno = (dev_t *)malloc(sizeof(dev_t) * uopt.nroots);
+	dev_t devno[uopt.nroots];
 
 	int i = 0;
 	for (i = 0; i < uopt.nroots; i++) {
@@ -740,7 +740,6 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	}
 
 	stbuf->f_fsid = 0;
-	free(devno);
 
 	to_root();
 	return 0;
