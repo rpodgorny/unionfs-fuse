@@ -52,7 +52,7 @@ int find_rorw_root(const char *path) {
 			return -1;
 		}
 		// check check for a hide file
-		hidden = file_hidden(p);
+		hidden = path_hidden(p);
 	}
 
 	return -1;

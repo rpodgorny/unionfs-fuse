@@ -107,7 +107,7 @@ static void print_help(const char *progname) {
 	"unionfs-fuse version "VERSION"\n"
 	"by Radek Podgorny <radek@podgorny.cz>\n"
 	"\n"
-	"Usage: %s [options] root[:root...] mountpoint\n"
+	"Usage: %s [options] root[=RO/RW][:root...] mountpoint\n"
 	"The first argument is a colon separated list of directories to merge\n"
 	"\n"
 	"general options:\n"
@@ -116,6 +116,8 @@ static void print_help(const char *progname) {
 	"    -V   --version         print version\n"
 	"\n"
 	"UnionFS options:\n"
+	"    -o cache               enable cache\n"
+	"    -o cow                 enable copy-on-write\n"
 	"    -o stats               show statistics in the file 'stats' under the mountpoint\n"
 	"\n",
 	progname);

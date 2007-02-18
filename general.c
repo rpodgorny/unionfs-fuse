@@ -26,9 +26,9 @@ static uid_t daemon_uid = -1; // the uid the daemon is running as
 
 
 /**
- * Check if a file with the hidden flag exists.
+ * Check if a file or directory with the hidden flag exists.
  */
-bool file_hidden(const char *path) {
+static bool filedir_hidden(const char *path) {
 	// cow mode disabled, no need for hidden files
 	if (!uopt.cow_enabled) return false;
 	
@@ -41,6 +41,42 @@ bool file_hidden(const char *path) {
 
 	return false;
 }
+
+
+/**
+ * check if any dir or file within path is hidden
+ */
+bool path_hidden(const char *path) {
+	if (!uopt.cow_enabled) return false;
+
+	char *walk = (char *)path;
+
+	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
+	while (*walk != '\0' && *walk == '/') walk++;
+
+	bool first = true; 
+	do {
+		// walk over the directory name, walk will now be /dir2
+		while (*walk != '\0' && *walk != '/') walk++;
+	
+		if (first) {
+			// first dir in path is our branch, no need to check if it is hidden
+			first = false;
+			continue;
+		}
+		// +1 due to \0, which gets added automatically
+		char p[PATHLEN_MAX];
+		snprintf(p, (walk - path) + 1, path); // walk - path = strlen(/dir1)
+		bool res = filedir_hidden(p);
+		if (res) return res; // path is hidden
+
+		// as above the do loop, walk over the next slashes, walk = dir2/
+		while (*walk != '\0' && *walk == '/') walk++;
+	} while (*walk != '\0');
+
+	return 0;
+}
+
 
 /**
  * Remove a hide-file in all roots up to maxroot
