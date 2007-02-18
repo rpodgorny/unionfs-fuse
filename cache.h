@@ -9,8 +9,6 @@ typedef struct {
 } cache_entry_t;
 
 
-extern struct hashtable *cache;
-
 
 void cache_init();
 int cache_lookup(const char *path);
