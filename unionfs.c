@@ -137,7 +137,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 		return -errno;
 	}
 
-	res = close(fd);
+	int res = close(fd);
 
 	to_root();
 
