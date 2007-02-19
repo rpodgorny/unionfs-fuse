@@ -418,7 +418,8 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		if ((fi->flags & 3) == O_RDONLY) {
-			fi->direct_io = 1;
+			// This makes exec() fail
+			//fi->direct_io = 1;
 			return 0;
 		}
 		return -EACCES;
@@ -465,13 +466,12 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	}
 	
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
-		/* There might have been a hide file, but since we successfully 
-		* wrote to the real file, a hide file must not exist anymore */
+		// There might have been a hide file, but since we successfully wrote to the real file, a hide file must not exist anymore
 		remove_hidden(path, i);
 	}
 
-
-	fi->direct_io = 1;
+	// This makes exec() fail
+	//fi->direct_io = 1;
 	fi->fh = (unsigned long)fd;
 
 	to_root();
