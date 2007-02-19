@@ -17,25 +17,21 @@
 #include <errno.h>
 
 #include "unionfs.h"
-#include "cache.h"
 #include "opts.h"
 #include "general.h"
 #include "cow.h"
 #include "findbranch.h"
 
 /**
- * If path exists, return the root number that has path. Also create a cache entry.
+ * If path exists, return the root number that has path.
  * TODO: We can still stat() fname_~HIDDEN, though these are hidden by readdir()
  *       and should mainly be for internal usage, only.
 */
 int find_rorw_root(const char *path) {
 	int i = -1;
 	
-	if (uopt.cache_enabled) i = cache_lookup(path);
-
 	if (i != -1) return i;
 
-	// create a new cache entry, if path exists
 	bool hidden = false;
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
@@ -45,7 +41,6 @@ int find_rorw_root(const char *path) {
 		int res = lstat(p, &stbuf);
 
 		if (res == 0 && !hidden) {
-			if (uopt.cache_enabled) cache_save(path, i);
 			return i;
 		} else if (hidden) {
 			// the file is hidden in this root, we also ignore it in all roots below this level
@@ -123,12 +118,6 @@ int find_rw_root_cow(const char *path) {
 
 	// remove a file that might hide the copied file
 	remove_hidden(path, root_rw);
-
-	if (uopt.cache_enabled) {
-		// update the cache
-		cache_invalidate_path(path);
-		cache_save(path, root_rw);
-	}
 
 	return root_rw;
 }

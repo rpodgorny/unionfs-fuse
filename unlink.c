@@ -25,7 +25,6 @@
 #include "unionfs.h"
 #include "opts.h"
 #include "debug.h"
-#include "cache.h"
 #include "cow.h"
 #include "general.h"
 #include "findbranch.h"
@@ -53,9 +52,6 @@ static int unlink_ro(const char *path, int root_ro) {
 		return -errno;
 	}
 
-	// path is invalid now
-	if (uopt.cache_enabled) cache_invalidate_path(path);
-
 	return 0;
 }
 
@@ -68,29 +64,8 @@ static int unlink_rw(const char *path, int root_rw) {
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
 
 	int res = unlink(p);
-	if (res == -1) {
-		if (errno == ENOENT) {
-			if (uopt.cache_enabled) cache_invalidate_path(path);
 
-			root_rw = find_rorw_root(path);
-			if (root_rw == -1) return -errno;
-			
-			if (uopt.roots[root_rw].rw == 1) {
-				// file already removed from the rw root?
-				unlink_ro(path, root_rw);
-			}
-
-			snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
-
-			res = unlink(p);
-			if (res == -1) return -errno;
-		} else {
-			return -errno;
-		}
-	}
-
-	// The path should no longer exist
-	if (uopt.cache_enabled) cache_invalidate_path(path);
+	if (res == -1) return -errno;
 
 	return 0;
 }

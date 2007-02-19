@@ -15,8 +15,6 @@ void uopt_init() {
 	uopt.doexit = 0;
 	uopt.nroots = 0;
 	uopt.stats_enabled = false;
-	uopt.cache_enabled = false;
-	uopt.cache_time = 60; // default cache entry validity
 	uopt.cow_enabled = false; // copy-on-write
 }
 
@@ -116,7 +114,6 @@ static void print_help(const char *progname) {
 	"    -V   --version         print version\n"
 	"\n"
 	"UnionFS options:\n"
-	"    -o cache               enable cache\n"
 	"    -o cow                 enable copy-on-write\n"
 	"    -o stats               show statistics in the file 'stats' under the mountpoint\n"
 	"\n",
@@ -135,18 +132,6 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 1;
 		case KEY_STATS:
 			uopt.stats_enabled = 1;
-			return 0;
-		case KEY_CACHE:
-			uopt.cache_enabled = true;
-			return 0;
-		case KEY_CACHE_TIME:
-			// TODO: get rid of the ugly string
-			res = sscanf(arg, "cache-time=%i", &uopt.cache_time);
-			if (res != 1) {
-				fprintf(stderr, "Failed to parse cache time\n");
-				uopt.doexit = 1;
-				return 1;
-			}
 			return 0;
 		case KEY_COW:
 			uopt.cow_enabled = true;

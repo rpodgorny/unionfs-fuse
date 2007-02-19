@@ -21,7 +21,6 @@
 
 #include "unionfs.h"
 #include "opts.h"
-#include "cache.h"
 #include "stats.h"
 #include "debug.h"
 #include "hashtable.h"

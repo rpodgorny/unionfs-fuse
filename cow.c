@@ -9,7 +9,6 @@
 
 #include "opts.h"
 #include "findbranch.h"
-#include "cache.h"
 #include "general.h"
 #include "cow.h"
 #include "cow_utils.h"

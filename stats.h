@@ -6,8 +6,6 @@
 #define STATS_SIZE 2048
 
 
-extern unsigned int stats_cache_hits, stats_cache_misses;
-
 void stats_init();
 void stats_sprint(char *s);
 
