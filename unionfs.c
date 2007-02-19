@@ -164,7 +164,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 	}
 
 	if (res == -1) {
-		to_root(); // TODO: really needed here (to_user() missing)?
+		to_root();
 		return -errno;
 	}
 
