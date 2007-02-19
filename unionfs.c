@@ -128,7 +128,12 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 
 	if (fd == -1) {
 		// What to do now?
-		if (fsync(fi->fh) == -1) return -EIO;
+		if (fsync(fi->fh) == -1) {
+			to_root();
+			return -EIO;
+		}
+
+		to_root();
 		return 0;
 	}
 
