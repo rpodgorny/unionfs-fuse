@@ -120,12 +120,9 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	DBG("flush\n");
 
-	to_user();
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		to_root();
-		return 0;
-	}
+	to_user();
 
 	int fd = dup(fi->fh);
 
@@ -174,8 +171,6 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	DBG("getattr\n");
 
-	to_user();
-
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		memset(stbuf, 0, sizeof(stbuf));
 		stbuf->st_mode = S_IFREG | 0444;
@@ -183,6 +178,8 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_size = STATS_SIZE;
 		return 0;
 	}
+
+	to_user();
 
 	int i = find_rorw_root(path);
 	if (i == -1) {
@@ -325,8 +322,6 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	DBG("read\n");
 
-	to_user();
-
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		char out[STATS_SIZE] = "";
 		stats_sprint(out);
@@ -339,9 +334,10 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 			s = 0;
 		}
 
-		to_root();
 		return s;
 	}
+
+	to_user();
 
 	int res = pread(fi->fh, buf, size, offset);
 
@@ -563,9 +559,9 @@ static int unionfs_truncate(const char *path, off_t size) {
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	DBG("utime\n");
 
-	to_user();
-
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+
+	to_user();
 
 	int i = find_rw_root_cow(path);
 	if (i == -1) {
@@ -590,11 +586,13 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 
 	DBG("write\n");
 
+	to_user();
+
 	int res = pwrite(fi->fh, buf, size, offset);
-	if (res == -1) {
-		to_root();
-		return -errno;
-	}
+
+	to_root();
+
+	if (res == -1) return -errno;
 
 	if (uopt.stats_enabled) stats_add_written(size);
 
