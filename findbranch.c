@@ -28,11 +28,9 @@
  *       and should mainly be for internal usage, only.
 */
 int find_rorw_root(const char *path) {
-	int i = -1;
-	
-	if (i != -1) return i;
-
 	bool hidden = false;
+
+	int i = 0;
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
 		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
@@ -63,22 +61,22 @@ int find_rw_root_cutlast(const char *path) {
 	if (root < 0 && errno == ENOENT) {
 		// So path does not exist, now again, but with dirname only
 		char *dname = u_dirname(path);
-		int root_ro = find_rorw_root(dname);
+		int root_rorw = find_rorw_root(dname);
 		free(dname);
 
 		// nothing found
-		if (root_ro < 0) return -1;
+		if (root_rorw < 0) return -1;
 
 		// the returned root is writable, good!
-		if (uopt.roots[root_ro].rw) return root_ro;
+		if (uopt.roots[root_rorw].rw) return root_rorw;
 		
 		// cow is disabled, return whatever was found
-		if (!uopt.cow_enabled) return root_ro;
+		if (!uopt.cow_enabled) return root_rorw;
 
-		int root_rw = find_lowest_rw_root(root_ro);
+		int root_rw = find_lowest_rw_root(root_rorw);
 
 		dname = u_dirname(path);
-		int res = path_create(dname, root_ro, root_rw);
+		int res = path_create(dname, root_rorw, root_rw);
 		free(dname);
 
 		// creating the path failed
@@ -96,25 +94,25 @@ int find_rw_root_cutlast(const char *path) {
  * copy the file to a read-write branch.
  */
 int find_rw_root_cow(const char *path) {
-	int root_ro = find_rorw_root(path);
+	int root_rorw = find_rorw_root(path);
 
 	// not found anywhere
-	if (root_ro < 0) return -1;
+	if (root_rorw < 0) return -1;
 
 	// the found root is writable, good!
-	if (uopt.roots[root_ro].rw) return root_ro;
+	if (uopt.roots[root_rorw].rw) return root_rorw;
 
 	// cow is disabled, return whatever was found
-	if (!uopt.cow_enabled) return root_ro;
+	if (!uopt.cow_enabled) return root_rorw;
 
-	int root_rw = find_lowest_rw_root(root_ro);
+	int root_rw = find_lowest_rw_root(root_rorw);
 	if (root_rw < 0) {
 		// no writable root found
 		errno = EACCES;
 		return -1;
 	}
 
-	if (cow_cp(path, root_ro, root_rw)) return -1;
+	if (cow_cp(path, root_rorw, root_rw)) return -1;
 
 	// remove a file that might hide the copied file
 	remove_hidden(path, root_rw);
