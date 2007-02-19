@@ -134,15 +134,15 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 		}
 
 		to_root();
-		return 0;
-	}
-
-	if (close(fd) == -1) {
-		to_root();
 		return -errno;
 	}
 
+	res = close(fd);
+
 	to_root();
+
+	if (res == -1) return -errno;
+
 	return 0;
 }
 
