@@ -278,8 +278,6 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	DBG("open\n");
 
-	to_user();
-
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		if ((fi->flags & 3) == O_RDONLY) {
 			// This makes exec() fail
@@ -288,6 +286,8 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 		}
 		return -EACCES;
 	}
+
+	to_user();
 
 	int i;
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
