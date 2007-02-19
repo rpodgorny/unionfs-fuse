@@ -150,6 +150,8 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
+	to_user();
+
 	int res;
 	if (isdatasync) {
 #ifdef _POSIX_SYNCHRONIZED_IO
