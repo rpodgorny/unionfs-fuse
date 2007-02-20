@@ -430,6 +430,7 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	if (res == -1) return -errno;
 
+	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
 }
 
