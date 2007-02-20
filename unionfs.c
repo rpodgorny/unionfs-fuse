@@ -226,6 +226,7 @@ static int unionfs_link(const char *from, const char *to) {
 
 	if (res == -1) return -errno;
 
+	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
 }
 
@@ -535,6 +536,8 @@ static int unionfs_symlink(const char *from, const char *to) {
 
 	if (res == -1) return -errno;
 
+
+	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
 }
 
