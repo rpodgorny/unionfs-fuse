@@ -170,6 +170,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 		return -errno;
 	}
 
+	to_root();
 	return 0;
 }
 
