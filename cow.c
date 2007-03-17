@@ -145,7 +145,7 @@ int cow_cp(const char *path, int root_ro, int root_rw) {
 			break;
 		case S_IFBLK:
 		case S_IFCHR:
-			res copy_special(&cow);
+			res = copy_special(&cow);
 			break;
 		case S_IFIFO:
 			res = copy_fifo(&cow);
