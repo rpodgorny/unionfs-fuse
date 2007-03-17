@@ -61,10 +61,13 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[nroot_rw].path, path);
+	
+	to_root(); // to make cow working, we need higher priviledges
 
 	struct stat st;
 	if (!stat(p, &st)) {
 		// path does already exists, no need to create it
+		to_user();
 		return 0;
 	}
 
@@ -80,7 +83,10 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 		// +1 due to \0, which gets added automatically
 		snprintf(p, (walk - path) + 1, path); // walk - path = strlen(/dir1)
 		int res = do_create(p, nroot_ro, nroot_rw);
-		if (res) return res; // creating the direcory failed
+		if (res) {
+			to_user();
+			return res; // creating the direcory failed
+		}
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
 		while (*walk != '\0' && *walk == '/') walk++;
@@ -115,6 +121,7 @@ int cow_cp(const char *path, int root_ro, int root_rw) {
 
 	struct cow cow;
 
+	to_root();
 	cow.uid = getuid();
 
 	// Copy the umask for explicit mode setting.
@@ -128,20 +135,29 @@ int cow_cp(const char *path, int root_ro, int root_rw) {
 	lstat(cow.from_path, &buf);
 	cow.stat = &buf;
 
+	int res;
 	switch (buf.st_mode & S_IFMT) {
 		case S_IFLNK:
-			return copy_link(&cow);
+			res = copy_link(&cow);
+			break;
 		case S_IFDIR:
-			return path_create(path, root_ro, root_rw);
+			res = path_create(path, root_ro, root_rw);
+			break;
 		case S_IFBLK:
 		case S_IFCHR:
-			return copy_special(&cow);
+			res copy_special(&cow);
+			break;
 		case S_IFIFO:
-			return copy_fifo(&cow);
+			res = copy_fifo(&cow);
+			break;
 		case S_IFSOCK:
 			syslog(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
+			to_user();
 			return 1;
 		default:
-			return copy_file(&cow);
-	}	
+			res = copy_file(&cow);
+	}
+	
+	to_user();
+	return res;
 }
