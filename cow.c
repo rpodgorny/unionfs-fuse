@@ -85,7 +85,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 		int res = do_create(p, nroot_ro, nroot_rw);
 		if (res) {
 			to_user();
-			return res; // creating the direcory failed
+			return res; // creating the directory failed
 		}
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
