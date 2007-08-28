@@ -210,7 +210,7 @@ static int unionfs_link(const char *from, const char *to) {
 	
 	to_user();
 
-	// hardlinks do not work across different filesystems,so we need a copy of from first.
+	// hardlinks do not work across different filesystems so we need a copy of from first
 	int i = find_rw_root_cow(from);
 	if (i == -1) {
 		to_root();
