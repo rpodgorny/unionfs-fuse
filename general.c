@@ -27,7 +27,7 @@
 
 
 static uid_t daemon_uid = -1; // the uid the daemon is running as
-static pthread_mutex_t *mutex; // the to_user() and to_root() locking mutex
+static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
 
 /**
  * Check if a file or directory with the hidden flag exists.
@@ -156,7 +156,7 @@ void to_user(void) {
 
 	if (first) {
 		daemon_uid = getuid();
-		pthread_mutex_init(mutex, NULL);
+		pthread_mutex_init(&mutex, NULL);
 		first = false;
 	}
 
@@ -165,7 +165,7 @@ void to_user(void) {
 	struct fuse_context *ctx = fuse_get_context();
 	if (!ctx) return;
 
-	pthread_mutex_lock(mutex);
+	pthread_mutex_lock(&mutex);
 
 	initgroups_uid(ctx->uid);
 
@@ -188,7 +188,7 @@ void to_root(void) {
 
 	initgroups_uid(0);
 
-	pthread_mutex_unlock(mutex);
+	pthread_mutex_unlock(&mutex);
 
 	errno = errno_orig;
 }
