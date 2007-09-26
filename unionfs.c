@@ -622,15 +622,15 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 	int res = lgetxattr(p, name, value, size);
 
 	to_root();
 
-	if (res == -1) -errno;
+	if (res == -1) return -errno;
 
-	return 0;
+	return res;
 }
 
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
@@ -645,15 +645,15 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 	int res = llistxattr(p, list, size);
 
 	to_root();
 
-	if (res == -1) -errno;
+	if (res == -1) return -errno;
 
-	return 0;
+	return res;
 }
 
 static int unionfs_removexattr(const char *path, const char *name) {
@@ -668,15 +668,15 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 	int res = lremovexattr(p, name);
 
 	to_root();
 
-	if (res == -1) -errno;
+	if (res == -1) return -errno;
 
-	return 0;
+	return res;
 }
 
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
@@ -691,15 +691,15 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 	int res = lsetxattr(p, name, value, size, flags);
 
 	to_root();
 
-	if (res == -1) -errno;
+	if (res == -1) return -errno;
 	
-	return 0;
+	return res;
 }
 #endif // HAVE_SETXATTR
 
