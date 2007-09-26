@@ -17,6 +17,9 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <syslog.h>
+#include <errno.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -134,11 +137,21 @@ int hide_file(const char *path, int root_rw) {
 	return 0;
 }
 
+static void initgroups_uid(uid_t uid) {
+	struct passwd pwd;
+	struct passwd *ppwd;
+	char buf[BUFSIZ];
+
+	getpwuid_r(uid, &pwd, buf, sizeof(buf), &ppwd);
+	if (ppwd) initgroups(ppwd->pw_name, ppwd->pw_gid);
+}
+
 /**
  * Set the euid of the user performing the fs operation.
  */
 void to_user(void) {
 	static bool first = true;
+	int errno_orig = errno;
 
 	if (first) daemon_uid = getuid();
 	if (daemon_uid != 0) return;
@@ -146,16 +159,26 @@ void to_user(void) {
 	struct fuse_context *ctx = fuse_get_context();
 	if (!ctx) return;
 
-	if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+	initgroups_uid(ctx->uid);
+
 	if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
+	if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+
+	errno = errno_orig;
 }
 
 /**
  * Switch back to the root user.
  */
 void to_root(void) {
+	int errno_orig = errno;
+
 	if (daemon_uid != 0) return;
 
-	if (seteuid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+	if (seteuid(0)) syslog(LOG_WARNING, "seteuid(0) failed");
 	if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+
+	initgroups_uid(0);
+
+	errno = errno_orig;
 }
