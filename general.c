@@ -20,13 +20,14 @@
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
+#include <pthread.h>
 
 #include "unionfs.h"
 #include "opts.h"
 
 
 static uid_t daemon_uid = -1; // the uid the daemon is running as
-
+static pthread_mutex_t *mutex; // the to_user() and to_root() locking mutex
 
 /**
  * Check if a file or directory with the hidden flag exists.
@@ -153,11 +154,18 @@ void to_user(void) {
 	static bool first = true;
 	int errno_orig = errno;
 
-	if (first) daemon_uid = getuid();
+	if (first) {
+		daemon_uid = getuid();
+		pthread_mutex_init(mutex, NULL);
+		first = false;
+	}
+
 	if (daemon_uid != 0) return;
 
 	struct fuse_context *ctx = fuse_get_context();
 	if (!ctx) return;
+
+	pthread_mutex_lock(mutex);
 
 	initgroups_uid(ctx->uid);
 
@@ -179,6 +187,8 @@ void to_root(void) {
 	if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
 
 	initgroups_uid(0);
+
+	pthread_mutex_unlock(mutex);
 
 	errno = errno_orig;
 }
