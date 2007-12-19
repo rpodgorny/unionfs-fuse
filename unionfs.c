@@ -32,6 +32,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include "general.h"
 
 #include "unlink.h"
+#include "rmdir.h"
 #include "readdir.h"
 #include "cow.h"
 
@@ -268,7 +269,13 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
-	int res = mknod(p, mode, rdev);
+	int res = -1;
+	if ((mode & S_IFMT) == S_IFREG) {
+		// under FreeBSD, only the super-user can create ordinary files using mknod
+		res = creat(p, mode ^ S_IFREG);
+	} else {
+		res = mknod(p, mode, rdev);
+	}
 
 	to_root();
 
@@ -432,31 +439,6 @@ static int unionfs_rename(const char *from, const char *to) {
 	if (res == -1) return -errno;
 
 	remove_hidden(to, i); // remove hide file (if any)
-	return 0;
-}
-
-static int unionfs_rmdir(const char *path) {
-	DBG("rmdir\n");
-	
-	to_user();
-
-	// FIXME: no proper cow support yet
-
-	int i = find_rorw_root(path);
-	if (i == -1) {
-		to_root();
-		return -errno;
-	}
-
-	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
-
-	int res = rmdir(p);
-
-	to_root();
-
-	if (res == -1) return -errno;
-
 	return 0;
 }
 
