@@ -156,6 +156,6 @@ void to_user(void) {
 void to_root(void) {
 	if (daemon_uid != 0) return;
 
-	if (seteuid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+	if (seteuid(0)) syslog(LOG_WARNING, "seteuid(0) failed");
 	if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
 }
