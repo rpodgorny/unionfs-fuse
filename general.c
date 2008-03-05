@@ -169,8 +169,8 @@ void to_user(void) {
 
 	initgroups_uid(ctx->uid);
 
-	if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
 	if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+	if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
 
 	errno = errno_orig;
 }
