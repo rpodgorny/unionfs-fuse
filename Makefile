@@ -1,5 +1,6 @@
 CFLAGS += -Wall
 CPPFLAGS += -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
+#CPPFLAGS += -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26 -DHAVE_SETXATTR
 LDFLAGS += 
 
 LIB = -lfuse -lpthread -lm
@@ -12,5 +13,5 @@ unionfs: $(UNIONFS_OBJ) $(HASHTABLE_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(UNIONFS_OBJ) $(HASHTABLE_OBJ) $(LIB)
 
 clean:
-	rm -f unionfs 
-	rm -f *.o	
+	rm -f unionfs
+	rm -f *.o

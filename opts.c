@@ -64,16 +64,17 @@ static void add_root(char *root) {
 	if (!res) return;
 
 	uopt.roots[uopt.nroots].path = make_absolute(res);
+	uopt.roots[uopt.nroots].rw = 0;
 
 	res = strsep(ptr, "=");
 	if (res) {
 		if (strcasecmp(res, "rw") == 0) {
 			uopt.roots[uopt.nroots].rw = 1;
 		} else if (strcasecmp(res, "ro") == 0) {
-			uopt.roots[uopt.nroots].rw = 0;
+			// no action needed here
 		} else {
 			fprintf(stderr, "Failed to parse RO/RW flag, setting RO.\n");
-			uopt.roots[uopt.nroots].rw = 0;
+			// no action needed here either
 		}
 	}
 

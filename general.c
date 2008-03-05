@@ -17,13 +17,17 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <syslog.h>
+#include <errno.h>
+#include <pwd.h>
+#include <grp.h>
+#include <pthread.h>
 
 #include "unionfs.h"
 #include "opts.h"
 
 
 static uid_t daemon_uid = -1; // the uid the daemon is running as
-
+static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
 
 /**
  * Check if a file or directory with the hidden flag exists.
@@ -134,28 +138,57 @@ int hide_file(const char *path, int root_rw) {
 	return 0;
 }
 
+static void initgroups_uid(uid_t uid) {
+	struct passwd pwd;
+	struct passwd *ppwd;
+	char buf[BUFSIZ];
+
+	getpwuid_r(uid, &pwd, buf, sizeof(buf), &ppwd);
+	if (ppwd) initgroups(ppwd->pw_name, ppwd->pw_gid);
+}
+
 /**
  * Set the euid of the user performing the fs operation.
  */
 void to_user(void) {
 	static bool first = true;
+	int errno_orig = errno;
 
-	if (first) daemon_uid = getuid();
+	if (first) {
+		daemon_uid = getuid();
+		pthread_mutex_init(&mutex, NULL);
+		first = false;
+	}
+
 	if (daemon_uid != 0) return;
 
 	struct fuse_context *ctx = fuse_get_context();
 	if (!ctx) return;
 
+	pthread_mutex_lock(&mutex);
+
+	initgroups_uid(ctx->uid);
+
 	if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
 	if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
+
+	errno = errno_orig;
 }
 
 /**
  * Switch back to the root user.
  */
 void to_root(void) {
+	int errno_orig = errno;
+
 	if (daemon_uid != 0) return;
 
 	if (seteuid(0)) syslog(LOG_WARNING, "seteuid(0) failed");
 	if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+
+	initgroups_uid(0);
+
+	pthread_mutex_unlock(&mutex);
+
+	errno = errno_orig;
 }
