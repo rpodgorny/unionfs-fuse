@@ -81,7 +81,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 		while (*walk != '\0' && *walk != '/') walk++;
 	
 		// +1 due to \0, which gets added automatically
-		snprintf(p, (walk - path) + 1, path); // walk - path = strlen(/dir1)
+		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
 		int res = do_create(p, nroot_ro, nroot_rw);
 		if (res) {
 			to_user();

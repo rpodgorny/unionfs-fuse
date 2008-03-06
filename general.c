@@ -70,7 +70,7 @@ bool path_hidden(const char *path) {
 		}
 		// +1 due to \0, which gets added automatically
 		char p[PATHLEN_MAX];
-		snprintf(p, (walk - path) + 1, path); // walk - path = strlen(/dir1)
+		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
 		bool res = filedir_hidden(p);
 		if (res) return res; // path is hidden
 
