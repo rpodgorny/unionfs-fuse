@@ -93,7 +93,8 @@ int unionfs_rmdir(const char *path) {
 	}
 	
 	res = rmdir_rw(path, i);
-	unionfs_rmdir(path); /* make _real_ sure the directory is removed */
+	if (res == 0)
+		unionfs_rmdir(path); /* make _real_ sure the directory is removed */
 	to_root();
 	return res;
 }

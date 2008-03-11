@@ -94,6 +94,7 @@ int unionfs_unlink(const char *path) {
 
 	res = unlink_rw(path, i);
 	to_root();
-	unionfs_unlink(path); /* make _real_ sure the file is removed */
+	if (res == 0)
+		unionfs_unlink(path); /* make _real_ sure the file is removed */
 	return res;
 }
