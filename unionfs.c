@@ -317,16 +317,20 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
 	int fd = open(p, fi->flags);
-
-	to_root();
-
 	if (fd == -1 && fi->flags == O_RDONLY) {
 		// workround for for files having the x-bit, but no r-bit
 		// nfs also handles it this way
-		if (access(p, X_OK) == 0)
+		if (access(p, X_OK) == 0) {
+			to_root();
 			fd = open(p, fi->flags); // we need root rights here
-	} else if (fd == -1)
+			to_user();
+		}
+	} else if (fd == -1) {
+		to_root();
 		return -errno;
+	}
+
+	to_root();
 	
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
 		// There might have been a hide file, but since we successfully wrote to the real file, a hide file must not exist anymore
