@@ -92,6 +92,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 		while (*walk != '\0' && *walk == '/') walk++;
 	} while (*walk != '\0');
 
+	to_user();
 	return 0;
 }
 
