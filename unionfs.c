@@ -742,5 +742,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	umask(0);
-	return fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
+	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
+	return uopt.doexit ? uopt.retval : res;
 }

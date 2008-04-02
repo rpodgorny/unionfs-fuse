@@ -18,6 +18,7 @@ typedef struct {
 	bool cow_enabled;
 
 	int doexit;
+	int retval;
 } uopt_t;
 
 enum {

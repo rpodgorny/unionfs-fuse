@@ -13,6 +13,7 @@ uopt_t uopt;
 
 void uopt_init() {
 	uopt.doexit = 0;
+	uopt.retval = 0;
 	uopt.nroots = 0;
 	uopt.stats_enabled = false;
 	uopt.cow_enabled = false; // copy-on-write
@@ -130,6 +131,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 		case FUSE_OPT_KEY_NONOPT:
 			res = parse_roots(arg);
 			if (res > 0) return 0;
+			uopt.retval = 1;
 			return 1;
 		case KEY_STATS:
 			uopt.stats_enabled = 1;
@@ -147,6 +149,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			uopt.doexit = 1;
 			return 1;
 		default:
+ 			uopt.retval = 1;
 			return 1;
 	}
 }
