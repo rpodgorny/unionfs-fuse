@@ -17,6 +17,8 @@ typedef struct {
 	bool stats_enabled;
 	bool cow_enabled;
 
+	bool initgroups; // initgroups() will cause a deadlock on for a union of /etc
+
 	int doexit;
 	int retval;
 } uopt_t;
@@ -24,6 +26,7 @@ typedef struct {
 enum {
 	KEY_STATS,
 	KEY_COW,
+	KEY_NO_INITGROUPS,
 	KEY_HELP,
 	KEY_VERSION
 };

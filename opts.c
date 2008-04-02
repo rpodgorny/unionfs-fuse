@@ -17,6 +17,7 @@ void uopt_init() {
 	uopt.nroots = 0;
 	uopt.stats_enabled = false;
 	uopt.cow_enabled = false; // copy-on-write
+	uopt.initgroups = true;
 }
 
 /**
@@ -117,7 +118,11 @@ static void print_help(const char *progname) {
 	"\n"
 	"UnionFS options:\n"
 	"    -o cow                 enable copy-on-write\n"
-	"    -o stats               show statistics in the file 'stats' under the mountpoint\n"
+	"    -o stats               show statistics in the file 'stats' under the\n"
+	"                           mountpoint\n"
+	"    -o disable_initgroups  initgroups are enabled by default to supply\n"
+	"                           supplementary user groups, but will cause a deadlock\n"
+	"                           of unions including /etc\n"
 	"\n",
 	progname);
 }
@@ -138,6 +143,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_COW:
 			uopt.cow_enabled = true;
+			return 0;
+		case KEY_NO_INITGROUPS:
+			uopt.initgroups = false;
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);

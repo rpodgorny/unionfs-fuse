@@ -143,6 +143,8 @@ static void initgroups_uid(uid_t uid) {
 	struct passwd *ppwd;
 	char buf[BUFSIZ];
 
+	if (!uopt.initgroups) return;
+
 	getpwuid_r(uid, &pwd, buf, sizeof(buf), &ppwd);
 	if (ppwd) initgroups(ppwd->pw_name, ppwd->pw_gid);
 }
