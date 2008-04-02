@@ -26,7 +26,7 @@ typedef struct {
 enum {
 	KEY_STATS,
 	KEY_COW,
-	KEY_NO_INITGROUPS,
+	KEY_NOINITGROUPS,
 	KEY_HELP,
 	KEY_VERSION
 };
