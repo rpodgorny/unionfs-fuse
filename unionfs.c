@@ -19,6 +19,7 @@ This is offered under a BSD-style license. This means you can use the code for w
 #include <dirent.h>
 #include <errno.h>
 #include <sys/statvfs.h>
+#include <syslog.h>
 
 #ifdef HAVE_SETXATTR
 	#include <sys/xattr.h>
@@ -451,7 +452,20 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	to_root();
 
-	if (res == -1) return -errno;
+	if (res == -1) {
+		int err = errno; // unlink() might overwrite errno
+		// if from was on a read-only branch we copied it, but now rename failed so we need to delete it
+		if (!uopt.roots[i].rw) {
+			if (unlink(f))
+				syslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
+				       "also unlink()  failed\n", __func__, from);
+			
+			if (remove_hidden(from, i))
+				syslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
+				       "also removing the whiteout  failed\n", __func__, from);
+		}
+		return -err;
+	}
 
 	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
