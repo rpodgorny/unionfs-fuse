@@ -46,7 +46,7 @@ static int rmdir_ro(const char *path, int root_ro) {
 	// no writable path, or some other error
 	if (i < 0) return -EACCES;
 
-	if (hide_file(path, root_rw) == -1) {
+	if (hide_dir(path, root_rw) == -1) {
 		// creating the file with the hide tag failed
 		// TODO: open() error messages are not optimal on rmdir()
 		return -errno;
