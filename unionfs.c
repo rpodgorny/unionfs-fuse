@@ -423,6 +423,12 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	to_user();
 
+	int j = find_rw_root_cutlast(to);
+	if (j == -1) {
+		to_root();
+		return -errno;
+	}
+
 	int i = find_rorw_root(from);
 	if (i == -1) {
 		to_root();
@@ -442,6 +448,14 @@ static int unionfs_rename(const char *from, const char *to) {
 			to_root();
 			return -errno;
 		}
+	}
+
+	if (i != j) {
+		// TODO: cow to a specific branch.
+		to_root();
+		syslog(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
+		       "is not supported yet.\n", __func__, i, j);
+		return -EXDEV;
 	}
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
