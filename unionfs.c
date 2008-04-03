@@ -422,7 +422,7 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	to_user();
 
-	int i = find_rw_root_cow(from);
+	int i = find_rorw_root(from);
 	if (i == -1) {
 		to_root();
 		return -errno;
