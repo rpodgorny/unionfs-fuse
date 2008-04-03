@@ -418,6 +418,11 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 	return 0;
 }
 
+/**
+ * unionfs rename function
+ * TODO: If we rename a directory on a read-only branch, we need to copy over 
+ *       all files to the renamed directory on the read-write branch.
+ */
 static int unionfs_rename(const char *from, const char *to) {
 	DBG("rename\n");
 	
