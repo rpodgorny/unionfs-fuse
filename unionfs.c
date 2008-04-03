@@ -436,7 +436,11 @@ static int unionfs_rename(const char *from, const char *to) {
 		}
 		
 		// since original file is on a read-only root, we copied the from file to a writable root, but since we will rename from, we also need to hide the from file on the read-only root
-		hide_file(from, i);
+		int res = hide_file(from, i);
+		if (res) {
+			to_root();
+			return -errno;
+		}
 	}
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
