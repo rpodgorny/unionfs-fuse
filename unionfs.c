@@ -420,6 +420,8 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 
 static int unionfs_rename(const char *from, const char *to) {
 	DBG("rename\n");
+	
+	bool is_dir = false; // is 'from' a file or directory
 
 	to_user();
 
@@ -434,24 +436,16 @@ static int unionfs_rename(const char *from, const char *to) {
 		to_root();
 		return -errno;
 	}
-	
+
 	if (!uopt.roots[i].rw) {
 		i = find_rw_root_cow(from);
 		if (i == -1) {
 			to_root();
 			return -errno;
 		}
-		
-		// since original file is on a read-only root, we copied the from file to a writable root, but since we will rename from, we also need to hide the from file on the read-only root
-		int res = hide_file(from, i);
-		if (res) {
-			to_root();
-			return -errno;
-		}
 	}
 
 	if (i != j) {
-		// TODO: cow to a specific branch.
 		to_root();
 		syslog(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
 		       "is not supported yet.\n", __func__, i, j);
@@ -462,7 +456,26 @@ static int unionfs_rename(const char *from, const char *to) {
 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
-	int res = rename(f, t);
+	int res = path_is_dir(f);
+	if (res == -1) {
+		to_root();
+		return -ENOENT;
+	} else if (res == 1) is_dir = true;
+
+	if (!uopt.roots[i].rw) {
+		// since original file is on a read-only root, we copied the from file to a writable root,
+		// but since we will rename from, we also need to hide the from file on the read-only root
+		if (is_dir)
+			res = hide_dir(from, i);
+		else
+			res = hide_file(from, i);
+		if (res) {
+			to_root();
+			return -errno;
+		}
+	}
+
+	res = rename(f, t);
 
 	to_root();
 
@@ -479,6 +492,16 @@ static int unionfs_rename(const char *from, const char *to) {
 				       "also removing the whiteout  failed\n", __func__, from);
 		}
 		return -err;
+	}
+
+	if (uopt.roots[i].rw) {
+		// A lower branch still *might* have a file called 'from', we need to delete this.
+		// We only need to do this if we have been on a rw-branch, since we created
+		// a whiteout for read-only branches anyway.
+		if (is_dir)
+			unionfs_rmdir(from);
+		else
+			unionfs_unlink(from);
 	}
 
 	remove_hidden(to, i); // remove hide file (if any)

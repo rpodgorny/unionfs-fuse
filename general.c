@@ -124,6 +124,22 @@ char *u_dirname(const char *path) {
 }
 
 /**
+ * check if path is a directory
+ *
+ * return 1 if it is a directory, 0 if it is a file and -1 if it does not exist
+ */
+int path_is_dir (const char *path)
+{
+	struct stat buf;
+	
+	if (stat (path, &buf) == -1 ) return -1;
+	
+	if (S_ISDIR(buf.st_mode)) return 1;
+	
+	return 0;
+}
+
+/**
  * Create a file that hides path below root_rw
  */
 int hide_file(const char *path, int root_rw) {
@@ -137,6 +153,22 @@ int hide_file(const char *path, int root_rw) {
 
 	return 0;
 }
+
+/**
+ * Create a directory that hides path below root_rw
+ */
+int hide_dir(const char *path, int root_rw) {
+	char p[PATHLEN_MAX];
+	snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[root_rw].path, path, HIDETAG);
+
+	int res = mkdir(p, S_IRWXU);
+	if (res == -1) return res;
+
+	close(res);
+
+	return 0;
+}
+
 
 static void initgroups_uid(uid_t uid) {
 	struct passwd pwd;
