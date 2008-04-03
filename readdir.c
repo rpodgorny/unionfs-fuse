@@ -119,6 +119,9 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		}
 
 		closedir(dp);
+		
+		// check if branches below this branch are hidden
+		if (path_hidden(p)) break;
 	}
 
 	hashtable_destroy(files, 1);
