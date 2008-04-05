@@ -205,6 +205,15 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 
 	if (res == -1) return -errno;
 
+	/* This is a workaround for broken gnu find implementations. Actually, 
+	 * n_links is not defined at all for directories by posix. However, it
+	 * seems to be common for filesystems to set it to one if the actual value
+	 * is unknown. Since nlink_t is unsigned and since these broken implementations
+	 * always substract 2 (for . and ..) this will cause an underflow, setting
+	 * it to max(nlink_t).
+	 */
+	if (S_ISDIR(stbuf->st_mode)) stbuf->st_nlink = 1;
+
 	return 0;
 }
 
