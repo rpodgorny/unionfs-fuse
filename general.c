@@ -29,6 +29,23 @@
 static uid_t daemon_uid = -1; // the uid the daemon is running as
 static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
 
+
+/**
+ * Check if the given fname suffixes the hide tag
+ */
+char *whiteout_tag(const char *fname) {
+	char *tag = strstr(fname, HIDETAG);
+
+	// check if fname has tag, fname is not only the tag, file name ends with the tag
+	// TODO: static strlen(HIDETAG)
+	if (tag && tag != fname && strlen(tag) == strlen(HIDETAG)) {
+		return tag;
+	}
+
+	return NULL;
+}
+
+
 /**
  * Check if a file or directory with the hidden flag exists.
  */

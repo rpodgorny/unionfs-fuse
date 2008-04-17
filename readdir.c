@@ -28,21 +28,6 @@
 #include "general.h"
 
 /**
- * Check if the given fname suffixes the hide tag
- */
-static char *hide_tag(const char *fname) {
-	char *tag = strstr(fname, HIDETAG);
-
-	// check if fname has tag, fname is not only the tag, file name ends with the tag
-	// TODO: static strlen(HIDETAG)
-	if (tag && tag != fname && strlen(tag) == strlen(HIDETAG)) {
-		return tag;
-	}
-
-	return NULL;
-}
-
-/**
  * Check if fname has a hiding tag and return its status.
  * Also, add this file and to the hiding hash table.
  * Warning: If fname has the tag, fname gets modified.
@@ -50,7 +35,7 @@ static char *hide_tag(const char *fname) {
 static bool is_hiding(struct hashtable *hides, char *fname) {
 	char *tag;
 	
-	tag = hide_tag(fname);
+	tag = whiteout_tag(fname);
 	if (tag) {
 		// even more important, ignore the file without the tag!
 		// hint: tag is a pointer to the flag-suffix within de->d_name

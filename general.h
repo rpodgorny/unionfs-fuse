@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+char *whiteout_tag(const char *fname);
 bool path_hidden(const char *path);
 char *u_dirname(const char *path);
 int remove_hidden(const char *path, int maxroot);
