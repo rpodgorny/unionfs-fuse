@@ -243,6 +243,12 @@ static int unionfs_link(const char *from, const char *to) {
 	return 0;
 }
 
+/**
+ * unionfs mkdir() implementation
+ *
+ * NOTE: Never delete whiteouts directories here, since this will just
+ *       make already hidden sub-branches visible again.
+ */
 static int unionfs_mkdir(const char *path, mode_t mode) {
 	DBG("mkdir\n");
 
