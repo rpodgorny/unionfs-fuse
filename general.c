@@ -12,6 +12,7 @@
 */
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
@@ -29,6 +30,35 @@
 static uid_t daemon_uid = -1; // the uid the daemon is running as
 static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
 
+
+/**
+ * argements: maximal string length and one or more char* string arrays
+ *
+ * check if the sum of the strings is larger than PATHLEN_MAX
+ */
+bool string_too_long(int narg, ...)
+{
+	va_list ap; // argument pointer
+	int len = 0;
+	int i = 0;
+
+	va_start(ap, narg);
+	while (i < narg) {
+		char *str = va_arg (ap, char *);
+	
+		// pity, theoretically this could be used to test for the number of arguments as well
+		// unfortunately, it doesn't work (undefined by C standard) :(
+		if (!str) break;
+
+		i++;
+		len += strlen(str);
+	}
+
+	if (len >= PATHLEN_MAX)
+		return true;
+
+	return false;
+}
 
 /**
  * Check if the given fname suffixes the hide tag

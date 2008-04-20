@@ -12,5 +12,6 @@ int hide_dir(const char *path, int root_rw);
 int path_is_dir (const char *path);
 void to_user(void);
 void to_root(void);
+bool string_too_long(int max_len, ...);
 
 #endif
