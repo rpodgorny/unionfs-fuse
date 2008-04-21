@@ -32,29 +32,28 @@ static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
 
 
 /**
- * argements: maximal string length and one or more char* string arrays
+ * arguments: maximal string length and one or more char* string arrays
  *
  * check if the sum of the strings is larger than PATHLEN_MAX
+ *
+ * This function requires a NULL as last argument!
  */
-bool string_too_long(int narg, ...)
+bool string_too_long(int max_len, ...)
 {
 	va_list ap; // argument pointer
 	int len = 0;
 	int i = 0;
 
-	va_start(ap, narg);
-	while (i < narg) {
+	va_start(ap, max_len);
+	while (1) {
 		char *str = va_arg (ap, char *);
-	
-		// pity, theoretically this could be used to test for the number of arguments as well
-		// unfortunately, it doesn't work (undefined by C standard) :(
 		if (!str) break;
 
 		i++;
 		len += strlen(str);
 	}
 
-	if (len >= PATHLEN_MAX)
+	if (len >= max_len)
 		return true;
 
 	return false;

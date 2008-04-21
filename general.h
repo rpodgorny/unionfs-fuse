@@ -14,4 +14,11 @@ void to_user(void);
 void to_root(void);
 bool string_too_long(int max_len, ...);
 
+/**
+ * Wrapper macro for string_too_long(). In string_too_long we test if the given number of strings does exceed
+ * a maximum string length. Since there is no way in C to determine the given number of arguments, we
+ * simply add NULL here.
+ */
+#define STR_TOO_LONG(len, ...) string_too_long(len, __VA_ARGS__, NULL)
+
 #endif
