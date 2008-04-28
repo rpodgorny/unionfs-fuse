@@ -249,8 +249,10 @@ void to_user(void) {
 
 	initgroups_uid(ctx->uid);
 
-	if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
-	if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
+	if (ctx->gid != 0)
+		if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+	if (ctx->uid != 0)
+		if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
 
 	errno = errno_orig;
 }
@@ -263,8 +265,13 @@ void to_root(void) {
 
 	if (daemon_uid != 0) return;
 
-	if (seteuid(0)) syslog(LOG_WARNING, "seteuid(0) failed");
-	if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+        struct fuse_context *ctx = fuse_get_context();
+	        if (!ctx) return;
+
+	if (ctx->uid != 0)
+		if (seteuid(0)) syslog(LOG_WARNING, "seteuid(0) failed");
+	if (ctx->gid != 0)
+		if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
 
 	initgroups_uid(0);
 
