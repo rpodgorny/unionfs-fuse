@@ -290,6 +290,8 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	if ((mode & S_IFMT) == S_IFREG) {
 		// under FreeBSD, only the super-user can create ordinary files using mknod
 		res = creat(p, mode ^ S_IFREG);
+		if (res > 0) 
+			if (close (res) == -1) syslog (LOG_WARNING, "Warning, cannot close file\n");
 	} else {
 		res = mknod(p, mode, rdev);
 	}
