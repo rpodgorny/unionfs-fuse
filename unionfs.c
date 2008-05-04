@@ -320,6 +320,12 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	int res = -1;
 	if ((mode & S_IFMT) == S_IFREG) {
 		// under FreeBSD, only the super-user can create ordinary files using mknod
+		// Actually this workaround should not be required any more
+		// since we now have the unionfs_create() method
+		// So can we remove it?
+		
+		syslog (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
+		
 		res = creat(p, mode ^ S_IFREG);
 		if (res > 0) 
 			if (close (res) == -1) syslog (LOG_WARNING, "Warning, cannot close file\n");
