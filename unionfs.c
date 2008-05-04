@@ -119,6 +119,37 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	return 0;
 }
 
+/**
+ * unionfs implementation of the create call
+ * libfuse will call this to create regular files
+ */
+static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+	DBG("create\n");
+
+	to_user();
+
+	int i = find_rw_root_cutlast(path);
+	if (i == -1) {
+		to_root();
+		return -errno;
+	}
+
+	char p[PATHLEN_MAX];
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+
+	int res = open(p, fi->flags, mode);
+
+	to_root();
+
+	if (res == -1) return -errno;
+
+	fi->fh = res;
+	remove_hidden(path, i);
+
+	return 0;
+}
+
+
 // flush may be called multiple times for an open file, this must not really close the file. This is important if used on a network filesystem like NFS which flush the data/metadata on close()
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	DBG("flush\n");
@@ -777,6 +808,7 @@ static struct fuse_operations unionfs_oper = {
 	.access	= unionfs_access,
 	.chmod	= unionfs_chmod,
 	.chown	= unionfs_chown,
+	.create = unionfs_create,
 	.flush	= unionfs_flush,
 	.fsync	= unionfs_fsync,
 	.getattr	= unionfs_getattr,
