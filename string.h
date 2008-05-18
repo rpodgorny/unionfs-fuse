@@ -1,7 +1,9 @@
 #ifndef UNIONFS_STRING_H
 #define UNIONFS_STRING_H
 
+char *whiteout_tag(const char *fname);
 int build_path(char *dest, int max_len, ...);
+char *u_dirname(const char *path);
 
 /**
  * A wrapper for build_path(). In build_path() we test if the given number of strings does exceed
