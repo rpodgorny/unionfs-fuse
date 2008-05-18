@@ -40,6 +40,8 @@ static char *make_absolute(char *relpath) {
 		return NULL;
 	}
 
+	// 2 due to: +1 for '/' between cwd and relpath
+	//           +1 for terminating '\0'
 	int abslen = cwdlen + strlen(relpath) + 2;
 	if (abslen > PATHLEN_MAX) {
 		fprintf(stderr, "Absolute path too long!\n");
@@ -47,9 +49,29 @@ static char *make_absolute(char *relpath) {
 	}
 
 	char *abspath = malloc(abslen);
-	sprintf(abspath, "%s/%s", cwd, relpath);
+	// the terminating '/' is important so that we are sure later on the
+	// diroctory components are properly seperated
+	sprintf(abspath, "%s/%s/", cwd, relpath);
 
 	return abspath;
+}
+
+/**
+ * Add a trailing slash at the end of a branch (root). So functions using this
+ * path don't have to care about this slash themselves.
+ **/
+static char *add_trailing_slash(char *path)
+{
+	int len = strlen(path);
+	if (path[len - 1] == '/')
+		return path; // no need to add a slash, already there
+	
+	path = realloc(path, len + 2); // +1 for '/' and +1 for '\0'
+	if (!path) // still very early stage, we can abort here
+		fprintf(stderr, "%s: realloc() failed, aborting\n", __func__);
+	
+	strcat (path, "/");
+	return (path);
 }
 
 /**
@@ -65,7 +87,11 @@ static void add_root(char *root) {
 	res = strsep(ptr, "=");
 	if (!res) return;
 
-	uopt.roots[uopt.nroots].path = make_absolute(res);
+	// for string manipulations it is important to copy the string, otherwise
+	// make_absolute() and add_trailing_slash() will corrupt our input (parse string)
+	uopt.roots[uopt.nroots].path = strdup(res);
+	uopt.roots[uopt.nroots].path = make_absolute(uopt.roots[uopt.nroots].path);
+	uopt.roots[uopt.nroots].path = add_trailing_slash(uopt.roots[uopt.nroots].path);
 	uopt.roots[uopt.nroots].rw = 0;
 
 	res = strsep(ptr, "=");
@@ -100,6 +126,7 @@ static int parse_roots(const char *arg) {
 		add_root(root);
 	}
 
+	free (buf);
 	return uopt.nroots;
 }
 
