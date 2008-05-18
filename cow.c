@@ -25,18 +25,26 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 	int res = stat(dirp, &buf);
 	if (res != -1) return 0; // already exists
 
-	// root does not exist yet, create it with stat data from the root
-	char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
-	sprintf(o_dirp, "%s%s", uopt.roots[nroot_ro].path, path);
+	if (nroot_ro == nroot_rw) {
+		// special case nroot_ro = nroot_rw, this is if we a create
+		// unionfs meta directories, so not directly on cow operations
+		buf.st_mode = S_IRWXU | S_IRWXG;
+	} else {
+		// data from the ro-root
+		char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
+		sprintf(o_dirp, "%s%s", uopt.roots[nroot_ro].path, path);
+		res = stat(o_dirp, &buf);
+		if (res == -1) return 1; // lower level root removed in the mean time?
+	}
 
-	res = stat(o_dirp, &buf);
-	if (res == -1) return 1; // lower level root removed in the mean time?
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
 		syslog (LOG_DAEMON, "Creating %s failed: \n", dirp);
 		return 1;
 	}
+
+	if (nroot_ro == nroot_rw) return 0; // the special case again
 
 	res = chown(dirp, buf.st_uid, buf.st_gid);
 	if (res == -1) return 1; // directory already removed by another process?

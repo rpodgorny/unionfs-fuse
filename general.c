@@ -25,6 +25,8 @@
 
 #include "unionfs.h"
 #include "opts.h"
+#include "string.h"
+#include "cow.h"
 
 
 static uid_t daemon_uid = -1; // the uid the daemon is running as
@@ -52,15 +54,21 @@ static bool filedir_hidden(const char *path) {
 /**
  * check if any dir or file within path is hidden
  */
-bool path_hidden(const char *path) {
+bool path_hidden(const char *path, int branch) {
 	if (!uopt.cow_enabled) return false;
 
-	char *walk = (char *)path;
+	char whiteoutpath[PATHLEN_MAX];
+	if (BUILD_PATH(whiteoutpath, uopt.roots[branch].path, METADIR, path)) {
+		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		return false;
+	}
+
+	char *walk = whiteoutpath;
 
 	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
 	while (*walk != '\0' && *walk == '/') walk++;
 
-	bool first = true; 
+	bool first = true;
 	do {
 		// walk over the directory name, walk will now be /dir2
 		while (*walk != '\0' && *walk != '/') walk++;
@@ -72,7 +80,7 @@ bool path_hidden(const char *path) {
 		}
 		// +1 due to \0, which gets added automatically
 		char p[PATHLEN_MAX];
-		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
+		snprintf(p, (walk - whiteoutpath) + 1, "%s", whiteoutpath); // walk - path = strlen(/dir1)
 		bool res = filedir_hidden(p);
 		if (res) return res; // path is hidden
 
@@ -96,7 +104,10 @@ int remove_hidden(const char *path, int maxroot) {
 	int i;
 	for (i = 0; i <= maxroot; i++) {
 		char p[PATHLEN_MAX];
-		snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[i].path, path, HIDETAG);
+		if (BUILD_PATH(p, uopt.roots[i].path, METADIR, path, HIDETAG)) {
+			syslog(LOG_WARNING, "%s: Path too long\n", __func__);
+			return 1;
+		}
 
 		struct stat buf;
 		int res = lstat(p, &buf);
@@ -131,8 +142,22 @@ int path_is_dir (const char *path)
  * Create a file that hides path below root_rw
  */
 int hide_file(const char *path, int root_rw) {
+	char metapath[PATHLEN_MAX];
+
+	if (BUILD_PATH(metapath, METADIR, path)) {
+		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		return -1;
+	}
+
+	// p MUST be without path to branch prefix here! 2 x root_rw is correct here!
+	// this creates e.g. branch/.unionfs/some_directory
+	path_create_cutlast(metapath, root_rw, root_rw);
+
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[root_rw].path, path, HIDETAG);
+	if (BUILD_PATH(p, uopt.roots[root_rw].path, metapath, HIDETAG)) {
+		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		return -1;
+	}	
 
 	int res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 	if (res == -1) return res;
@@ -146,13 +171,25 @@ int hide_file(const char *path, int root_rw) {
  * Create a directory that hides path below root_rw
  */
 int hide_dir(const char *path, int root_rw) {
+	char metapath[PATHLEN_MAX];
+
+	if (BUILD_PATH(metapath, METADIR, path)) {
+		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		return -1;
+	}
+
+	// p MUST be without path to branch prefix here! 2 x root_rw is correct here!
+	// this creates e.g. branch/.unionfs/some_directory
+	path_create_cutlast(metapath, root_rw, root_rw);
+
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s%s", uopt.roots[root_rw].path, path, HIDETAG);
+	if (BUILD_PATH(p, uopt.roots[root_rw].path, metapath, HIDETAG)) {
+		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		return -1;
+	}	
 
 	int res = mkdir(p, S_IRWXU);
 	if (res == -1) return res;
-
-	close(res);
 
 	return 0;
 }

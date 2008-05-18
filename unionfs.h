@@ -3,6 +3,7 @@
 
 #define PATHLEN_MAX 1024
 #define HIDETAG "_HIDDEN~"
+#define METADIR ".unionfs/"
 
 typedef struct {
 	char *path;

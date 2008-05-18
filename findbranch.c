@@ -45,7 +45,7 @@ int find_rorw_root(const char *path) {
 			return -1;
 		}
 		// check check for a hide file, checking first here is the magic to hide files *below* this level
-		hidden = path_hidden(p);
+		hidden = path_hidden(path, i);
 	}
 
 	return -1;
