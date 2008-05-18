@@ -57,7 +57,7 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
 /**
  * Read whiteout files
  */
-void read_whiteouts(const char *path, struct hashtable *whiteouts)
+static void read_whiteouts(const char *path, struct hashtable *whiteouts)
 {
 	if (!uopt.cow_enabled) return;
 
