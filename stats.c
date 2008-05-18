@@ -1,3 +1,8 @@
+/*
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*/
+
 #include <stdio.h>
 #include <string.h>
 

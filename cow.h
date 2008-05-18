@@ -1,3 +1,9 @@
+/*
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*            Bernd Schubert <bernd-schubert@gmx.de>
+*/
+
 #ifndef COW_H
 #define COW_H
 

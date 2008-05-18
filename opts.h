@@ -1,3 +1,9 @@
+/*
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*            Bernd Schubert <bernd-schubert@gmx.de>
+*/
+
 #ifndef OPTS_H
 #define OPTS_H
 

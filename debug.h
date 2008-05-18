@@ -1,3 +1,8 @@
+/*
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*/
+
 #ifndef DEBUG_H
 #define DEBUG_H
 

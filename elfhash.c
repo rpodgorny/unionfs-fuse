@@ -1,3 +1,7 @@
+/*
+* License and Copyright: see elfhash.h
+*/
+
 #include "elfhash.h"
 
 /**

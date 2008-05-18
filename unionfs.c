@@ -1,7 +1,13 @@
 /*
-Written by Radek Podgorny
-
-This is offered under a BSD-style license. This means you can use the code for whatever you desire in any way you may want but you MUST NOT forget to give me appropriate credits when spreading your work which is based on mine. Something like "original implementation by Radek Podgorny" should be fine.
+*
+* This is offered under a BSD-style license. This means you can use the code for whatever you
+* desire in any way you may want but you MUST NOT forget to give me appropriate credits when
+* spreading your work which is based on mine. Something like "original implementation by Radek 
+* Podgorny" should be fine.
+*
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*            Bernd Schubert <bernd-schubert@gmx.de>
 */
 
 #ifdef linux

@@ -1,3 +1,13 @@
+/*
+*  C Implementation: cow
+*
+* Copy-on-write functions
+*
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*            Bernd Schubert <bernd-schubert@gmx.de>
+*/
+
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>

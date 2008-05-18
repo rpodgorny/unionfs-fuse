@@ -4,8 +4,11 @@
 * License: BSD-style license
 *
 *
-* Author: Radek Podgorny <radek@podgorny.cz>
+* original implementation by Radek Podgorny
 *
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*            Bernd Schubert <bernd-schubert@gmx.de>
 *
 */
 

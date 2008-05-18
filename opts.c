@@ -1,3 +1,13 @@
+/*
+*  C Implementation: opts.c
+*
+* Option parser
+*
+* License: BSD-style license
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
+*            Bernd Schubert <bernd-schubert@gmx.de>
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
