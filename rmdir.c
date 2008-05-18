@@ -30,6 +30,7 @@
 #include "cow.h"
 #include "general.h"
 #include "findbranch.h"
+#include "string.h"
 
 enum {
 	EMPTY = 0,
