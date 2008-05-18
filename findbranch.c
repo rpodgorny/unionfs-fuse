@@ -41,10 +41,10 @@ int find_rorw_root(const char *path) {
 		if (res == 0 && !hidden) {
 			return i;
 		} else if (hidden) {
-			// the file is hidden in this root, we also ignore it in all roots below this level
+			// the file is hidden in this root, we *only* ignore it in roots below this level
 			return -1;
 		}
-		// check check for a hide file
+		// check check for a hide file, checking first here is the magic to hide files *below* this level
 		hidden = path_hidden(p);
 	}
 
