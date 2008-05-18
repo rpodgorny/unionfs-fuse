@@ -49,6 +49,10 @@ static char *make_absolute(char *relpath) {
 	}
 
 	char *abspath = malloc(abslen);
+	if (abspath == NULL) {
+		fprintf(stderr, "%s: malloc failed\n", __func__);
+		exit (1); // still at early stage, we can't abort
+	}
 	// the terminating '/' is important so that we are sure later on the
 	// diroctory components are properly seperated
 	sprintf(abspath, "%s/%s/", cwd, relpath);
@@ -67,8 +71,10 @@ static char *add_trailing_slash(char *path)
 		return path; // no need to add a slash, already there
 	
 	path = realloc(path, len + 2); // +1 for '/' and +1 for '\0'
-	if (!path) // still very early stage, we can abort here
+	if (!path) {
 		fprintf(stderr, "%s: realloc() failed, aborting\n", __func__);
+		exit (1); // still very early stage, we can abort here
+	}
 	
 	strcat (path, "/");
 	return (path);
@@ -80,6 +86,11 @@ static char *add_trailing_slash(char *path)
  */
 static void add_root(char *root) {
 	uopt.roots = realloc(uopt.roots, (uopt.nroots+1) * sizeof(root_entry_t));
+	if (uopt.roots == NULL) {
+		fprintf(stderr, "%s: realloc failed\n", __func__);
+		exit (1); // still at early stage, we can't abort
+	}
+
 
 	char *res;
 	char **ptr = (char **)&root;
