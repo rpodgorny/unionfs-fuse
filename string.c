@@ -40,31 +40,35 @@ char *whiteout_tag(const char *fname) {
 }
 
 /**
+ * copy one or more char arrays into dest and check for maximum size
+ *
  * arguments: maximal string length and one or more char* string arrays
  *
  * check if the sum of the strings is larger than PATHLEN_MAX
  *
  * This function requires a NULL as last argument!
  */
-bool string_too_long(int max_len, ...)
+int build_path(char *dest, int max_len, ...)
 {
 	va_list ap; // argument pointer
 	int len = 0;
-	int i = 0;
+
+	dest[0] = '\0';
 
 	va_start(ap, max_len);
 	while (1) {
 		char *str = va_arg (ap, char *);
 		if (!str) break;
 
-		i++;
-		len += strlen(str);
+		len += strlen(str) + 1; // + 1 for '/' between the pathes
+
+		if (len > max_len)
+			return -ENAMETOOLONG;
+
+		strcat (dest, str);
 	}
 
-	if (len >= max_len)
-		return true;
-
-	return false;
+	return 0;
 }
 
 /**

@@ -83,8 +83,7 @@ static int recursive_rmdir(const char *path)
 		||  strncmp (de->d_name, "..", strlen(de->d_name)) == 0)
 			continue;
 
-		if (STR_TOO_LONG(PATHLEN_MAX, path, de->d_name)) return ENAMETOOLONG;
-		sprintf (fname, "%s/%s", path, de->d_name);
+		if (BUILD_PATH(fname, path, de->d_name)) return ENAMETOOLONG;
 
 		if (lstat(fname, &st) == 0) {
 			if (S_ISDIR(st.st_mode)) {
