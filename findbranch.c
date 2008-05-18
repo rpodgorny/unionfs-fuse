@@ -21,6 +21,7 @@
 #include "general.h"
 #include "cow.h"
 #include "findbranch.h"
+#include "string.h"
 
 /**
  * If path exists, return the root number that has path.

@@ -12,6 +12,7 @@
 #include "general.h"
 #include "cow.h"
 #include "cow_utils.h"
+#include "string.h"
 
 
 /**
