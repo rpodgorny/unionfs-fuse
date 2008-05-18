@@ -145,15 +145,11 @@ static int rmdir_rw(const char *path, int root_rw) {
   * lower level directory.
   */
 static int rmdir_ro(const char *path, int root_ro) {
-	int i = -1;
-
 	// find a writable root above root_ro
 	int root_rw = find_lowest_rw_root(root_ro);
 
-	if (root_rw >= 0) i = path_create_cutlast(path, root_ro, root_rw);
-
-	// no writable path, or some other error
-	if (i < 0) return EACCES;
+	if (root_rw < 0) 
+		return -EACCES;
 
 	if (hide_dir(path, root_rw) == -1) {
 		// creating the file with the hide tag failed
