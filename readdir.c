@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <sys/statvfs.h>
 #include <stdbool.h>
+#include <syslog.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -26,6 +27,7 @@
 #include "hashtable.h"
 #include "hash.h"
 #include "general.h"
+#include "string.h"
 
 /**
  * Check if fname has a hiding tag and return its status.
@@ -53,6 +55,32 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
 }
 
 /**
+ * Read whiteout files
+ */
+void read_whiteouts(const char *path, struct hashtable *whiteouts)
+{
+	if (!uopt.cow_enabled) return;
+
+	int i;
+	for (i = 0; i < uopt.nroots; i++) {
+		char p[PATHLEN_MAX];
+		if (BUILD_PATH(p, uopt.roots[i].path, METADIR, path)) {
+			syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+			return;
+		}
+		
+		DIR *dp = opendir(p);
+		if (dp == NULL) continue;
+
+		struct dirent *de;
+		while ((de = readdir(dp)) != NULL)
+			is_hiding(whiteouts, de->d_name);
+
+		closedir(dp);
+	}
+}
+
+/**
  * unionfs-fuse readdir function
  */
 int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
@@ -67,9 +95,10 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	// we will store already added files here to handle same file names across different roots
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 	
-	struct hashtable *hides;
+	struct hashtable *whiteouts;
 	
-	if (uopt.cow_enabled) hides = create_hashtable(16, string_hash, string_equal);
+	if (uopt.cow_enabled) whiteouts = create_hashtable(16, string_hash, string_equal);
+	read_whiteouts(path, whiteouts);
 
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
@@ -86,10 +115,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 			// check if we need file hiding
 			if (uopt.cow_enabled) {
 				// file should be hidden from the user
-				if (hashtable_search(hides, de->d_name) != NULL) continue;
-	
-				// file itself has the hiding tag
-				if (is_hiding(hides, de->d_name)) continue;
+				if (hashtable_search(whiteouts, de->d_name) != NULL) continue;
 			}
 
 			// fill with something dummy, we're interested in key existence only
@@ -111,7 +137,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 	hashtable_destroy(files, 1);
 	
-	if (uopt.cow_enabled) hashtable_destroy(hides, 1);
+	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 1);
 	
 	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
 		filler(buf, "stats", NULL, 0);
