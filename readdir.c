@@ -59,8 +59,6 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
  */
 static void read_whiteouts(const char *path, struct hashtable *whiteouts)
 {
-	if (!uopt.cow_enabled) return;
-
 	int i;
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
@@ -97,8 +95,10 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	
 	struct hashtable *whiteouts;
 	
-	if (uopt.cow_enabled) whiteouts = create_hashtable(16, string_hash, string_equal);
-	read_whiteouts(path, whiteouts);
+	if (uopt.cow_enabled) {
+		whiteouts = create_hashtable(16, string_hash, string_equal);
+		read_whiteouts(path, whiteouts);
+	}
 
 	for (i = 0; i < uopt.nroots; i++) {
 		char p[PATHLEN_MAX];
