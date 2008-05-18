@@ -29,6 +29,11 @@
 #include "cow.h"
 
 
+enum  whiteout {
+	WHITEOUT_FILE,
+	WHITEOUT_DIR
+};
+
 static uid_t daemon_uid = -1; // the uid the daemon is running as
 static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
 
@@ -139,9 +144,9 @@ int path_is_dir (const char *path)
 }
 
 /**
- * Create a file that hides path below root_rw
+ * Create a file or directory that hides path below root_rw
  */
-int hide_file(const char *path, int root_rw) {
+static int do_create_whiteout(const char *path, int root_rw, enum whiteout mode) {
 	char metapath[PATHLEN_MAX];
 
 	if (BUILD_PATH(metapath, METADIR, path)) {
@@ -157,41 +162,36 @@ int hide_file(const char *path, int root_rw) {
 	if (BUILD_PATH(p, uopt.roots[root_rw].path, metapath, HIDETAG)) {
 		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
 		return -1;
-	}	
+	}
 
-	int res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-	if (res == -1) return res;
+	if (mode == WHITEOUT_FILE) {
+		int res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+		if (res == -1) return res;
 
-	close(res);
+		close(res);
+	} else {
+		int res = mkdir(p, S_IRWXU);
+		return res;
+	}
 
 	return 0;
 }
 
 /**
+ * Create a file that hides path below root_rw
+ */
+int hide_file(const char *path, int root_rw) {
+
+	return do_create_whiteout(path, root_rw, WHITEOUT_FILE);
+}
+
+
+/**
  * Create a directory that hides path below root_rw
  */
 int hide_dir(const char *path, int root_rw) {
-	char metapath[PATHLEN_MAX];
 
-	if (BUILD_PATH(metapath, METADIR, path)) {
-		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
-		return -1;
-	}
-
-	// p MUST be without path to branch prefix here! 2 x root_rw is correct here!
-	// this creates e.g. branch/.unionfs/some_directory
-	path_create_cutlast(metapath, root_rw, root_rw);
-
-	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.roots[root_rw].path, metapath, HIDETAG)) {
-		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
-		return -1;
-	}	
-
-	int res = mkdir(p, S_IRWXU);
-	if (res == -1) return res;
-
-	return 0;
+	return do_create_whiteout(path, root_rw, WHITEOUT_DIR);
 }
 
 
