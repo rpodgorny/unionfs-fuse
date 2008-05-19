@@ -136,7 +136,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		}
 
 		closedir(dp);
-		read_whiteouts(path, whiteouts, i);
+		if (uopt.cow_enabled) read_whiteouts(path, whiteouts, i);
 	}
 
 	hashtable_destroy(files, 1);
