@@ -40,12 +40,12 @@ static int unlink_ro(const char *path, int root_ro) {
 	int root_rw = find_lowest_rw_root(root_ro);
 
 	if (root_rw < 0)
-		return -EACCES;
+		return EACCES;
 
 	if (hide_file(path, root_rw) == -1) {
 		// creating the file with the hide tag failed
 		// TODO: open() error messages are not optimal on unlink()
-		return -errno;
+		return errno;
 	}
 
 	return 0;
@@ -61,7 +61,7 @@ static int unlink_rw(const char *path, int root_rw) {
 
 	int res = unlink(p);
 
-	if (res == -1) return -errno;
+	if (res == -1) return errno;
 
 	return 0;
 }
@@ -77,20 +77,25 @@ int unionfs_unlink(const char *path) {
 	int i = find_rorw_root(path);
 	if (i == -1) {
 		to_root();
-		return -errno;
+		return errno;
 	}
 
 	int res;
-	// root is read-only and cow is enabled
-	if (!uopt.roots[i].rw && uopt.cow_enabled) {
-		res = unlink_ro(path, i);
-		to_root();
-		return res;
+	if (!uopt.roots[i].rw) {
+		// read-only branch
+		if (!uopt.cow_enabled)
+			res = EROFS;
+		else
+			res = unlink_ro(path, i);
+	} else {
+		// read-write branch
+		res = unlink_rw(path, i);
+		if (res == 0) {
+			// No need to be root, whiteouts are created as root!
+			maybe_whiteout(path, i, WHITEOUT_FILE);
+		}
 	}
 
-	res = unlink_rw(path, i);
 	to_root();
-	if (res == 0)
-		maybe_whiteout(path, i, WHITEOUT_FILE); /* make _real_ sure the file is removed */
-	return res;
+	return -res;
 }

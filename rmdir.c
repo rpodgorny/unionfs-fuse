@@ -91,16 +91,21 @@ int unionfs_rmdir(const char *path) {
 	}
 
 	int res;
-	// root is read-only and cow is enabled
-	if (!uopt.roots[i].rw && uopt.cow_enabled) {
-		res = rmdir_ro(path, i);
-		to_root();
-		return -res;
+	if (!uopt.roots[i].rw) {
+		// read-only branch
+		if (!uopt.cow_enabled)
+			res = EROFS;
+		else
+			res = rmdir_ro(path, i);
+	} else {
+		// read-write branch
+		res = rmdir_rw(path, i);
+		if (res == 0) {
+			// No need to be root, whiteouts are created as root!
+			maybe_whiteout(path, i, WHITEOUT_DIR);
+		}
 	}
 
-	res = rmdir_rw(path, i);
 	to_root();
-	if (res == 0)
-		maybe_whiteout(path, i, WHITEOUT_DIR); /* make _real_ sure the directory is hidden */
 	return -res;
 }
