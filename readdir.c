@@ -111,7 +111,10 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		if (path_hidden(path, i)) subdir_hidden = true;
 
 		DIR *dp = opendir(p);
-		if (dp == NULL) continue;
+		if (dp == NULL) {
+			if (uopt.cow_enabled) read_whiteouts(path, whiteouts, i);
+			continue;
+		}
 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
