@@ -144,10 +144,13 @@ int path_is_dir (const char *path)
  */
 static int do_create_whiteout(const char *path, int root_rw, enum whiteout mode) {
 	char metapath[PATHLEN_MAX];
+	int res = -1;
+
+	to_root(); // whiteouts are root business
 
 	if (BUILD_PATH(metapath, METADIR, path)) {
 		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
-		return -1;
+		goto out;
 	}
 
 	// p MUST be without path to branch prefix here! 2 x root_rw is correct here!
@@ -157,20 +160,20 @@ static int do_create_whiteout(const char *path, int root_rw, enum whiteout mode)
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.roots[root_rw].path, metapath, HIDETAG)) {
 		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
-		return -1;
+		goto out;
 	}
 
 	if (mode == WHITEOUT_FILE) {
-		int res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-		if (res == -1) return res;
+		res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+		if (res == -1)
+			goto out;
+		res = close(res);
+	} else
+		res = mkdir(p, S_IRWXU);
 
-		close(res);
-	} else {
-		int res = mkdir(p, S_IRWXU);
-		return res;
-	}
-
-	return 0;
+out:
+	to_user();
+	return res;
 }
 
 /**
