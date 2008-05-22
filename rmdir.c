@@ -61,8 +61,15 @@ static int rmdir_ro(const char *path, int root_ro) {
 		return -EACCES;
 
 	if (hide_dir(path, root_rw) == -1) {
-		// creating the file with the hide tag failed
-		// TODO: open() error messages are not optimal on rmdir()
+		switch (errno) {
+		case (EEXIST):
+		case (ENOTDIR):
+		case (ENOTEMPTY):
+			// catch errors not allowed for rmdir()
+			syslog (LOG_ERR, "%s: Creating the whiteout failed: %s\n",
+				__func__, strerror(errno));
+			errno = EFAULT;
+		}
 		return errno;
 	}
 
