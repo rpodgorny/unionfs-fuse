@@ -28,9 +28,7 @@
 
 /**
  * If path exists, return the root number that has path.
- * TODO: We can still stat() fname_~HIDDEN, though these are hidden by readdir()
- *       and should mainly be for internal usage, only.
-*/
+ */
 int find_rorw_root(const char *path) {
 	bool hidden = false;
 
