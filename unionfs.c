@@ -564,9 +564,9 @@ static int unionfs_rename(const char *from, const char *to) {
 		// We only need to do this if we have been on a rw-branch, since we created
 		// a whiteout for read-only branches anyway.
 		if (is_dir)
-			unionfs_rmdir(from);
+			maybe_whiteout(from, i, WHITEOUT_DIR);
 		else
-			unionfs_unlink(from);
+			maybe_whiteout(from, i, WHITEOUT_FILE);
 	}
 
 	remove_hidden(to, i); // remove hide file (if any)

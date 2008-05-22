@@ -101,6 +101,6 @@ int unionfs_rmdir(const char *path) {
 	res = rmdir_rw(path, i);
 	to_root();
 	if (res == 0)
-		unionfs_rmdir(path); /* make _real_ sure the directory is removed */
+		maybe_whiteout(path, i, WHITEOUT_DIR); /* make _real_ sure the directory is hidden */
 	return -res;
 }

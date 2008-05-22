@@ -27,12 +27,8 @@
 #include "opts.h"
 #include "string.h"
 #include "cow.h"
-
-
-enum  whiteout {
-	WHITEOUT_FILE,
-	WHITEOUT_DIR
-};
+#include "findbranch.h"
+#include "general.h"
 
 static uid_t daemon_uid = -1; // the uid the daemon is running as
 static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
@@ -185,7 +181,6 @@ int hide_file(const char *path, int root_rw) {
 	return do_create_whiteout(path, root_rw, WHITEOUT_FILE);
 }
 
-
 /**
  * Create a directory that hides path below root_rw
  */
@@ -194,6 +189,18 @@ int hide_dir(const char *path, int root_rw) {
 	return do_create_whiteout(path, root_rw, WHITEOUT_DIR);
 }
 
+/**
+ * This is called *after* unlink() or rmdir(), create a whiteout file
+ * if the same file/dir does exist in a lower branch
+ */
+int maybe_whiteout(const char *path, int root_rw, enum whiteout mode)
+{
+	// we are not interested in the branch itself, only if it exists at all
+	if (find_rorw_root(path) != -1) {
+		return do_create_whiteout(path, root_rw, mode);
+	}
+	return 0;
+}
 
 static void initgroups_uid(uid_t uid) {
 	struct passwd pwd;
