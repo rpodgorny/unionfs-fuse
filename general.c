@@ -234,7 +234,8 @@ void to_user(void) {
 	struct fuse_context *ctx = fuse_get_context();
 	if (!ctx) return;
 
-	pthread_mutex_lock(&mutex);
+	// disabled, since we temporarily enforce single threading
+	// pthread_mutex_lock(&mutex);
 
 	initgroups_uid(ctx->uid);
 
@@ -264,7 +265,8 @@ void to_root(void) {
 
 	initgroups_uid(0);
 
-	pthread_mutex_unlock(&mutex);
+	// disabled, since we temporarily enforce single threading
+	// pthread_mutex_unlock(&mutex);
 
 	errno = errno_orig;
 }

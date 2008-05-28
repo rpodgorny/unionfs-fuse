@@ -873,6 +873,16 @@ int main(int argc, char *argv[]) {
 		uopt.roots[i].fd = open(uopt.roots[i].path, O_RDONLY);
 	}
 
+	// This is only a temporarily workaround, which will go away soon!
+	// Set single threading mode.
+	args.argc += 1;
+	args.argv = realloc (args.argv, args.argc);
+	if (args.argv == NULL) {
+		fprintf(stderr, "%s: Realloc failed, aborting!\n", __func__);
+		exit (1);
+	}
+	args.argv[args.argc - 1] = strdup("-s");
+
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
 	return uopt.doexit ? uopt.retval : res;
