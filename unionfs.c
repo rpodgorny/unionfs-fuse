@@ -867,21 +867,12 @@ int main(int argc, char *argv[]) {
 		if (uopt.stats_enabled) stats_init();
 	}
 	
-	// Prevent accidental umounts. Especially system shutdown scripts tend to umount everything they can. If we don't have an open file descriptor, this might cause unexpected behaviour. 
-	int i = 0;
-	for (i = 0; i < uopt.nroots; i++) {
-		uopt.roots[i].fd = open(uopt.roots[i].path, O_RDONLY);
-	}
-
 	// This is only a temporarily workaround, which will go away soon!
 	// Set single threading mode.
-	args.argc += 1;
-	args.argv = realloc (args.argv, args.argc);
-	if (args.argv == NULL) {
-		fprintf(stderr, "%s: Realloc failed, aborting!\n", __func__);
+	if (fuse_opt_add_arg(&args, "-s")) {
+		fprintf(stderr, "Adding the single-thread option failed, but we present MUST run single threaded, aborting\n");
 		exit (1);
 	}
-	args.argv[args.argc - 1] = strdup("-s");
 
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
