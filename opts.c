@@ -63,8 +63,9 @@ static char *make_absolute(char *relpath) {
 		fprintf(stderr, "%s: malloc failed\n", __func__);
 		exit (1); // still at early stage, we can't abort
 	}
+
 	// the terminating '/' is important so that we are sure later on the
-	// diroctory components are properly seperated
+	// directory components are properly seperated
 	sprintf(abspath, "%s/%s/", cwd, relpath);
 
 	return abspath;
@@ -74,18 +75,18 @@ static char *make_absolute(char *relpath) {
  * Add a trailing slash at the end of a branch (root). So functions using this
  * path don't have to care about this slash themselves.
  **/
-static char *add_trailing_slash(char *path)
-{
+static char *add_trailing_slash(char *path) {
 	int len = strlen(path);
-	if (path[len - 1] == '/')
+	if (path[len - 1] == '/') {
 		return path; // no need to add a slash, already there
-	
+	}
+
 	path = realloc(path, len + 2); // +1 for '/' and +1 for '\0'
 	if (!path) {
 		fprintf(stderr, "%s: realloc() failed, aborting\n", __func__);
 		exit (1); // still very early stage, we can abort here
 	}
-	
+
 	strcat (path, "/");
 	return (path);
 }
@@ -100,7 +101,6 @@ static void add_root(char *root) {
 		fprintf(stderr, "%s: realloc failed\n", __func__);
 		exit (1); // still at early stage, we can't abort
 	}
-
 
 	char *res;
 	char **ptr = (char **)&root;
