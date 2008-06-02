@@ -80,7 +80,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[nroot_rw].path, path);
 
-	to_root(); // to make cow working, we need higher priviledges
+	to_root(); // to make cow working, we need higher privileges
 
 	struct stat st;
 	if (!stat(p, &st)) {
@@ -115,7 +115,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 }
 
 /**
- * As path_create(), but ignore the last segment in path,
+ * Same as  path_create(), but ignore the last segment in path,
  * i.e. it might be a filename.
  **/
 int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
@@ -125,6 +125,7 @@ int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
 
 	return ret;
 }
+
 /**
  * initiate the cow-copy action
  */
