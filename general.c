@@ -30,6 +30,7 @@
 #include "findbranch.h"
 #include "general.h"
 
+
 static uid_t daemon_uid = -1; // the uid the daemon is running as
 static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
 
@@ -50,7 +51,6 @@ static bool filedir_hidden(const char *path) {
 
 	return false;
 }
-
 
 /**
  * check if any dir or file within path is hidden
@@ -92,7 +92,6 @@ bool path_hidden(const char *path, int branch) {
 	return 0;
 }
 
-
 /**
  * Remove a hide-file in all roots up to maxroot
  * If maxroot == -1, try to delete it in all roots.
@@ -131,7 +130,7 @@ int remove_hidden(const char *path, int maxroot) {
 int path_is_dir(const char *path) {
 	struct stat buf;
 	
-	if (stat (path, &buf) == -1 ) return -1;
+	if (stat(path, &buf) == -1) return -1;
 	
 	if (S_ISDIR(buf.st_mode)) return 1;
 	
