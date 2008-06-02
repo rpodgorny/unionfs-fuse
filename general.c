@@ -128,8 +128,7 @@ int remove_hidden(const char *path, int maxroot) {
  *
  * return 1 if it is a directory, 0 if it is a file and -1 if it does not exist
  */
-int path_is_dir (const char *path)
-{
+int path_is_dir(const char *path) {
 	struct stat buf;
 	
 	if (stat (path, &buf) == -1 ) return -1;
@@ -165,11 +164,11 @@ static int do_create_whiteout(const char *path, int root_rw, enum whiteout mode)
 
 	if (mode == WHITEOUT_FILE) {
 		res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-		if (res == -1)
-			goto out;
+		if (res == -1) goto out;
 		res = close(res);
-	} else
+	} else {
 		res = mkdir(p, S_IRWXU);
+	}
 
 out:
 	to_user();
@@ -180,7 +179,6 @@ out:
  * Create a file that hides path below root_rw
  */
 int hide_file(const char *path, int root_rw) {
-
 	return do_create_whiteout(path, root_rw, WHITEOUT_FILE);
 }
 
@@ -188,7 +186,6 @@ int hide_file(const char *path, int root_rw) {
  * Create a directory that hides path below root_rw
  */
 int hide_dir(const char *path, int root_rw) {
-
 	return do_create_whiteout(path, root_rw, WHITEOUT_DIR);
 }
 
@@ -196,12 +193,12 @@ int hide_dir(const char *path, int root_rw) {
  * This is called *after* unlink() or rmdir(), create a whiteout file
  * if the same file/dir does exist in a lower branch
  */
-int maybe_whiteout(const char *path, int root_rw, enum whiteout mode)
-{
+int maybe_whiteout(const char *path, int root_rw, enum whiteout mode) {
 	// we are not interested in the branch itself, only if it exists at all
 	if (find_rorw_root(path) != -1) {
 		return do_create_whiteout(path, root_rw, mode);
 	}
+
 	return 0;
 }
 
@@ -235,14 +232,16 @@ void to_user(void) {
 	if (!ctx) return;
 
 	// disabled, since we temporarily enforce single threading
-	// pthread_mutex_lock(&mutex);
+	//pthread_mutex_lock(&mutex);
 
 	initgroups_uid(ctx->uid);
 
-	if (ctx->gid != 0)
+	if (ctx->gid != 0) {
 		if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
-	if (ctx->uid != 0)
+	}
+	if (ctx->uid != 0) {
 		if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
+	}
 
 	errno = errno_orig;
 }
@@ -255,18 +254,20 @@ void to_root(void) {
 
 	if (daemon_uid != 0) return;
 
-        struct fuse_context *ctx = fuse_get_context();
-	        if (!ctx) return;
+	struct fuse_context *ctx = fuse_get_context();
+	if (!ctx) return;
 
-	if (ctx->uid != 0)
+	if (ctx->uid != 0) {
 		if (seteuid(0)) syslog(LOG_WARNING, "seteuid(0) failed");
-	if (ctx->gid != 0)
+	}
+	if (ctx->gid != 0) {
 		if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+	}
 
 	initgroups_uid(0);
 
 	// disabled, since we temporarily enforce single threading
-	// pthread_mutex_unlock(&mutex);
+	//pthread_mutex_unlock(&mutex);
 
 	errno = errno_orig;
 }
