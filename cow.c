@@ -48,7 +48,6 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 		if (res == -1) return 1; // lower level root removed in the mean time?
 	}
 
-
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
 		syslog (LOG_DAEMON, "Creating %s failed: \n", dirp);
@@ -80,7 +79,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[nroot_rw].path, path);
-	
+
 	to_root(); // to make cow working, we need higher priviledges
 
 	struct stat st;
@@ -98,7 +97,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 	do {
 		// walk over the directory name, walk will now be /dir2
 		while (*walk != '\0' && *walk != '/') walk++;
-	
+
 		// +1 due to \0, which gets added automatically
 		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
 		int res = do_create(p, nroot_ro, nroot_rw);
@@ -177,7 +176,7 @@ int cow_cp(const char *path, int root_ro, int root_rw) {
 		default:
 			res = copy_file(&cow);
 	}
-	
+
 	to_user();
 	return res;
 }
