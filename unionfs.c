@@ -871,7 +871,7 @@ int main(int argc, char *argv[]) {
 	// Set single threading mode.
 	if (fuse_opt_add_arg(&args, "-s")) {
 		fprintf(stderr, "Adding the single-thread option failed, but we present MUST run single threaded, aborting\n");
-		exit (1);
+		exit(1);
 	}
 
 	umask(0);
