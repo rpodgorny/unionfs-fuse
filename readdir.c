@@ -40,7 +40,7 @@
  */
 static bool is_hiding(struct hashtable *hides, char *fname) {
 	char *tag;
-	
+
 	tag = whiteout_tag(fname);
 	if (tag) {
 		// even more important, ignore the file without the tag!
@@ -64,7 +64,7 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
 static void read_whiteouts(const char *path, struct hashtable *whiteouts, int branch) {
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.roots[branch].path, METADIR, path)) {
-		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		syslog(LOG_WARNING, "%s(): Path too long\n", __func__);
 		return;
 	}
 
