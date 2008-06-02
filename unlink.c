@@ -39,8 +39,7 @@ static int unlink_ro(const char *path, int root_ro) {
 	// find a writable root above root_ro
 	int root_rw = find_lowest_rw_root(root_ro);
 
-	if (root_rw < 0)
-		return EACCES;
+	if (root_rw < 0) return EACCES;
 
 	if (hide_file(path, root_rw) == -1) {
 		// creating the file with the hide tag failed
@@ -60,7 +59,6 @@ static int unlink_rw(const char *path, int root_rw) {
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
 
 	int res = unlink(p);
-
 	if (res == -1) return errno;
 
 	return 0;
@@ -83,10 +81,11 @@ int unionfs_unlink(const char *path) {
 	int res;
 	if (!uopt.roots[i].rw) {
 		// read-only branch
-		if (!uopt.cow_enabled)
+		if (!uopt.cow_enabled) {
 			res = EROFS;
-		else
+		} else {
 			res = unlink_ro(path, i);
+		}
 	} else {
 		// read-write branch
 		res = unlink_rw(path, i);
