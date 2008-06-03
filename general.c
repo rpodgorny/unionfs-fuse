@@ -130,7 +130,7 @@ int remove_hidden(const char *path, int maxroot) {
 int path_is_dir(const char *path) {
 	struct stat buf;
 	
-	if (stat(path, &buf) == -1) return -1;
+	if (lstat(path, &buf) == -1) return -1;
 	
 	if (S_ISDIR(buf.st_mode)) return 1;
 	
