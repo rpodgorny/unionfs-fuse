@@ -109,13 +109,10 @@ int remove_hidden(const char *path, int maxroot) {
 			return 1;
 		}
 
-		struct stat buf;
-		int res = lstat(p, &buf);
-		if (res == -1) continue;
-
-		switch (buf.st_mode & S_IFMT) {
-			case S_IFDIR: rmdir(p); break;
-			default: unlink(p); break;
+		switch (path_is_dir(p)) {
+			case IS_FILE: unlink (p); break;
+			case IS_DIR:  rmdir  (p); break;
+			case NOT_EXISTING: continue;
 		}
 	}
 
@@ -127,7 +124,7 @@ int remove_hidden(const char *path, int maxroot) {
  *
  * return 1 if it is a directory, 0 if it is a file and -1 if it does not exist
  */
-int path_is_dir(const char *path) {
+filetype_t path_is_dir(const char *path) {
 	struct stat buf;
 	
 	if (lstat(path, &buf) == -1) return -1;

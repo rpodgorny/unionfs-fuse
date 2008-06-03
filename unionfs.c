@@ -521,11 +521,11 @@ static int unionfs_rename(const char *from, const char *to) {
 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
 
-	int res = path_is_dir(f);
-	if (res == -1) {
+	filetype_t res = path_is_dir(f);
+	if (res == NOT_EXISTING) {
 		to_root();
 		return -ENOENT;
-	} else if (res == 1) is_dir = true;
+	} else if (res == IS_DIR) is_dir = true;
 
 	if (!uopt.roots[i].rw) {
 		// since original file is on a read-only root, we copied the from file to a writable root,
