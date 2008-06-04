@@ -368,12 +368,12 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	} else {
 		i = find_rorw_root(path);
 	}
-	
+
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
-	
+
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
 
@@ -392,7 +392,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	}
 
 	to_root();
-	
+
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
 		// There might have been a hide file, but since we successfully wrote to the real file, a hide file must not exist anymore
 		remove_hidden(path, i);
