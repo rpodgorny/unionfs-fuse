@@ -410,7 +410,7 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		char out[STATS_SIZE] = "";
-		stats_sprint(out);
+		stats_sprint(&stats, out);
 
 		int s = size;
 		if (offset < strlen(out)) {
@@ -431,7 +431,7 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 
 	if (res == -1) return -errno;
 
-	if (uopt.stats_enabled) stats_add_read(size);
+	if (uopt.stats_enabled) stats_add_read(&stats, size);
 
 	return res;
 }
@@ -717,7 +717,7 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 
 	if (res == -1) return -errno;
 
-	if (uopt.stats_enabled) stats_add_written(size);
+	if (uopt.stats_enabled) stats_add_written(&stats, size);
 
 	return res;
 }
@@ -864,7 +864,7 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}
 
-		if (uopt.stats_enabled) stats_init();
+		if (uopt.stats_enabled) stats_init(&stats);
 	}
 	
 	// This is only a temporarily workaround, which will go away soon!

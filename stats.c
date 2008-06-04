@@ -10,66 +10,31 @@
 #include "opts.h"
 
 
-unsigned int stats_read_b, stats_read_k, stats_read_m, stats_read_g, stats_read_t;
-unsigned int stats_written_b, stats_written_k, stats_written_m, stats_written_g, stats_written_t;
-
-
-void stats_init() {
-	stats_read_b = stats_read_k = stats_read_m = stats_read_g = stats_read_t = 0;
-	stats_written_b = stats_written_k = stats_written_m = stats_written_g = stats_written_t = 0;
+void stats_init(struct stats_t *s) {
+	memset(s, 0, sizeof(struct stats_t));
 }
 
-void stats_sprint(char *s) {
-	strcpy(s, "");
+void stats_sprint(struct stats_t *s, char *out) {
+	strcpy(out, "");
 
-	sprintf(s+strlen(s), "Bytes read: %u,%03u,%03u,%03u,%03u\n", stats_read_t, stats_read_g, stats_read_m, stats_read_k, stats_read_b);
-	sprintf(s+strlen(s), "Bytes written: %u,%03u,%03u,%03u,%03u\n", stats_written_t, stats_written_g, stats_written_m, stats_written_k, stats_written_b);
+	sprintf(out+strlen(out), "Bytes read: %u,%03u,%03u,%03u,%03u\n", s->r_t, s->r_g, s->r_m, s->r_k, s->r_b);
+	sprintf(out+strlen(out), "Bytes written: %u,%03u,%03u,%03u,%03u\n", s->w_t, s->w_g, s->w_m, s->w_k, s->w_b);
 }
 
-void stats_add_read(unsigned int bytes) {
-	stats_read_b += bytes;
+void stats_add_read(struct stats_t *s, unsigned int bytes) {
+	s->r_b += bytes;
 
-	while (stats_read_b >= 1000) {
-		stats_read_k++;
-		stats_read_b -= 1000;
-	}
-
-	while (stats_read_k >= 1000) {
-		stats_read_m++;
-		stats_read_k -= 1000;
-	}
-
-	while (stats_read_m >= 1000) {
-		stats_read_g++;
-		stats_read_m -= 1000;
-	}
-
-	while (stats_read_g >= 1000) {
-		stats_read_t++;
-		stats_read_g -= 1000;
-	}
+	while (s->r_b >= 1000) { s->r_k++; s->r_b -= 1000; }
+	while (s->r_k >= 1000) { s->r_m++; s->r_k -= 1000; }
+	while (s->r_m >= 1000) { s->r_g++; s->r_m -= 1000; }
+	while (s->r_g >= 1000) { s->r_t++; s->r_g -= 1000; }
 }
 
-void stats_add_written(unsigned int bytes) {
-	stats_written_b += bytes;
+void stats_add_written(struct stats_t *s, unsigned int bytes) {
+	s->w_b += bytes;
 
-	while (stats_written_b >= 1000) {
-		stats_written_k++;
-		stats_written_b -= 1000;
-	}
-
-	while (stats_written_k >= 1000) {
-		stats_written_m++;
-		stats_written_k -= 1000;
-	}
-
-	while (stats_written_m >= 1000) {
-		stats_written_g++;
-		stats_written_m -= 1000;
-	}
-
-	while (stats_written_g >= 1000) {
-		stats_written_t++;
-		stats_written_g -= 1000;
-	}
+	while (s->w_b >= 1000) { s->w_k++; s->w_b -= 1000; }
+	while (s->w_k >= 1000) { s->w_m++; s->w_k -= 1000; }
+	while (s->w_m >= 1000) { s->w_g++; s->w_m -= 1000; }
+	while (s->w_g >= 1000) { s->w_t++; s->w_g -= 1000; }
 }
