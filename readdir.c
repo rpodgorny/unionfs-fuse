@@ -94,7 +94,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	// we will store already added files here to handle same file names across different roots
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 
-	struct hashtable *whiteouts;
+	struct hashtable *whiteouts = NULL;
 
 	if (uopt.cow_enabled) whiteouts = create_hashtable(16, string_hash, string_equal);
 
