@@ -28,24 +28,24 @@
 /*
  * Actually create the directory here.
  */
-static int do_create(const char *path, int nroot_ro, int nroot_rw) {
+static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	char dirp[PATHLEN_MAX]; // dir path to create
-	sprintf(dirp, "%s%s", uopt.roots[nroot_rw].path, path);
+	sprintf(dirp, "%s%s", uopt.branches[nbranch_rw].path, path);
 
 	struct stat buf;
 	int res = stat(dirp, &buf);
 	if (res != -1) return 0; // already exists
 
-	if (nroot_ro == nroot_rw) {
-		// special case nroot_ro = nroot_rw, this is if we a create
+	if (nbranch_ro == nbranch_rw) {
+		// special case nbranch_ro = nbranch_rw, this is if we a create
 		// unionfs meta directories, so not directly on cow operations
 		buf.st_mode = S_IRWXU | S_IRWXG;
 	} else {
-		// data from the ro-root
+		// data from the ro-branch
 		char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
-		sprintf(o_dirp, "%s%s", uopt.roots[nroot_ro].path, path);
+		sprintf(o_dirp, "%s%s", uopt.branches[nbranch_ro].path, path);
 		res = stat(o_dirp, &buf);
-		if (res == -1) return 1; // lower level root removed in the mean time?
+		if (res == -1) return 1; // lower level branch removed in the mean time?
 	}
 
 	res = mkdir(dirp, buf.st_mode);
@@ -54,7 +54,7 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 		return 1;
 	}
 
-	if (nroot_ro == nroot_rw) return 0; // the special case again
+	if (nbranch_ro == nbranch_rw) return 0; // the special case again
 
 	res = chown(dirp, buf.st_uid, buf.st_gid);
 	if (res == -1) return 1; // directory already removed by another process?
@@ -65,20 +65,20 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 }
 
 /*
- * l_nroot (lower nroot than nroot) is write protected, create the dir path on
- * nroot for an other COW operation.
+ * l_nbranch (lower nbranch than nbranch) is write protected, create the dir path on
+ * nbranch for an other COW operation.
  */
-int path_create(const char *path, int nroot_ro, int nroot_rw) {
+int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	if (!uopt.cow_enabled) return 0;
 
-	if (strlen(path) + strlen(uopt.roots[nroot_rw].path) > PATHLEN_MAX
-	|| strlen(path) + strlen(uopt.roots[nroot_ro].path) > PATHLEN_MAX) {
+	if (strlen(path) + strlen(uopt.branches[nbranch_rw].path) > PATHLEN_MAX
+	|| strlen(path) + strlen(uopt.branches[nbranch_ro].path) > PATHLEN_MAX) {
 		// TODO: how to handle that?
 		return 1;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[nroot_rw].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[nbranch_rw].path, path);
 
 	to_root(); // to make cow working, we need higher privileges
 
@@ -100,7 +100,7 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 
 		// +1 due to \0, which gets added automatically
 		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
-		int res = do_create(p, nroot_ro, nroot_rw);
+		int res = do_create(p, nbranch_ro, nbranch_rw);
 		if (res) {
 			to_user();
 			return res; // creating the directory failed
@@ -118,9 +118,9 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
  * Same as  path_create(), but ignore the last segment in path,
  * i.e. it might be a filename.
  */
-int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
+int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
 	char *dname = u_dirname(path);
-	int ret = path_create(dname, nroot_ro, nroot_rw);
+	int ret = path_create(dname, nbranch_ro, nbranch_rw);
 	free(dname);
 
 	return ret;
@@ -129,13 +129,13 @@ int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
 /*
  * initiate the cow-copy action
  */
-int cow_cp(const char *path, int root_ro, int root_rw) {
+int cow_cp(const char *path, int branch_ro, int branch_rw) {
 	// create the path to the file
-	path_create_cutlast(path, root_ro, root_rw);
+	path_create_cutlast(path, branch_ro, branch_rw);
 
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
-	snprintf(from, PATHLEN_MAX, "%s%s", uopt.roots[root_ro].path, path);
-	snprintf(to, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
+	snprintf(from, PATHLEN_MAX, "%s%s", uopt.branches[branch_ro].path, path);
+	snprintf(to, PATHLEN_MAX, "%s%s", uopt.branches[branch_rw].path, path);
 
 	setlocale(LC_ALL, "");
 
@@ -161,7 +161,7 @@ int cow_cp(const char *path, int root_ro, int root_rw) {
 			res = copy_link(&cow);
 			break;
 		case S_IFDIR:
-			res = path_create(path, root_ro, root_rw);
+			res = path_create(path, branch_ro, branch_rw);
 			break;
 		case S_IFBLK:
 		case S_IFCHR:

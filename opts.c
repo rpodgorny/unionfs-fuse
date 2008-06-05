@@ -24,7 +24,7 @@ uopt_t uopt;
 void uopt_init() {
 	uopt.doexit = 0;
 	uopt.retval = 0;
-	uopt.nroots = 0;
+	uopt.nbranches = 0;
 	uopt.stats_enabled = false;
 	uopt.cow_enabled = false; // copy-on-write
 	uopt.initgroups = true;
@@ -72,7 +72,7 @@ static char *make_absolute(char *relpath) {
 }
 
 /**
- * Add a trailing slash at the end of a branch (root). So functions using this
+ * Add a trailing slash at the end of a branch. So functions using this
  * path don't have to care about this slash themselves.
  **/
 static char *add_trailing_slash(char *path) {
@@ -92,33 +92,33 @@ static char *add_trailing_slash(char *path) {
 }
 
 /**
- * Add a given root and its options to the array of available roots.
- * example root string "root1=RO" or "/path/path2=RW"
+ * Add a given branch and its options to the array of available branches.
+ * example branch string "branch1=RO" or "/path/path2=RW"
  */
-static void add_root(char *root) {
-	uopt.roots = realloc(uopt.roots, (uopt.nroots+1) * sizeof(root_entry_t));
-	if (uopt.roots == NULL) {
+static void add_branch(char *branch) {
+	uopt.branches = realloc(uopt.branches, (uopt.nbranches+1) * sizeof(branch_entry_t));
+	if (uopt.branches == NULL) {
 		fprintf(stderr, "%s: realloc failed\n", __func__);
 		exit (1); // still at early stage, we can't abort
 	}
 
 	char *res;
-	char **ptr = (char **)&root;
+	char **ptr = (char **)&branch;
 
 	res = strsep(ptr, "=");
 	if (!res) return;
 
 	// for string manipulations it is important to copy the string, otherwise
 	// make_absolute() and add_trailing_slash() will corrupt our input (parse string)
-	uopt.roots[uopt.nroots].path = strdup(res);
-	uopt.roots[uopt.nroots].path = make_absolute(uopt.roots[uopt.nroots].path);
-	uopt.roots[uopt.nroots].path = add_trailing_slash(uopt.roots[uopt.nroots].path);
-	uopt.roots[uopt.nroots].rw = 0;
+	uopt.branches[uopt.nbranches].path = strdup(res);
+	uopt.branches[uopt.nbranches].path = make_absolute(uopt.branches[uopt.nbranches].path);
+	uopt.branches[uopt.nbranches].path = add_trailing_slash(uopt.branches[uopt.nbranches].path);
+	uopt.branches[uopt.nbranches].rw = 0;
 
 	res = strsep(ptr, "=");
 	if (res) {
 		if (strcasecmp(res, "rw") == 0) {
-			uopt.roots[uopt.nroots].rw = 1;
+			uopt.branches[uopt.nbranches].rw = 1;
 		} else if (strcasecmp(res, "ro") == 0) {
 			// no action needed here
 		} else {
@@ -127,28 +127,28 @@ static void add_root(char *root) {
 		}
 	}
 
-	uopt.nroots++;
+	uopt.nbranches++;
 }
 
 /**
- * Options without any -X prefix, so these options define our root pathes.
- * example arg string: "root1=RW:root2=RO:root3=RO"
+ * Options without any -X prefix, so these options define our branch paths.
+ * example arg string: "branch1=RW:branch2=RO:branch3=RO"
  */
-static int parse_roots(const char *arg) {
-	if (uopt.nroots) return 0;
+static int parse_branches(const char *arg) {
+	if (uopt.nbranches) return 0;
 
-	// We don't free the buf as parts of it may go to roots
+	// We don't free the buf as parts of it may go to branches
 	char *buf = strdup(arg);
 	char **ptr = (char **)&buf;
-	char *root;
-	while ((root = strsep(ptr, ROOT_SEP)) != NULL) {
-		if (strlen(root) == 0) continue;
+	char *branch;
+	while ((branch = strsep(ptr, ROOT_SEP)) != NULL) {
+		if (strlen(branch) == 0) continue;
 
-		add_root(root);
+		add_branch(branch);
 	}
 
 	free (buf);
-	return uopt.nroots;
+	return uopt.nbranches;
 }
 
 static void print_help(const char *progname) {
@@ -156,7 +156,7 @@ static void print_help(const char *progname) {
 	"unionfs-fuse version "VERSION"\n"
 	"by Radek Podgorny <radek@podgorny.cz>\n"
 	"\n"
-	"Usage: %s [options] root[=RO/RW][:root...] mountpoint\n"
+	"Usage: %s [options] branch[=RO/RW][:branch...] mountpoint\n"
 	"The first argument is a colon separated list of directories to merge\n"
 	"\n"
 	"general options:\n"
@@ -183,7 +183,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 
 	switch (key) {
 		case FUSE_OPT_KEY_NONOPT:
-			res = parse_roots(arg);
+			res = parse_branches(arg);
 			if (res > 0) return 0;
 			uopt.retval = 1;
 			return 1;

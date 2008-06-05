@@ -63,7 +63,7 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
  */
 static void read_whiteouts(const char *path, struct hashtable *whiteouts, int branch) {
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.roots[branch].path, METADIR, path)) {
+	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) {
 		syslog(LOG_WARNING, "%s(): Path too long\n", __func__);
 		return;
 	}
@@ -91,7 +91,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	
 	to_user();
 
-	// we will store already added files here to handle same file names across different roots
+	// we will store already added files here to handle same file names across different branches
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 
 	struct hashtable *whiteouts = NULL;
@@ -100,11 +100,11 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 	bool subdir_hidden = false;
 
-	for (i = 0; i < uopt.nroots; i++) {
+	for (i = 0; i < uopt.nbranches; i++) {
 		if (subdir_hidden) break;
 
 		char p[PATHLEN_MAX];
-		snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+		snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 		// check if branches below this branch are hidden
 		if (path_hidden(path, i)) subdir_hidden = true;
@@ -117,7 +117,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
-			// already added in some other root
+			// already added in some other branch
 			if (hashtable_search(files, de->d_name) != NULL) continue;
 
 			// check if we need file hiding

@@ -61,14 +61,14 @@ static int unionfs_access(const char *path, int mask) {
 	
 	to_user();
 
-	int i = find_rorw_root(path);
+	int i = find_rorw_branch(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = access(p, mask);
 
@@ -84,14 +84,14 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_branch_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = chmod(p, mode);
 
@@ -107,14 +107,14 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_branch_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = lchown(p, uid, gid);
 
@@ -134,14 +134,14 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 
 	to_user();
 
-	int i = find_rw_root_cutlast(path);
+	int i = find_rw_branch_cutlast(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = open(p, fi->flags, mode);
 
@@ -227,14 +227,14 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 
 	to_user();
 
-	int i = find_rorw_root(path);
+	int i = find_rorw_branch(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = lstat(p, stbuf);
 
@@ -260,15 +260,15 @@ static int unionfs_link(const char *from, const char *to) {
 	to_user();
 
 	// hardlinks do not work across different filesystems so we need a copy of from first
-	int i = find_rw_root_cow(from);
+	int i = find_rw_branch_cow(from);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
-	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
-	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
+	snprintf(f, PATHLEN_MAX, "%s%s", uopt.branches[i].path, from);
+	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
 
 	int res = link(f, t);
 
@@ -291,14 +291,14 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 
 	to_user();
 
-	int i = find_rw_root_cutlast(path);
+	int i = find_rw_branch_cutlast(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = mkdir(p, mode);
 
@@ -314,14 +314,14 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
 	to_user();
 
-	int i = find_rw_root_cutlast(path);
+	int i = find_rw_branch_cutlast(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = -1;
 	if ((mode & S_IFMT) == S_IFREG) {
@@ -364,9 +364,9 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 
 	int i;
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
-		i = find_rw_root_cutlast(path);
+		i = find_rw_branch_cutlast(path);
 	} else {
-		i = find_rorw_root(path);
+		i = find_rorw_branch(path);
 	}
 
 	if (i == -1) {
@@ -375,7 +375,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int fd = open(p, fi->flags);
 	if (fd == -1 && fi->flags == O_RDONLY) {
@@ -442,14 +442,14 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 
 	to_user();
 
-	int i = find_rorw_root(path);
+	int i = find_rorw_branch(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = readlink(p, buf, size - 1);
 
@@ -490,20 +490,20 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	to_user();
 
-	int j = find_rw_root_cutlast(to);
+	int j = find_rw_branch_cutlast(to);
 	if (j == -1) {
 		to_root();
 		return -errno;
 	}
 
-	int i = find_rorw_root(from);
+	int i = find_rorw_branch(from);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
-	if (!uopt.roots[i].rw) {
-		i = find_rw_root_cow(from);
+	if (!uopt.branches[i].rw) {
+		i = find_rw_branch_cow(from);
 		if (i == -1) {
 			to_root();
 			return -errno;
@@ -518,8 +518,8 @@ static int unionfs_rename(const char *from, const char *to) {
 	}
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
-	snprintf(f, PATHLEN_MAX, "%s%s", uopt.roots[i].path, from);
-	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
+	snprintf(f, PATHLEN_MAX, "%s%s", uopt.branches[i].path, from);
+	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
 
 	filetype_t res = path_is_dir(f);
 	if (res == NOT_EXISTING) {
@@ -527,9 +527,9 @@ static int unionfs_rename(const char *from, const char *to) {
 		return -ENOENT;
 	} else if (res == IS_DIR) is_dir = true;
 
-	if (!uopt.roots[i].rw) {
-		// since original file is on a read-only root, we copied the from file to a writable root,
-		// but since we will rename from, we also need to hide the from file on the read-only root
+	if (!uopt.branches[i].rw) {
+		// since original file is on a read-only branch, we copied the from file to a writable branch,
+		// but since we will rename from, we also need to hide the from file on the read-only branch
 		if (is_dir)
 			res = hide_dir(from, i);
 		else
@@ -547,7 +547,7 @@ static int unionfs_rename(const char *from, const char *to) {
 	if (res == -1) {
 		int err = errno; // unlink() might overwrite errno
 		// if from was on a read-only branch we copied it, but now rename failed so we need to delete it
-		if (!uopt.roots[i].rw) {
+		if (!uopt.branches[i].rw) {
 			if (unlink(f))
 				syslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also unlink()  failed\n", __func__, from);
@@ -559,7 +559,7 @@ static int unionfs_rename(const char *from, const char *to) {
 		return -err;
 	}
 
-	if (uopt.roots[i].rw) {
+	if (uopt.branches[i].rw) {
 		// A lower branch still *might* have a file called 'from', we need to delete this.
 		// We only need to do this if we have been on a rw-branch, since we created
 		// a whiteout for read-only branches anyway.
@@ -582,16 +582,16 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 
 	int first = 1;
 
-	dev_t devno[uopt.nroots];
+	dev_t devno[uopt.nbranches];
 
 	int i = 0;
-	for (i = 0; i < uopt.nroots; i++) {
+	for (i = 0; i < uopt.nbranches; i++) {
 		struct statvfs stb;
-		int res = statvfs(uopt.roots[i].path, &stb);
+		int res = statvfs(uopt.branches[i].path, &stb);
 		if (res == -1) continue;
 
 		struct stat st;
-		res = stat(uopt.roots[i].path, &st);
+		res = stat(uopt.branches[i].path, &st);
 		if (res == -1) continue;
 		devno[i] = st.st_dev;
 
@@ -636,14 +636,14 @@ static int unionfs_symlink(const char *from, const char *to) {
 
 	to_user();
 
-	int i = find_rw_root_cutlast(to);
+	int i = find_rw_branch_cutlast(to);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char t[PATHLEN_MAX];
-	snprintf(t, PATHLEN_MAX, "%s%s", uopt.roots[i].path, to);
+	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
 
 	int res = symlink(from, t);
 
@@ -661,14 +661,14 @@ static int unionfs_truncate(const char *path, off_t size) {
 
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_branch_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = truncate(p, size);
 
@@ -686,14 +686,14 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_branch_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = utime(p, buf);
 
@@ -728,14 +728,14 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 
 	to_user();
 
-	int i = find_rorw_root(path);
+	int i = find_rorw_branch(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = lgetxattr(p, name, value, size);
 
@@ -751,14 +751,14 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 
 	to_user();
 
-	int i = find_rorw_root(path);
+	int i = find_rorw_branch(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = llistxattr(p, list, size);
 
@@ -774,14 +774,14 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_branch_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = lremovexattr(p, name);
 
@@ -797,14 +797,14 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 
 	to_user();
 
-	int i = find_rw_root_cow(path);
+	int i = find_rw_branch_cow(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[i].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
 	int res = lsetxattr(p, name, value, size, flags);
 
@@ -859,8 +859,8 @@ int main(int argc, char *argv[]) {
 	if (fuse_opt_parse(&args, NULL, unionfs_opts, unionfs_opt_proc) == -1) return 1;
 
 	if (!uopt.doexit) {
-		if (uopt.nroots == 0) {
-			printf("You need to specify at least one root!\n");
+		if (uopt.nbranches == 0) {
+			printf("You need to specify at least one branch!\n");
 			return 1;
 		}
 

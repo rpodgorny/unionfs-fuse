@@ -59,7 +59,7 @@ bool path_hidden(const char *path, int branch) {
 	if (!uopt.cow_enabled) return false;
 
 	char whiteoutpath[PATHLEN_MAX];
-	if (BUILD_PATH(whiteoutpath, uopt.roots[branch].path, METADIR, path)) {
+	if (BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path)) {
 		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
 		return false;
 	}
@@ -93,18 +93,18 @@ bool path_hidden(const char *path, int branch) {
 }
 
 /**
- * Remove a hide-file in all roots up to maxroot
- * If maxroot == -1, try to delete it in all roots.
+ * Remove a hide-file in all branches up to maxbranch
+ * If maxbranch == -1, try to delete it in all branches.
  */
-int remove_hidden(const char *path, int maxroot) {
+int remove_hidden(const char *path, int maxbranch) {
 	if (!uopt.cow_enabled) return 0;
 
-	if (maxroot == -1) maxroot = uopt.nroots;
+	if (maxbranch == -1) maxbranch = uopt.nbranches;
 
 	int i;
-	for (i = 0; i <= maxroot; i++) {
+	for (i = 0; i <= maxbranch; i++) {
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.roots[i].path, METADIR, path, HIDETAG)) {
+		if (BUILD_PATH(p, uopt.branches[i].path, METADIR, path, HIDETAG)) {
 			syslog(LOG_WARNING, "%s: Path too long\n", __func__);
 			return 1;
 		}
@@ -135,9 +135,9 @@ filetype_t path_is_dir(const char *path) {
 }
 
 /**
- * Create a file or directory that hides path below root_rw
+ * Create a file or directory that hides path below branch_rw
  */
-static int do_create_whiteout(const char *path, int root_rw, enum whiteout mode) {
+static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 	char metapath[PATHLEN_MAX];
 	int res = -1;
 
@@ -148,12 +148,12 @@ static int do_create_whiteout(const char *path, int root_rw, enum whiteout mode)
 		goto out;
 	}
 
-	// p MUST be without path to branch prefix here! 2 x root_rw is correct here!
+	// p MUST be without path to branch prefix here! 2 x branch_rw is correct here!
 	// this creates e.g. branch/.unionfs/some_directory
-	path_create_cutlast(metapath, root_rw, root_rw);
+	path_create_cutlast(metapath, branch_rw, branch_rw);
 
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.roots[root_rw].path, metapath, HIDETAG)) {
+	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath, HIDETAG)) {
 		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
 		goto out;
 	}
@@ -172,27 +172,27 @@ out:
 }
 
 /**
- * Create a file that hides path below root_rw
+ * Create a file that hides path below branch_rw
  */
-int hide_file(const char *path, int root_rw) {
-	return do_create_whiteout(path, root_rw, WHITEOUT_FILE);
+int hide_file(const char *path, int branch_rw) {
+	return do_create_whiteout(path, branch_rw, WHITEOUT_FILE);
 }
 
 /**
- * Create a directory that hides path below root_rw
+ * Create a directory that hides path below branch_rw
  */
-int hide_dir(const char *path, int root_rw) {
-	return do_create_whiteout(path, root_rw, WHITEOUT_DIR);
+int hide_dir(const char *path, int branch_rw) {
+	return do_create_whiteout(path, branch_rw, WHITEOUT_DIR);
 }
 
 /**
  * This is called *after* unlink() or rmdir(), create a whiteout file
  * if the same file/dir does exist in a lower branch
  */
-int maybe_whiteout(const char *path, int root_rw, enum whiteout mode) {
+int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 	// we are not interested in the branch itself, only if it exists at all
-	if (find_rorw_root(path) != -1) {
-		return do_create_whiteout(path, root_rw, mode);
+	if (find_rorw_branch(path) != -1) {
+		return do_create_whiteout(path, branch_rw, mode);
 	}
 
 	return 0;

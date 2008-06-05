@@ -34,12 +34,12 @@
 #include "string.h"
 
 /**
-  * If the root that has the directory to be removed is in read-write mode,
+  * If the branch that has the directory to be removed is in read-write mode,
   * we can really delete the file.
   */
-static int rmdir_rw(const char *path, int root_rw) {
+static int rmdir_rw(const char *path, int branch_rw) {
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.roots[root_rw].path, path);
+	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[branch_rw].path, path);
 
 	int res = rmdir(p);
 	if (res == -1) return errno;
@@ -48,19 +48,18 @@ static int rmdir_rw(const char *path, int root_rw) {
 }
 
 /**
-  * If the root that has the directory to be removed is in read-only mode,
-  * we create a file with a HIDE tag in an upper level root.
+  * If the branch that has the directory to be removed is in read-only mode,
+  * we create a file with a HIDE tag in an upper level branch.
   * To other fuse functions this tag means, not to expose the 
   * lower level directory.
   */
-static int rmdir_ro(const char *path, int root_ro) {
-	// find a writable root above root_ro
-	int root_rw = find_lowest_rw_root(root_ro);
+static int rmdir_ro(const char *path, int branch_ro) {
+	// find a writable branch above branch_ro
+	int branch_rw = find_lowest_rw_branch(branch_ro);
 
-	if (root_rw < 0) 
-		return -EACCES;
+	if (branch_rw < 0) return -EACCES;
 
-	if (hide_dir(path, root_rw) == -1) {
+	if (hide_dir(path, branch_rw) == -1) {
 		switch (errno) {
 		case (EEXIST):
 		case (ENOTDIR):
@@ -81,17 +80,17 @@ static int rmdir_ro(const char *path, int root_ro) {
   */
 int unionfs_rmdir(const char *path) {
 	DBG("rmdir\n");
-	
+
 	to_user();
 
-	int i = find_rorw_root(path);
+	int i = find_rorw_branch(path);
 	if (i == -1) {
 		to_root();
 		return -errno;
 	}
 
 	int res;
-	if (!uopt.roots[i].rw) {
+	if (!uopt.branches[i].rw) {
 		// read-only branch
 		if (!uopt.cow_enabled)
 			res = EROFS;

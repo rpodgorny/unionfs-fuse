@@ -17,8 +17,8 @@
 #define ROOT_SEP ":"
 
 typedef struct {
-	int nroots;
-	root_entry_t *roots;
+	int nbranches;
+	branch_entry_t *branches;
 
 	bool stats_enabled;
 	bool cow_enabled;
