@@ -25,9 +25,9 @@
 #include "string.h"
 
 
-/**
-  * Actually create the directory here.
-  */
+/*
+ * Actually create the directory here.
+ */
 static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 	char dirp[PATHLEN_MAX]; // dir path to create
 	sprintf(dirp, "%s%s", uopt.roots[nroot_rw].path, path);
@@ -50,7 +50,7 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
-		syslog (LOG_DAEMON, "Creating %s failed: \n", dirp);
+		syslog(LOG_DAEMON, "Creating %s failed: \n", dirp);
 		return 1;
 	}
 
@@ -64,10 +64,10 @@ static int do_create(const char *path, int nroot_ro, int nroot_rw) {
 	return 0;
 }
 
-/**
-  * l_nroot (lower nroot than nroot) is write protected, create the dir path on
-  * nroot for an other COW operation.
-  */
+/*
+ * l_nroot (lower nroot than nroot) is write protected, create the dir path on
+ * nroot for an other COW operation.
+ */
 int path_create(const char *path, int nroot_ro, int nroot_rw) {
 	if (!uopt.cow_enabled) return 0;
 
@@ -114,10 +114,10 @@ int path_create(const char *path, int nroot_ro, int nroot_rw) {
 	return 0;
 }
 
-/**
+/*
  * Same as  path_create(), but ignore the last segment in path,
  * i.e. it might be a filename.
- **/
+ */
 int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
 	char *dname = u_dirname(path);
 	int ret = path_create(dname, nroot_ro, nroot_rw);
@@ -126,7 +126,7 @@ int path_create_cutlast(const char *path, int nroot_ro, int nroot_rw) {
 	return ret;
 }
 
-/**
+/*
  * initiate the cow-copy action
  */
 int cow_cp(const char *path, int root_ro, int root_rw) {
