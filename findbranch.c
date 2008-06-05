@@ -26,7 +26,7 @@
 #include "findbranch.h"
 #include "string.h"
 
-/**
+/*
  * If path exists, return the root number that has path.
  */
 int find_rorw_root(const char *path) {
@@ -53,10 +53,10 @@ int find_rorw_root(const char *path) {
 	return -1;
 }
 
-/**
+/*
  * Find a writable root. If file does not exist, we check for 
  * the parent directory.
- **/
+ */
 int find_rw_root_cutlast(const char *path) {
 	int root = find_rw_root_cow(path);
 
@@ -90,8 +90,8 @@ int find_rw_root_cutlast(const char *path) {
 	return root;
 }
 
-/**
- * copy-one-write
+/*
+ * copy-on-write
  * Find path in a union branch and if this branch is read-only, 
  * copy the file to a read-write branch.
  */
@@ -122,7 +122,7 @@ int find_rw_root_cow(const char *path) {
 	return root_rw;
 }
 
-/**
+/*
  * Find lowest possible writable root but only lower than root_ro.
  */
 int find_lowest_rw_root(int root_ro) {
