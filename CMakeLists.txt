@@ -26,4 +26,5 @@ add_executable(unionfs ${UNIONFS_SRCS} ${HASHTABLE_SRCS})
 target_link_libraries(unionfs fuse pthread m rt)
 
 INSTALL(PROGRAMS unionfs DESTINATION sbin)
+INSTALL(FILES unionfs-fuse.8 DESTINATION share/man/man8/)
 
