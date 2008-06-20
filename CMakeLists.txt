@@ -7,7 +7,7 @@ IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 
 # Select flags.
-SET(CMAKE_C_FLAGS "-Wall -DFORTIFY_SOURCE=2")
+SET(CMAKE_C_FLAGS "-pipe -W -Wall -DFORTIFY_SOURCE=2")
 SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g")
 SET(CMAKE_C_FLAGS_RELEASE "-O2")
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -g")
@@ -24,3 +24,6 @@ set(UNIONFS_SRCS unionfs.c stats.c opts.c debug.c findbranch.c readdir.c general
 
 add_executable(unionfs ${UNIONFS_SRCS} ${HASHTABLE_SRCS})
 target_link_libraries(unionfs fuse pthread m rt)
+
+INSTALL(PROGRAMS unionfs DESTINATION sbin)
+
