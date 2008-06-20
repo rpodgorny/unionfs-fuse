@@ -1,0 +1,60 @@
+..
+.de Vb \" Begin verbatim text
+.ft CW
+.nf
+.ne \\$1
+..
+.de Ve \" End verbatim text
+.ft R
+.fi
+..
+
+
+.TH "unionfs-fuse" "8" "June 2008" "unionfs-fuse 0.9.20" ""
+.SH "NAME"
+unionfs\-fuse \- A userspace unionfs implementation
+.SH "SYNOPSIS"
+.B unionfs\-fuse
+\fB[\-o \fIoption1\fP \-o \fIoption2\fP ... \-o \fIoptionN\fP ]\fR
+             \fBtop_branch:lower_branch:...:lowest_branch \fR
+             \fBmount_point\fR
+.SH "DESCRIPTION"
+\fBunionfs\-fuse\fR overlays several directory into one single mount point.
+.PP 
+It first tries to access the file on the top branch and if the file does not exist
+there, it continues on lower level branches.
+If the user tries to modify a file on a lower level read\-only branch
+the file is copied to to a higher level read\-write branch if the 
+\fBcopy\-on\-write (cow) \fR mode was enabled.
+.SH "OPTIONS"
+Below is a summary of unionfs\-fuse options
+.TP 
+\fB\-o cow
+Enable copy\-on\-write
+.TP 
+\fB\-o stats
+Show statistics in the file 'stats' under the mountpoint.
+.TP 
+\fB\-o noinitgroups
+Disable initgroups. Initgroups are enabled by default to supply
+supplementary user groups, but will cause a deadlock of unions 
+including /etc.
+.SH "EXAMPLES"
+.Vb 5
+\& unionfs\-fuse \-o cow \-o noinitgroups \e
+\&              \-o default_permissions \-o allow_other \e
+\&              \-o use_ino \-o nonempty \e
+\&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
+\&              /u/union/etc
+.Ve
+.SH "KNOWN ISSUES"
+Presently it is not possible to create a union for /. This is work in progress.
+.SH "AUTHORS"
+.B unionfs\-fuse
+Original implemention by Radek Podgorny <radek@podgorny.cz>
+.SH "COPYRIGHT"
+Radek Podgorny <radek\@podgorny.cz>, Bernd Schubert <bernd\-schubert\@gmx.de>
+.SH "THANKS"
+Many thanks to the author of the FUSE filesystem Miklos Szeredi.
+.SH "SEE ALSO"
+
