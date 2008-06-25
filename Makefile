@@ -5,7 +5,7 @@ LDFLAGS +=
 
 LIB = -lfuse -lpthread -lm
 
-HASHTABLE_OBJ = hashtable.o hashtable_itr.o hash.o elfhash.o
+HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o general.o unlink.o rmdir.o cow.o cow_utils.o string.o
 
 

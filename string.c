@@ -85,3 +85,36 @@ char *u_dirname(const char *path) {
 	return ret;
 }
 
+/**
+ * general elf hash (32-bit) function
+ *
+ * Algorithm taken from URL: http://www.partow.net/programming/hashfunctions/index.html,
+ * but rewritten from scratch due to incompatible license.
+ *
+ * str needs to NULL terminated
+ */
+int elfhash (const char *str) {
+	unsigned hash = 0;
+
+	while (*str) {
+		hash = (hash << 4) + (*str); // hash * 16 + c
+
+		// 0xF is 1111 in dual system, so highbyte is the highest byte of hash (which is 32bit == 4 Byte)
+		unsigned highbyte = hash & 0xF0000000UL;
+		if (highbyte != 0) {
+			// hash = hash ^ (highbyte / 2^24)
+			// example: hash             =           10110000000000000000000010100000
+			//          highbyte         =           10110000000000000000000000000000
+			//          (highbyte >> 24) =           00000000000000000000000010110000
+			hash ^= (highbyte >> 24); // XOR both:   11110000000000000000000000010000
+		}
+		
+		// Finally an AND operation with ~highbyte(      01001111111111111111111111111111)
+		hash &= ~highbyte; //                            01000000000000000000000000010000
+
+		str++;
+	}
+	return hash;
+}
+
+

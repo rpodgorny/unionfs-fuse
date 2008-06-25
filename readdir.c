@@ -29,7 +29,6 @@
 #include "stats.h"
 #include "debug.h"
 #include "hashtable.h"
-#include "hash.h"
 #include "general.h"
 #include "string.h"
 

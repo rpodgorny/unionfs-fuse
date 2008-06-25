@@ -13,8 +13,9 @@ Christopher Clark <christopher.clark@cl.cam.ac.uk>
 Copyright (c) 2002, 2004, Christopher Clark
 http://www.cl.cam.ac.uk/~cwc22/hashtable/
 
-Hash routines taken from:
-Arash Partow
+Hash algorithm taken from Arash Partow
+(http://www.partow.net/programming/hashfunctions/index.html)
+but rewritten from scratch due to incompatible license.
 
 COW routines taken from:
 OpenBSD
