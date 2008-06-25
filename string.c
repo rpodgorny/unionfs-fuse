@@ -125,13 +125,3 @@ static unsigned int elfhash(const char *str) {
 unsigned int string_hash(void *s) {
 	return elfhash(s);
 }
-
-/**
-  * Test if two strings are eqal.
-  * Return 1 if the strings are equal and 0 if they are different.
-  */ 
-int string_equal(void *s1, void *s2) {
-	if (strcmp(s1, s2) == 0) return 1;
-	return 0;
-}
-
