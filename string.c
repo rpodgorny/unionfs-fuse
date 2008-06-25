@@ -110,7 +110,7 @@ static unsigned int elfhash(const char *str) {
 
 		hash &= ~highbyte;
 		//          ~highbyte = 01001111111111111111111111111111
-		// after AND:    hash = 01000000000000000000000000010000
+		// after AND:    hash = 00000000000000000000000000010000
 
 		str++;
 	}
