@@ -100,16 +100,17 @@ static unsigned int elfhash(const char *str) {
 
 		// 0xF is 1111 in dual system, so highbyte is the highest byte of hash (which is 32bit == 4 Byte)
 		unsigned int highbyte = hash & 0xF0000000UL;
-		if (highbyte != 0) {
-			// hash = hash ^ (highbyte / 2^24)
-			// example: hash             =         10110000000000000000000010100000
-			//          highbyte         =         10110000000000000000000000000000
-			//          (highbyte >> 24) =         00000000000000000000000010110000
-			hash ^= (highbyte >> 24); // XOR both: 11110000000000000000000000010000
-		}
-		
-		// Finally an AND operation with ~highbyte(01001111111111111111111111111111)
-		hash &= ~highbyte; //                      01000000000000000000000000010000
+
+		if (highbyte != 0) hash ^= (highbyte >> 24);
+		// example (if the condition is met):
+		//               hash = 10110000000000000000000010100000
+		//           highbyte = 10110000000000000000000000000000
+		//   (highbyte >> 24) = 00000000000000000000000010110000
+		// after XOR:    hash = 10110000000000000000000000010000
+
+		hash &= ~highbyte;
+		//          ~highbyte = 01001111111111111111111111111111
+		// after AND:    hash = 01000000000000000000000000010000
 
 		str++;
 	}
