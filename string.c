@@ -48,8 +48,7 @@ char *whiteout_tag(const char *fname) {
  *
  * This function requires a NULL as last argument!
  */
-int build_path(char *dest, int max_len, ...)
-{
+int build_path(char *dest, int max_len, ...) {
 	va_list ap; // argument pointer
 	int len = 0;
 
@@ -93,28 +92,45 @@ char *u_dirname(const char *path) {
  *
  * str needs to NULL terminated
  */
-int elfhash (const char *str) {
-	unsigned hash = 0;
+static unsigned int elfhash(const char *str) {
+	unsigned int hash = 0;
 
 	while (*str) {
 		hash = (hash << 4) + (*str); // hash * 16 + c
 
 		// 0xF is 1111 in dual system, so highbyte is the highest byte of hash (which is 32bit == 4 Byte)
-		unsigned highbyte = hash & 0xF0000000UL;
+		unsigned int highbyte = hash & 0xF0000000UL;
 		if (highbyte != 0) {
 			// hash = hash ^ (highbyte / 2^24)
-			// example: hash             =           10110000000000000000000010100000
-			//          highbyte         =           10110000000000000000000000000000
-			//          (highbyte >> 24) =           00000000000000000000000010110000
-			hash ^= (highbyte >> 24); // XOR both:   11110000000000000000000000010000
+			// example: hash             =         10110000000000000000000010100000
+			//          highbyte         =         10110000000000000000000000000000
+			//          (highbyte >> 24) =         00000000000000000000000010110000
+			hash ^= (highbyte >> 24); // XOR both: 11110000000000000000000000010000
 		}
 		
-		// Finally an AND operation with ~highbyte(      01001111111111111111111111111111)
-		hash &= ~highbyte; //                            01000000000000000000000000010000
+		// Finally an AND operation with ~highbyte(01001111111111111111111111111111)
+		hash &= ~highbyte; //                      01000000000000000000000000010000
 
 		str++;
 	}
+
 	return hash;
 }
 
+/**
+ * Just a hash wrapper function, this way we can easily exchange the default
+ * hash algorith.
+ */
+unsigned int string_hash(void *s) {
+	return elfhash(s);
+}
+
+/**
+  * Test if two strings are eqal.
+  * Return 1 if the strings are equal and 0 if they are different.
+  */ 
+int string_equal(void *s1, void *s2) {
+	if (strcmp(s1, s2) == 0) return 1;
+	return 0;
+}
 

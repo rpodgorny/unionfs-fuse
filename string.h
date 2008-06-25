@@ -10,7 +10,8 @@
 char *whiteout_tag(const char *fname);
 int build_path(char *dest, int max_len, ...);
 char *u_dirname(const char *path);
-int elfhash (const char *str);
+unsigned int string_hash(void *s);
+int string_equal(void *s1, void *s2);
 
 /**
  * A wrapper for build_path(). In build_path() we test if the given number of strings does exceed
@@ -18,24 +19,5 @@ int elfhash (const char *str);
  * simply add NULL here.
  */
 #define BUILD_PATH(dest, ...) build_path(dest, PATHLEN_MAX, __VA_ARGS__, NULL)
-
-/**
- * Just a hash wrapper function, this way we can easily exchange the default
- * hash algorith.
- */
-static inline unsigned int string_hash(void *s) {
-        return elfhash(s);
-}
-
-/**
-  * Test if two strings are eqal.
-  * Return 1 if the strings are equal and 0 if they are different.
-  */ 
-static inline int string_equal(void *s1, void *s2) {
-	if (strcmp(s1, s2) == 0) return 1;
-	return 0;
-}
-
-
 
 #endif // UNIONFS_STRING_H
