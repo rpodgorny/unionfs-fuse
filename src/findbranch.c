@@ -108,7 +108,10 @@ int find_rw_branch_cow(const char *path) {
 	if (uopt.branches[branch_rorw].rw) return branch_rorw;
 
 	// cow is disabled, return whatever was found
-	if (!uopt.cow_enabled) return branch_rorw;
+	if (!uopt.cow_enabled) {
+		errno = EACCES;
+		return -1;
+	}
 
 	int branch_rw = find_lowest_rw_branch(branch_rorw);
 	if (branch_rw < 0) {
