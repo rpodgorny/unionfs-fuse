@@ -3,13 +3,36 @@
 *
 * License: BSD-style license
 *
-*
 * original implementation by Radek Podgorny
 *
 * License: BSD-style license
 * Copyright: Radek Podgorny <radek@podgorny.cz>,
 *            Bernd Schubert <bernd-schubert@gmx.de>
 *
+*
+* Details about finding branches:
+* 	We begin at the top-level branch to look for a file or directory, in
+*	the code usually called "path". If path was not found, we check for a 
+*	whiteout-file/directory. If we find a whiteout, we won't check further
+*	in lower level branches. If neither path nor the corresponding whiteout
+*	have been found, we do the test the next branch and so on.
+*	If a file was found, but it is on a read-only branch and a read-write 
+*	branch was requested we return EACCESS. On the other hand we ignore
+*	directories on read-only branches, since the directory in the higher
+*	level branch doesn't prevent the user can later on see the file on the
+*	lower level branch - so no problem to create path in the lower level 
+*	branch.
+*	It also really important the files in higher level branches have 
+*	priority, since this is the reason, we can't write to file in a 
+*	lower level branch, when another file already exists in a higher
+*	level ro-branch - on further access to the file the unmodified
+*	file in the ro-branch will visible.
+* TODO Terminology:
+* 	In the code below we have functions like find_lowest_rw_branch().
+* 	IMHO this is rather mis-leading, since it actually will find the
+* 	top-level rw-branch. The naming of the function is due to the fact
+* 	we begin to cound branches with 0, so 0 is actually the top-level
+* 	branch with highest file serving priority.
 */
 
 #include <stdlib.h>
