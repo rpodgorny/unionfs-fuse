@@ -27,7 +27,7 @@
 #include "string.h"
 
 /*
- * If path exists, return the branch number that has path.
+ * Find a rw or ro branch that has "path". Return the branch number.
  */
 int find_rorw_branch(const char *path) {
 	bool hidden = false;
@@ -54,6 +54,31 @@ int find_rorw_branch(const char *path) {
 }
 
 /*
+ *  Find a rw branch that has "path". Return the branch number.
+ */
+static int find_rw_branch(const char *path) {
+	int i = 0;
+	for (i = 0; i < uopt.nbranches; i++) {
+		char p[PATHLEN_MAX];
+		snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+
+		struct stat stbuf;
+		int res = lstat(p, &stbuf);
+
+		if (res == 0 && uopt.branches[i].rw) return i;
+
+		// check check for a hide file, checking first here is the magic to hide files *below* this level
+		if (path_hidden(path, i)) {
+			// So no path, but whiteout found. No need to search in further branches
+			errno = ENOENT;
+			return -1;
+		}
+	}
+
+	return -1;
+}
+
+/*
  * Find a writable branch. If file does not exist, we check for 
  * the parent directory.
  */
@@ -63,7 +88,7 @@ int find_rw_branch_cutlast(const char *path) {
 	if (branch < 0 && errno == ENOENT) {
 		// So path does not exist, now again, but with dirname only
 		char *dname = u_dirname(path);
-		int branch_rorw = find_rorw_branch(dname);
+		int branch_rorw = find_rw_branch(dname);
 		free(dname);
 
 		// nothing found
