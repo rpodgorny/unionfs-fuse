@@ -72,8 +72,11 @@ int find_rw_branch_cutlast(const char *path) {
 		// the returned branch is writable, good!
 		if (uopt.branches[branch_rorw].rw) return branch_rorw;
 		
-		// cow is disabled, return whatever was found
-		if (!uopt.cow_enabled) return branch_rorw;
+		// cow is disabled and branch is not writable, so deny write permission
+		if (!uopt.cow_enabled) {
+			errno = EACCES;
+			return -1;
+		}
 
 		int branch_rw = find_lowest_rw_branch(branch_rorw);
 
@@ -107,7 +110,7 @@ int find_rw_branch_cow(const char *path) {
 	// the found branch is writable, good!
 	if (uopt.branches[branch_rorw].rw) return branch_rorw;
 
-	// cow is disabled, return whatever was found
+	// cow is disabled and branch is not writable, so deny write permission
 	if (!uopt.cow_enabled) {
 		errno = EACCES;
 		return -1;
