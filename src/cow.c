@@ -25,7 +25,7 @@
 #include "string.h"
 
 
-/*
+/**
  * Actually create the directory here.
  */
 static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
@@ -64,7 +64,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	return 0;
 }
 
-/*
+/**
  * l_nbranch (lower nbranch than nbranch) is write protected, create the dir path on
  * nbranch for an other COW operation.
  */
@@ -114,7 +114,7 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	return 0;
 }
 
-/*
+/**
  * Same as  path_create(), but ignore the last segment in path,
  * i.e. it might be a filename.
  */
@@ -126,7 +126,7 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
 	return ret;
 }
 
-/*
+/**
  * initiate the cow-copy action
  */
 int cow_cp(const char *path, int branch_ro, int branch_rw) {

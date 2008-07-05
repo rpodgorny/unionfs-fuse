@@ -50,7 +50,7 @@
 #include "findbranch.h"
 #include "string.h"
 
-/*
+/**
  *  Find a branch that has "path". Return the branch number.
  */
 static int find_branch(const char *path, searchflag_t flag) {
@@ -101,7 +101,7 @@ static int find_rw_branch(const char *path) {
 	return find_branch(path, RWONLY);
 }
 
-/*
+/**
  * Find a writable branch. If file does not exist, we check for 
  * the parent directory.
  */
@@ -144,7 +144,7 @@ int find_rw_branch_cutlast(const char *path) {
 	return branch;
 }
 
-/*
+/**
  * copy-on-write
  * Find path in a union branch and if this branch is read-only, 
  * copy the file to a read-write branch.
@@ -179,7 +179,7 @@ int find_rw_branch_cow(const char *path) {
 	return branch_rw;
 }
 
-/*
+/**
  * Find lowest possible writable branch but only lower than branch_ro.
  */
 int find_lowest_rw_branch(int branch_ro) {
