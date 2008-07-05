@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <syslog.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -27,11 +28,9 @@
 #include "string.h"
 
 /*
- * Find a rw or ro branch that has "path". Return the branch number.
+ *  Find a branch that has "path". Return the branch number.
  */
-int find_rorw_branch(const char *path) {
-	bool hidden = false;
-
+static int find_branch(const char *path, searchflag_t flag) {
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
 		char p[PATHLEN_MAX];
@@ -40,32 +39,18 @@ int find_rorw_branch(const char *path) {
 		struct stat stbuf;
 		int res = lstat(p, &stbuf);
 
-		if (res == 0 && !hidden) {
-			return i;
-		} else if (hidden) {
-			// the file is hidden in this branch, we *only* ignore it in branches below this level
-			return -1;
+		if (res == 0) { // path was found
+			switch (flag) {
+			case RWRO:  
+				// any path we found is fine
+				return i; break; 
+			case RWONLY: 
+				// we need a rw-branch
+				if (!uopt.branches[i].rw) break; 
+			default: 
+				syslog(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
+			}
 		}
-		// check check for a hide file, checking first here is the magic to hide files *below* this level
-		hidden = path_hidden(path, i);
-	}
-
-	return -1;
-}
-
-/*
- *  Find a rw branch that has "path". Return the branch number.
- */
-static int find_rw_branch(const char *path) {
-	int i = 0;
-	for (i = 0; i < uopt.nbranches; i++) {
-		char p[PATHLEN_MAX];
-		snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
-
-		struct stat stbuf;
-		int res = lstat(p, &stbuf);
-
-		if (res == 0 && uopt.branches[i].rw) return i;
 
 		// check check for a hide file, checking first here is the magic to hide files *below* this level
 		if (path_hidden(path, i)) {
@@ -75,7 +60,22 @@ static int find_rw_branch(const char *path) {
 		}
 	}
 
+	errno = ENOENT;
 	return -1;
+}
+
+/**
+ * Find a ro or rw branch.
+ */
+int find_rorw_branch(const char *path) {
+	return find_branch(path, RWRO);
+}
+
+/**
+ * Find a rw branch.
+ */
+static int find_rw_branch(const char *path) {
+	return find_branch(path, RWONLY);
 }
 
 /*
