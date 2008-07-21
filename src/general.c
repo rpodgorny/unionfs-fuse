@@ -29,6 +29,7 @@
 #include "cow.h"
 #include "findbranch.h"
 #include "general.h"
+#include "debug.h"
 
 
 static uid_t daemon_uid = -1; // the uid the daemon is running as
@@ -39,6 +40,8 @@ static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
  * Check if a file or directory with the hidden flag exists.
  */
 static bool filedir_hidden(const char *path) {
+	DBG_IN();
+
 	// cow mode disabled, no need for hidden files
 	if (!uopt.cow_enabled) return false;
 	
@@ -56,6 +59,8 @@ static bool filedir_hidden(const char *path) {
  * check if any dir or file within path is hidden
  */
 bool path_hidden(const char *path, int branch) {
+	DBG_IN();
+
 	if (!uopt.cow_enabled) return false;
 
 	char whiteoutpath[PATHLEN_MAX];
@@ -97,6 +102,8 @@ bool path_hidden(const char *path, int branch) {
  * If maxbranch == -1, try to delete it in all branches.
  */
 int remove_hidden(const char *path, int maxbranch) {
+	DBG_IN();
+
 	if (!uopt.cow_enabled) return 0;
 
 	if (maxbranch == -1) maxbranch = uopt.nbranches;
@@ -125,6 +132,8 @@ int remove_hidden(const char *path, int maxbranch) {
  * return 1 if it is a directory, 0 if it is a file and -1 if it does not exist
  */
 filetype_t path_is_dir(const char *path) {
+	DBG_IN();
+
 	struct stat buf;
 	
 	if (lstat(path, &buf) == -1) return -1;
@@ -138,6 +147,8 @@ filetype_t path_is_dir(const char *path) {
  * Create a file or directory that hides path below branch_rw
  */
 static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mode) {
+	DBG_IN();
+
 	char metapath[PATHLEN_MAX];
 	int res = -1;
 
@@ -175,6 +186,7 @@ out:
  * Create a file that hides path below branch_rw
  */
 int hide_file(const char *path, int branch_rw) {
+	DBG_IN();
 	return do_create_whiteout(path, branch_rw, WHITEOUT_FILE);
 }
 
@@ -182,6 +194,7 @@ int hide_file(const char *path, int branch_rw) {
  * Create a directory that hides path below branch_rw
  */
 int hide_dir(const char *path, int branch_rw) {
+	DBG_IN();
 	return do_create_whiteout(path, branch_rw, WHITEOUT_DIR);
 }
 
@@ -190,6 +203,8 @@ int hide_dir(const char *path, int branch_rw) {
  * if the same file/dir does exist in a lower branch
  */
 int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
+	DBG_IN();
+
 	// we are not interested in the branch itself, only if it exists at all
 	if (find_rorw_branch(path) != -1) {
 		return do_create_whiteout(path, branch_rw, mode);
@@ -199,6 +214,8 @@ int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 }
 
 static void initgroups_uid(uid_t uid) {
+	DBG_IN();
+
 	struct passwd pwd;
 	struct passwd *ppwd;
 	char buf[BUFSIZ];
@@ -213,6 +230,8 @@ static void initgroups_uid(uid_t uid) {
  * Set the euid of the user performing the fs operation.
  */
 void to_user(void) {
+	DBG_IN();
+
 	static bool first = true;
 	int errno_orig = errno;
 
@@ -246,6 +265,8 @@ void to_user(void) {
  * Switch back to the root user.
  */
 void to_root(void) {
+	DBG_IN();
+
 	int errno_orig = errno;
 
 	if (daemon_uid != 0) return;

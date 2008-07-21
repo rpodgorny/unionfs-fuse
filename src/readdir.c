@@ -38,6 +38,8 @@
  * Warning: If fname has the tag, fname gets modified.
  */
 static bool is_hiding(struct hashtable *hides, char *fname) {
+	DBG_IN();
+
 	char *tag;
 
 	tag = whiteout_tag(fname);
@@ -61,6 +63,8 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
  * Read whiteout files
  */
 static void read_whiteouts(const char *path, struct hashtable *whiteouts, int branch) {
+	DBG_IN();
+
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) {
 		syslog(LOG_WARNING, "%s(): Path too long\n", __func__);
@@ -82,11 +86,11 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
  * unionfs-fuse readdir function
  */
 int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+	DBG_IN();
+
 	(void)offset;
 	(void)fi;
 	int i = 0;
-
-	DBG("readdir\n");
 	
 	to_user();
 

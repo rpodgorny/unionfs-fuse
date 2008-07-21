@@ -49,11 +49,14 @@
 #include "cow.h"
 #include "findbranch.h"
 #include "string.h"
+#include "debug.h"
 
 /**
  *  Find a branch that has "path". Return the branch number.
  */
 static int find_branch(const char *path, searchflag_t flag) {
+	DBG_IN();
+
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
 		char p[PATHLEN_MAX];
@@ -61,6 +64,8 @@ static int find_branch(const char *path, searchflag_t flag) {
 
 		struct stat stbuf;
 		int res = lstat(p, &stbuf);
+
+		DBG("%s: res = %d\n", p, res);
 
 		if (res == 0) { // path was found
 			switch (flag) {
@@ -91,6 +96,7 @@ static int find_branch(const char *path, searchflag_t flag) {
  * Find a ro or rw branch.
  */
 int find_rorw_branch(const char *path) {
+	DBG_IN();
 	return find_branch(path, RWRO);
 }
 
@@ -98,6 +104,7 @@ int find_rorw_branch(const char *path) {
  * Find a rw branch.
  */
 static int find_rw_branch(const char *path) {
+	DBG_IN();
 	return find_branch(path, RWONLY);
 }
 
@@ -106,9 +113,13 @@ static int find_rw_branch(const char *path) {
  * the parent directory.
  */
 int find_rw_branch_cutlast(const char *path) {
+	DBG_IN();
+
 	int branch = find_rw_branch_cow(path);
 
 	if (branch < 0 && errno == ENOENT) {
+		DBG("Check for parent directory\n");
+
 		// So path does not exist, now again, but with dirname only
 		char *dname = u_dirname(path);
 		int branch_rorw = find_rw_branch(dname);
@@ -116,6 +127,8 @@ int find_rw_branch_cutlast(const char *path) {
 
 		// nothing found
 		if (branch_rorw < 0) return -1;
+
+		DBG("rw parent = %d", branch_rorw);
 
 		// the returned branch is writable, good!
 		if (uopt.branches[branch_rorw].rw) return branch_rorw;
@@ -150,6 +163,8 @@ int find_rw_branch_cutlast(const char *path) {
  * copy the file to a read-write branch.
  */
 int find_rw_branch_cow(const char *path) {
+	DBG_IN();
+
 	int branch_rorw = find_rorw_branch(path);
 
 	// not found anywhere
@@ -183,6 +198,8 @@ int find_rw_branch_cow(const char *path) {
  * Find lowest possible writable branch but only lower than branch_ro.
  */
 int find_lowest_rw_branch(int branch_ro) {
+	DBG_IN();
+
 	int i = 0;
 	for (i = 0; i < branch_ro; i++) {
 		if (uopt.branches[i].rw) return i; // found it it.

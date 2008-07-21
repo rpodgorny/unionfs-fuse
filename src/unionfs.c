@@ -57,7 +57,7 @@ static struct fuse_opt unionfs_opts[] = {
 
 
 static int unionfs_access(const char *path, int mask) {
-	DBG("access\n");
+	DBG_IN();
 	
 	to_user();
 
@@ -80,7 +80,7 @@ static int unionfs_access(const char *path, int mask) {
 }
 
 static int unionfs_chmod(const char *path, mode_t mode) {
-	DBG("chmod\n");
+	DBG_IN();
 
 	to_user();
 
@@ -103,7 +103,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 }
 
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
-	DBG("chown\n");
+	DBG_IN();
 
 	to_user();
 
@@ -130,7 +130,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
  * libfuse will call this to create regular files
  */
 static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-	DBG("create\n");
+	DBG_IN();
 
 	to_user();
 
@@ -162,7 +162,7 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
  * which flush the data/metadata on close()
  */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
-	DBG("flush\n");
+	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
@@ -194,7 +194,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
  * Just a stub. This method is optional and can safely be left unimplemented
  */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
-	DBG("fsync\n");
+	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
@@ -221,7 +221,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 }
 
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
-	DBG("getattr\n");
+	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		memset(stbuf, 0, sizeof(stbuf));
@@ -261,7 +261,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 }
 
 static int unionfs_link(const char *from, const char *to) {
-	DBG("link\n");
+	DBG_IN();
 	
 	to_user();
 
@@ -293,7 +293,7 @@ static int unionfs_link(const char *from, const char *to) {
  *       make already hidden sub-branches visible again.
  */
 static int unionfs_mkdir(const char *path, mode_t mode) {
-	DBG("mkdir\n");
+	DBG_IN();
 
 	to_user();
 
@@ -316,7 +316,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 }
 
 static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
-	DBG("mknod\n");
+	DBG_IN();
 
 	to_user();
 
@@ -355,7 +355,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 }
 
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
-	DBG("open\n");
+	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		if ((fi->flags & 3) == O_RDONLY) {
@@ -412,7 +412,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	DBG("read\n");
+	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		char out[STATS_SIZE] = "";
@@ -444,7 +444,7 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 
 
 static int unionfs_readlink(const char *path, char *buf, size_t size) {
-	DBG("readlink\n");
+	DBG_IN();
 
 	to_user();
 
@@ -469,7 +469,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
-	DBG("release\n");
+	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
@@ -490,7 +490,7 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
  *       all files to the renamed directory on the read-write branch.
  */
 static int unionfs_rename(const char *from, const char *to) {
-	DBG("rename\n");
+	DBG_IN();
 	
 	bool is_dir = false; // is 'from' a file or directory
 
@@ -584,7 +584,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 
 	to_user();
 
-	DBG("statfs\n");
+	DBG_IN();
 
 	int first = 1;
 
@@ -638,7 +638,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 }
 
 static int unionfs_symlink(const char *from, const char *to) {
-	DBG("symlink\n");
+	DBG_IN();
 
 	to_user();
 
@@ -663,7 +663,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 }
 
 static int unionfs_truncate(const char *path, off_t size) {
-	DBG("truncate\n");
+	DBG_IN();
 
 	to_user();
 
@@ -686,7 +686,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 }
 
 static int unionfs_utime(const char *path, struct utimbuf *buf) {
-	DBG("utime\n");
+	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
@@ -713,7 +713,7 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	(void)path;
 
-	DBG("write\n");
+	DBG_IN();
 
 	to_user();
 
@@ -730,7 +730,7 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 
 #ifdef HAVE_SETXATTR
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
-	DBG("getxattr\n");
+	DBG_IN();
 
 	to_user();
 
@@ -753,7 +753,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 }
 
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
-	DBG("listxattr\n");
+	DBG_IN();
 
 	to_user();
 
@@ -776,7 +776,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 }
 
 static int unionfs_removexattr(const char *path, const char *name) {
-	DBG("removexattr\n");
+	DBG_IN();
 	
 	to_user();
 
@@ -799,7 +799,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 }
 
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
-	DBG("sexattr\n");
+	DBG_IN();
 
 	to_user();
 

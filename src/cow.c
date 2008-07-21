@@ -23,12 +23,15 @@
 #include "cow.h"
 #include "cow_utils.h"
 #include "string.h"
+#include "debug.h"
 
 
 /**
  * Actually create the directory here.
  */
 static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
+	DBG_IN();
+
 	char dirp[PATHLEN_MAX]; // dir path to create
 	sprintf(dirp, "%s%s", uopt.branches[nbranch_rw].path, path);
 
@@ -69,6 +72,8 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
  * nbranch for an other COW operation.
  */
 int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
+	DBG_IN();
+
 	if (!uopt.cow_enabled) return 0;
 
 	if (strlen(path) + strlen(uopt.branches[nbranch_rw].path) > PATHLEN_MAX
@@ -119,6 +124,8 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
  * i.e. it might be a filename.
  */
 int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
+	DBG_IN();
+
 	char *dname = u_dirname(path);
 	int ret = path_create(dname, nbranch_ro, nbranch_rw);
 	free(dname);
@@ -130,6 +137,8 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
  * initiate the cow-copy action
  */
 int cow_cp(const char *path, int branch_ro, int branch_rw) {
+	DBG_IN();
+
 	// create the path to the file
 	path_create_cutlast(path, branch_ro, branch_rw);
 

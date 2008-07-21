@@ -45,6 +45,7 @@
 
 #include "unionfs.h"
 #include "cow_utils.h"
+#include "debug.h"
 
 // BSD seems to know S_ISTXT itself
 #ifndef S_ISTXT
@@ -56,6 +57,8 @@
  **/
 static int setfile(const char *path, struct stat *fs)
 {
+	DBG_IN();
+
 	struct utimbuf ut;
 	int rval;
 
@@ -112,6 +115,7 @@ static int setfile(const char *path, struct stat *fs)
  **/
 static int setlink(const char *path, struct stat *fs)
 {
+	DBG_IN();
 
 	if (lchown(path, fs->st_uid, fs->st_gid)) {
 		if (errno != EPERM) {
@@ -128,6 +132,8 @@ static int setlink(const char *path, struct stat *fs)
  **/
 int copy_file(struct cow *cow)
 {
+	DBG_IN();
+
 	static char buf[MAXBSIZE];
 	struct stat to_stat, *fs;
 	int from_fd, rcount, to_fd, wcount;
@@ -230,6 +236,8 @@ int copy_file(struct cow *cow)
  */
 int copy_link(struct cow *cow)
 {
+	DBG_IN();
+
 	int len;
 	char link[PATHLEN_MAX];
 
@@ -252,6 +260,8 @@ int copy_link(struct cow *cow)
  **/
 int copy_fifo(struct cow *cow)
 {
+	DBG_IN();
+
 	if (mkfifo(cow->to_path, cow->stat->st_mode)) {
 		syslog(LOG_WARNING,   "mkfifo: %s", cow->to_path);
 		return (1);
@@ -265,6 +275,8 @@ int copy_fifo(struct cow *cow)
  */
 int copy_special(struct cow *cow)
 {
+	DBG_IN();
+
 	if (mknod(cow->to_path, cow->stat->st_mode, cow->stat->st_rdev)) {
 		syslog(LOG_WARNING,   "mknod: %s", cow->to_path);
 		return (1);

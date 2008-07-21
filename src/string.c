@@ -22,12 +22,15 @@
 
 #include "unionfs.h"
 #include "opts.h"
+#include "debug.h"
 
 
 /**
  * Check if the given fname suffixes the hide tag
  */
 char *whiteout_tag(const char *fname) {
+	DBG_IN();
+
 	char *tag = strstr(fname, HIDETAG);
 
 	// check if fname has tag, fname is not only the tag, file name ends with the tag
@@ -49,6 +52,8 @@ char *whiteout_tag(const char *fname) {
  * This function requires a NULL as last argument!
  */
 int build_path(char *dest, int max_len, ...) {
+	DBG_IN();
+
 	va_list ap; // argument pointer
 	int len = 0;
 
@@ -76,6 +81,8 @@ int build_path(char *dest, int max_len, ...) {
  * implementation
  */
 char *u_dirname(const char *path) {
+	DBG_IN();
+
 	char *ret = strdup(path);
 
 	char *ri = rindex(ret, '/'); //this char should always be found
@@ -93,6 +100,8 @@ char *u_dirname(const char *path) {
  * str needs to NULL terminated
  */
 static unsigned int elfhash(const char *str) {
+	DBG_IN();
+
 	unsigned int hash = 0;
 
 	while (*str) {
