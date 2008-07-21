@@ -71,10 +71,10 @@ static int find_branch(const char *path, searchflag_t flag) {
 			switch (flag) {
 			case RWRO:  
 				// any path we found is fine
-				return i; break; 
+				return i;
 			case RWONLY: 
 				// we need a rw-branch
-				if (!uopt.branches[i].rw) break; 
+				if (uopt.branches[i].rw) return i; 
 			default: 
 				syslog(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
 			}
@@ -128,7 +128,7 @@ int find_rw_branch_cutlast(const char *path) {
 		// nothing found
 		if (branch_rorw < 0) return -1;
 
-		DBG("rw parent = %d", branch_rorw);
+		DBG("rw parent = %d\n", branch_rorw);
 
 		// the returned branch is writable, good!
 		if (uopt.branches[branch_rorw].rw) return branch_rorw;
