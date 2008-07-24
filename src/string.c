@@ -17,7 +17,6 @@
 #include <strings.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <syslog.h>
 #include <errno.h>
 
 #include "unionfs.h"

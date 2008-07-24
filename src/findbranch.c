@@ -41,7 +41,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <syslog.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -77,7 +76,7 @@ static int find_branch(const char *path, searchflag_t flag) {
 				if (uopt.branches[i].rw) return i;
 				break;
 			default: 
-				syslog(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
+				usyslog(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
 			}
 		}
 

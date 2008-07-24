@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <sys/statvfs.h>
 #include <stdbool.h>
-#include <syslog.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -67,7 +66,7 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
 
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) {
-		syslog(LOG_WARNING, "%s(): Path too long\n", __func__);
+		usyslog(LOG_WARNING, "%s(): Path too long\n", __func__);
 		return;
 	}
 

@@ -17,7 +17,6 @@
 #include <strings.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <syslog.h>
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
@@ -65,7 +64,7 @@ bool path_hidden(const char *path, int branch) {
 
 	char whiteoutpath[PATHLEN_MAX];
 	if (BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path)) {
-		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		usyslog (LOG_WARNING, "%s(): Path too long\n", __func__);
 		return false;
 	}
 
@@ -112,7 +111,7 @@ int remove_hidden(const char *path, int maxbranch) {
 	for (i = 0; i <= maxbranch; i++) {
 		char p[PATHLEN_MAX];
 		if (BUILD_PATH(p, uopt.branches[i].path, METADIR, path, HIDETAG)) {
-			syslog(LOG_WARNING, "%s: Path too long\n", __func__);
+			usyslog(LOG_WARNING, "%s: Path too long\n", __func__);
 			return 1;
 		}
 
@@ -155,7 +154,7 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 	to_root(); // whiteouts are root business
 
 	if (BUILD_PATH(metapath, METADIR, path)) {
-		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		usyslog (LOG_WARNING, "%s(): Path too long\n", __func__);
 		goto out;
 	}
 
@@ -165,7 +164,7 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath, HIDETAG)) {
-		syslog (LOG_WARNING, "%s(): Path too long\n", __func__);
+		usyslog (LOG_WARNING, "%s(): Path too long\n", __func__);
 		goto out;
 	}
 
@@ -252,10 +251,10 @@ void to_user(void) {
 	initgroups_uid(ctx->uid);
 
 	if (ctx->gid != 0) {
-		if (setegid(ctx->gid)) syslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+		if (setegid(ctx->gid)) usyslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
 	}
 	if (ctx->uid != 0) {
-		if (seteuid(ctx->uid)) syslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
+		if (seteuid(ctx->uid)) usyslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
 	}
 
 	errno = errno_orig;
@@ -275,10 +274,10 @@ void to_root(void) {
 	if (!ctx) return;
 
 	if (ctx->uid != 0) {
-		if (seteuid(0)) syslog(LOG_WARNING, "seteuid(0) failed");
+		if (seteuid(0)) usyslog(LOG_WARNING, "seteuid(0) failed");
 	}
 	if (ctx->gid != 0) {
-		if (setegid(0)) syslog(LOG_WARNING, "setegid(0) failed");
+		if (setegid(0)) usyslog(LOG_WARNING, "setegid(0) failed");
 	}
 
 	initgroups_uid(0);

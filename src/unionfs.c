@@ -25,7 +25,6 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/statvfs.h>
-#include <syslog.h>
 
 #ifdef HAVE_SETXATTR
 	#include <sys/xattr.h>
@@ -336,11 +335,11 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		// since we now have the unionfs_create() method
 		// So can we remove it?
 		
-		syslog (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
+		usyslog (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
 		
 		res = creat(p, mode ^ S_IFREG);
 		if (res > 0) 
-			if (close (res) == -1) syslog (LOG_WARNING, "Warning, cannot close file\n");
+			if (close (res) == -1) usyslog (LOG_WARNING, "Warning, cannot close file\n");
 	} else {
 		res = mknod(p, mode, rdev);
 	}
@@ -518,7 +517,7 @@ static int unionfs_rename(const char *from, const char *to) {
 
 	if (i != j) {
 		to_root();
-		syslog(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
+		usyslog(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
 		       "is not supported yet.\n", __func__, i, j);
 		return -EXDEV;
 	}
@@ -555,11 +554,11 @@ static int unionfs_rename(const char *from, const char *to) {
 		// if from was on a read-only branch we copied it, but now rename failed so we need to delete it
 		if (!uopt.branches[i].rw) {
 			if (unlink(f))
-				syslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
+				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also unlink()  failed\n", __func__, from);
 			
 			if (remove_hidden(from, i))
-				syslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
+				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also removing the whiteout  failed\n", __func__, from);
 		}
 		return -err;

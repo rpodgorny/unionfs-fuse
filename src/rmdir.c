@@ -23,7 +23,6 @@
 #include <libgen.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <syslog.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -69,7 +68,7 @@ static int rmdir_ro(const char *path, int branch_ro) {
 		case (ENOTDIR):
 		case (ENOTEMPTY):
 			// catch errors not allowed for rmdir()
-			syslog (LOG_ERR, "%s: Creating the whiteout failed: %s\n",
+			usyslog (LOG_ERR, "%s: Creating the whiteout failed: %s\n",
 				__func__, strerror(errno));
 			errno = EFAULT;
 		}

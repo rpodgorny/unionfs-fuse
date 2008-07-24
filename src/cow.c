@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <syslog.h>
 #include <locale.h>
 #include <errno.h>
 #include <stdio.h>
@@ -53,7 +52,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
-		syslog(LOG_DAEMON, "Creating %s failed: \n", dirp);
+		usyslog(LOG_DAEMON, "Creating %s failed: \n", dirp);
 		return 1;
 	}
 
@@ -180,7 +179,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 			res = copy_fifo(&cow);
 			break;
 		case S_IFSOCK:
-			syslog(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
+			usyslog(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
 			to_user();
 			return 1;
 		default:
