@@ -44,6 +44,29 @@ including /etc.
 \&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
 \&              /u/union/etc
 .Ve
+.SH "Meta data"
+Like other filesystems unionfs-fuse also needs to store meta data. 
+Well, presently only information about deleted files and directories need
+to be stored, but in future releases more information might be required, e.g.
+inode-numbers for persistent inode information.
+Meta data information are safed and looked for in the .unionfs/
+directories of each branch-root. So in the example above, these are
+/u/host/etc/.unionfs, /u/group/etc/.unionfs and /u/common/etc/.unionfs.
+Within these directories a complete directory structure may be found.
+Example: If the admin decides to delete the file /etc/test/testfile, which
+only exists in /u/unionfs/etc/test/testfile, unionfs-fuse can't delete this 
+file, since it is on a read-only branch. So instead the whiteout file 
+/u/host/etc/.unionfs/test/testfile_HIDDEN~ will be created. So on accessing
+the union filesystem, test/testfile will not be visible.
+Please also note that whiteout files/directories will only hide the files 
+in lower level branches. So for example whiteouts in the group directory 
+(/u/group/etc/.unionfs of the example above) will only hide file of the 
+common branch (/u/common/etc), but not these of the group and host branches.
+Especially for diskless-booted environments it is rather useful for the admin
+to create whiteout files his/her-self. For example one should blacklist
+network re-initializations, /etc/mtab, /etc/nologin of the server and several 
+cron-scripts. This can be easily achieved by creating whiteout files for
+these scripts in the group meta directory.
 .SH "KNOWN ISSUES"
 Presently it is not possible to create a union for /\. This is work in progress.
 .SH "AUTHORS"
