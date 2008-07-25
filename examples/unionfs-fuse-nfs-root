@@ -1,0 +1,114 @@
+#!/bin/sh -x
+
+# This is an example script for diskless-booted systems over NFS.
+# In order to make the script working properly, you need to adjust
+# the parameters below and you also aready need to have booted
+# your root environment over NFS, either by an initrd/initramfs
+# or by your specific OS NFS-boot method (e.g. see 
+# ${path_to_linux_sources}/Documentation/nfsroot.txt).
+# Furtheremore, this script expectes your NFS-server to export
+# /unionfs/hosts (MUST be read-write) and 
+# /unionfs/groups/default (read-only is sufficient).
+# You then also MUST have the directory /unionfs/host and
+# /unionfs/groups/default with these 
+# subdirectories: bin  etc  lib  lib32  root  sbin  usr  var
+#
+# All of this is only an example, of course, and may be easily changed.
+#
+# On my systems this script is then executed as the very first init-script,
+# thus before any other init script is executed. On debian/ubuntu this
+# can be done by copying this script to /etc/init.d/unionfs-fuse and then
+# by creating a link /etc/rcS.d/S01a_unionfs-fuse -> ../init.d/unionfs-fuse.
+#
+# NOTE: It is generally advisable to monitor the very first boot process of 
+# a client using a serial cable, SOL (ipmi) or serial netconsole.
+#
+# LICENSE: new BSD license, see LICENSE file for details.
+# Copyright: Bernd Schubert <bernd-schubert@gmx.de>
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/local/bin:/opt/local/sbin
+
+NET="192.168.1."
+NFS_SERV="192.168.55.86"
+NFS_OPT="-otcp,nfsvers=3,port=2049,rsize=8192,wsize=8192,nolock"
+
+FUSE_OPT="-o default_permissions -o allow_other -o use_ino -o nonempty -o suid"
+UNION_OPT="-o cow -o noinitgroups"
+
+UPATH="/unionfs"
+UBIN="unionfs-fuse"
+
+
+IP=`ip addr show |grep $NET | sed -e s'/^.*inet //' |sed -e s'/\/24 brd.*$//'`
+
+[ -z "$IP" ] && exit 0
+
+if [ "$IP" = "$NFS_SERV" ]; then
+	# The nfs server shall not create a union of itself, abort!
+	echo "This system is the nfs-server, I won't mount myself!"
+	exit 1
+fi
+
+# allow more open files, reminder: everything in /etc and /var is opened by 
+# ${UPATH} e.g. with fontconfig caching the default of 1024 open file can be 
+# too small
+ulimit -n 16384
+
+mount -n -t proc  proc  /proc
+mount -n -t sysfs sysfs /sys
+mount -t tmpfs -o size=8192 tmpfs /tmp
+
+modprobe fuse
+
+# for the portmapper we need localhost
+ifconfig lo 127.0.0.1
+
+/etc/init.d/portmap start
+
+
+# we cannot convice fuse not to write to /etc/mtab, but /etc/mtab is still
+# write protected, so a workaround
+#touch /${UPATH}/tmp/mtab
+#mount -n --bind /${UPATH}/tmp/mtab /etc/mtab
+
+# test if hosts dir is already there and if not create it
+mount -n -t nfs $NFS_OPT ${NFS_SERV}:/${UPATH}/hosts /${UPATH}/host
+
+# make sure the directories really do exist
+mkdir -p /${UPATH}/host/${IP}
+mkdir -p /${UPATH}/host/${IP}
+
+umount -n /${UPATH}/host
+
+# the client specific files
+mount -n -t nfs $NFS_OPT ${NFS_SERV}:/$UPATH/groups/default /$UPATH/group
+mount -n -t nfs $NFS_OPT ${NFS_SERV}:/${UPATH}/hosts/${IP} /${UPATH}/host
+
+mkdir -p /${UPATH}/host/root
+mount -n -omode=0655 -t tmpfs tmpfs /${UPATH}/host/root
+
+function unionmount()
+{
+	dir=$1
+
+	mkdir -p /${UPATH}/host/$dir
+
+	mount --bind /$dir /$UPATH/common/$dir
+	host="/${UPATH}/host/${dir}=RW"
+	group="/${UPATH}/group/${dir}=RO"
+	common="/$UPATH/common/${dir}=RO"
+	$UBIN $FUSE_OPT $UNION_OPT ${host}:${group}:${common} /$UPATH/union/$dir
+	mount --bind /$UPATH/union/$dir /$dir
+}
+
+for i in etc var lib lib32 bin sbin usr root; do
+	unionmount $i
+done
+
+# re-read inittab
+init q
+
+umount /tmp
+
+
+
