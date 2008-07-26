@@ -7,7 +7,7 @@
 .ft R
 .fi
 ..
-.TH "unionfs-fuse" "8" "June 2008" "unionfs-fuse 0.9.20" ""
+.TH "unionfs-fuse" "8" "June 2008" "unionfs-fuse 0.20" ""
 .SH "NAME"
 unionfs\-fuse \- A userspace unionfs implementation
 .SH "SYNOPSIS"
@@ -49,7 +49,7 @@ Like other filesystems unionfs-fuse also needs to store meta data.
 Well, presently only information about deleted files and directories need
 to be stored, but in future releases more information might be required, e.g.
 inode-numbers for persistent inode information.
-Meta data information are safed and looked for in the .unionfs/
+Meta data information are saved and looked for in the .unionfs/
 directories of each branch-root. So in the example above, these are
 /u/host/etc/.unionfs, /u/group/etc/.unionfs and /u/common/etc/.unionfs.
 Within these directories a complete directory structure may be found.
