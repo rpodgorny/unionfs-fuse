@@ -68,14 +68,14 @@ static int find_branch(const char *path, searchflag_t flag) {
 
 		if (res == 0) { // path was found
 			switch (flag) {
-			case RWRO:  
+			case RWRO:
 				// any path we found is fine
 				return i;
-			case RWONLY: 
+			case RWONLY:
 				// we need a rw-branch
 				if (uopt.branches[i].rw) return i;
 				break;
-			default: 
+			default:
 				usyslog(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
 			}
 		}
@@ -101,15 +101,7 @@ int find_rorw_branch(const char *path) {
 }
 
 /**
- * Find a rw branch.
- */
-static int find_rw_branch(const char *path) {
-	DBG_IN();
-	return find_branch(path, RWONLY);
-}
-
-/**
- * Find a writable branch. If file does not exist, we check for 
+ * Find a writable branch. If file does not exist, we check for
  * the parent directory.
  */
 int find_rw_branch_cutlast(const char *path) {
@@ -117,42 +109,39 @@ int find_rw_branch_cutlast(const char *path) {
 
 	int branch = find_rw_branch_cow(path);
 
-	if (branch < 0 && errno == ENOENT) {
-		DBG("Check for parent directory\n");
+	if (branch >= 0 || (branch < 0 && errno != ENOENT))
+		return branch;
 
-		// So path does not exist, now again, but with dirname only
-		char *dname = u_dirname(path);
-		int branch_rorw = find_rw_branch(dname);
-		free(dname);
+	DBG("Check for parent directory\n");
 
-		// nothing found
-		if (branch_rorw < 0) return -1;
+	// So path does not exist, now again, but with dirname only.
+	// We MUST NOT call find_rw_branch_cow() // since this function 
+	// doesn't work properly for directories.
+	char *dname = u_dirname(path);
+	branch = find_rorw_branch(dname);
 
-		DBG("rw parent = %d\n", branch_rorw);
+	if (branch < 0 || uopt.branches[branch].rw) goto out;
 
-		// the returned branch is writable, good!
-		if (uopt.branches[branch_rorw].rw) return branch_rorw;
-		
-		// cow is disabled and branch is not writable, so deny write permission
-		if (!uopt.cow_enabled) {
-			errno = EACCES;
-			return -1;
-		}
-
-		int branch_rw = find_lowest_rw_branch(branch_rorw);
-
-		// no writable branch found, we must return an error
-		if (branch_rw < 0) return -1;
-
-		dname = u_dirname(path);
-		int res = path_create(dname, branch_rorw, branch_rw);
-		free(dname);
-
-		// creating the path failed
-		if (res) return -1;
-
-		return branch_rw;
+	if (!uopt.cow_enabled) {
+		// So path exists, but is not writable.
+		errno = EACCES;
+		goto out;
 	}
+
+	// since it is a directory, any rw-branch is fine
+	int branch_rw = find_lowest_rw_branch(uopt.nbranches);
+
+	// no writable branch found, we must return an error
+	if (branch_rw < 0) {
+		errno = EACCES;
+		goto out;
+	}
+
+	if (path_create(dname, branch, branch_rw) == 0)
+		branch = branch_rw; // path successfully copied
+
+out:
+	free(dname);
 
 	return branch;
 }
@@ -161,6 +150,9 @@ int find_rw_branch_cutlast(const char *path) {
  * copy-on-write
  * Find path in a union branch and if this branch is read-only, 
  * copy the file to a read-write branch.
+ * NOTE: Don't call this to copy directories. Use path_create() for that!
+ *       It will definitely fail, when a ro-branch is on top of a rw-branch
+ *       and a directory is to be copied from ro- to rw-branch.
  */
 int find_rw_branch_cow(const char *path) {
 	DBG_IN();
