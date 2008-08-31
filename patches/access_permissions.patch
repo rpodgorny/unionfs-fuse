@@ -1,0 +1,930 @@
+Replace seteuid()/setgid() switching with permission checks.
+
+Patch author: bernd.schubert@fastmail.fm
+
+diff --git a/src/cow.c b/src/cow.c
+--- a/src/cow.c
++++ b/src/cow.c
+@@ -84,12 +84,9 @@ int path_create(const char *path, int nb
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[nbranch_rw].path, path);
+ 
+-	to_root(); // to make cow working, we need higher privileges
+-
+ 	struct stat st;
+ 	if (!stat(p, &st)) {
+ 		// path does already exists, no need to create it
+-		to_user();
+ 		return 0;
+ 	}
+ 
+@@ -105,16 +102,12 @@ int path_create(const char *path, int nb
+ 		// +1 due to \0, which gets added automatically
+ 		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
+ 		int res = do_create(p, nbranch_ro, nbranch_rw);
+-		if (res) {
+-			to_user();
+-			return res; // creating the directory failed
+-		}
++		if (res) return res; // creating the directory failed
+ 
+ 		// as above the do loop, walk over the next slashes, walk = dir2/
+ 		while (*walk != '\0' && *walk == '/') walk++;
+ 	} while (*walk != '\0');
+ 
+-	to_user();
+ 	return 0;
+ }
+ 
+@@ -149,7 +142,6 @@ int cow_cp(const char *path, int branch_
+ 
+ 	struct cow cow;
+ 
+-	to_root();
+ 	cow.uid = getuid();
+ 
+ 	// Copy the umask for explicit mode setting.
+@@ -180,12 +172,10 @@ int cow_cp(const char *path, int branch_
+ 			break;
+ 		case S_IFSOCK:
+ 			usyslog(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
+-			to_user();
+ 			return 1;
+ 		default:
+ 			res = copy_file(&cow);
+ 	}
+ 
+-	to_user();
+ 	return res;
+ }
+diff --git a/src/general.c b/src/general.c
+--- a/src/general.c
++++ b/src/general.c
+@@ -147,9 +147,7 @@ static int do_create_whiteout(const char
+ 	char metapath[PATHLEN_MAX];
+ 	int res = -1;
+ 
+-	to_root(); // whiteouts are root business
+-
+-	if (BUILD_PATH(metapath, METADIR, path))  goto out;
++	if (BUILD_PATH(metapath, METADIR, path)) return res;
+ 
+ 	// p MUST be without path to branch prefix here! 2 x branch_rw is correct here!
+ 	// this creates e.g. branch/.unionfs/some_directory
+@@ -157,18 +155,16 @@ static int do_create_whiteout(const char
+ 
+ 	char p[PATHLEN_MAX];
+ 	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath, HIDETAG))
+-		goto out;
++		return res;
+ 
+ 	if (mode == WHITEOUT_FILE) {
+ 		res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+-		if (res == -1) goto out;
++		if (res == -1) return res;
+ 		res = close(res);
+ 	} else {
+ 		res = mkdir(p, S_IRWXU);
+ 	}
+ 
+-out:
+-	to_user();
+ 	return res;
+ }
+ 
+diff --git a/src/permission.c b/src/permission.c
+--- a/src/permission.c
++++ b/src/permission.c
+@@ -65,6 +65,8 @@ static bool in_group (struct fuse_contex
+  * This is wrong, if we want to check if the user has the **permission**
+  * to write to a directory which is on a ro-branch (e.g. nfs) and
+  * the actual write will then go to a rw-branch.
++ *
++ * TODO: We also must honour execute mount flags!
+  */
+ int generic_permission (const char *path, int mask)
+ {
+diff --git a/src/readdir.c b/src/readdir.c
+--- a/src/readdir.c
++++ b/src/readdir.c
+@@ -30,6 +30,7 @@
+ #include "hashtable.h"
+ #include "general.h"
+ #include "string.h"
++#include "permission.h"
+ 
+ /**
+  * Check if fname has a hiding tag and return its status.
+@@ -79,6 +80,37 @@ static void read_whiteouts(const char *p
+ }
+ 
+ /**
++ *  Check if we are allowed to read the directory.
++ *  
++  */
++static bool readdir_permission (const char *path, bool *need_perm_check)
++{
++	// We only need to check for the readdir permission once on a directory
++	// existing on the up-most branch, independent what permission lower level
++	// branches have.
++	if (*need_perm_check == false) return true;
++	
++	int res = generic_permission(path, R_OK);
++
++	if (res == -EACCES) {
++		// so the directory exists, but no read permission
++		*need_perm_check = false;
++		return false; // readding lower level branches is forbidden, too
++	}
++
++	if (res) {
++		// Permission could not be checked, some error happened, most
++		// probably -ENOENT. Return true here, since this will make the
++		// loop of the caller to try the next branch.
++		return true;
++	}
++
++	// So res == 0, which means we have read permission
++	*need_perm_check = false; // don't check the other branches again
++	return true;
++}
++
++/**
+  * unionfs-fuse readdir function
+  */
+ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+@@ -88,8 +120,6 @@ int unionfs_readdir(const char *path, vo
+ 	(void)fi;
+ 	int i = 0;
+ 	
+-	to_user();
+-
+ 	// we will store already added files here to handle same file names across different branches
+ 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
+ 
+@@ -98,12 +128,14 @@ int unionfs_readdir(const char *path, vo
+ 	if (uopt.cow_enabled) whiteouts = create_hashtable(16, string_hash, string_equal);
+ 
+ 	bool subdir_hidden = false;
++	bool need_perm_check = true; // check readdir permission?
+ 
+ 	for (i = 0; i < uopt.nbranches; i++) {
+ 		if (subdir_hidden) break;
+ 
+ 		char p[PATHLEN_MAX];
+-		snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
++		if (BUILD_PATH(p, uopt.branches[i].path, path)) continue;
++		if (!readdir_permission(p, &need_perm_check)) break;
+ 
+ 		// check if branches below this branch are hidden
+ 		if (path_hidden(path, i)) subdir_hidden = true;
+@@ -148,6 +180,5 @@ int unionfs_readdir(const char *path, vo
+ 		filler(buf, "stats", NULL, 0);
+ 	}
+ 
+-	to_root();
+ 	return 0;
+ }
+diff --git a/src/rmdir.c b/src/rmdir.c
+--- a/src/rmdir.c
++++ b/src/rmdir.c
+@@ -31,6 +31,7 @@
+ #include "general.h"
+ #include "findbranch.h"
+ #include "string.h"
++#include "permission.h"
+ 
+ /**
+   * If the branch that has the directory to be removed is in read-write mode,
+@@ -84,15 +85,12 @@ int unionfs_rmdir(const char *path) {
+ int unionfs_rmdir(const char *path) {
+ 	DBG_IN();
+ 
+-	to_user();
++	int i = find_rorw_branch(path);
++	if (i == -1) return -errno;
+ 
+-	int i = find_rorw_branch(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	int res = parent_write_ok(path);
++	if (res) return res;
+ 
+-	int res;
+ 	if (!uopt.branches[i].rw) {
+ 		// read-only branch
+ 		if (!uopt.cow_enabled)
+@@ -108,6 +106,5 @@ int unionfs_rmdir(const char *path) {
+ 		}
+ 	}
+ 
+-	to_root();
+ 	return -res;
+ }
+diff --git a/src/unionfs.c b/src/unionfs.c
+--- a/src/unionfs.c
++++ b/src/unionfs.c
+@@ -60,10 +60,7 @@ static int unionfs_access(const char *pa
+ 	DBG_IN();
+ 	
+ 	int i = find_rorw_branch(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -errno;
+@@ -74,20 +71,16 @@ static int unionfs_chmod(const char *pat
+ static int unionfs_chmod(const char *path, mode_t mode) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cow(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+-	int res = chmod(p, mode);
++	int res = generic_permission(p, W_OK);
++	if (res) return res;
+ 
+-	to_root();
++	res = chmod(p, mode);
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -97,21 +90,13 @@ static int unionfs_chown(const char *pat
+ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cow(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+ 	int res = lchown(p, uid, gid);
+-
+-	to_root();
+-
+ 	if (res == -1) return -errno;
+ 
+ 	return 0;
+@@ -124,20 +109,16 @@ static int unionfs_create(const char *pa
+ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cutlast(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+-	int res = open(p, fi->flags, mode);
++	int res = parent_write_ok(p);
++	if (res) return res;
+ 
+-	to_root();
++	res = open(p, fi->flags, mode);
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -158,24 +139,15 @@ static int unionfs_flush(const char *pat
+ 
+ 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+ 
+-	to_user();
+-
+ 	int fd = dup(fi->fh);
+ 
+ 	if (fd == -1) {
+ 		// What to do now?
+-		if (fsync(fi->fh) == -1) {
+-			to_root();
+-			return -EIO;
+-		}
+-
+-		to_root();
++		if (fsync(fi->fh) == -1) return -EIO;
+ 		return -errno;
+ 	}
+ 
+ 	int res = close(fd);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -190,8 +162,6 @@ static int unionfs_fsync(const char *pat
+ 
+ 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+ 
+-	to_user();
+-
+ 	int res;
+ 	if (isdatasync) {
+ #ifdef _POSIX_SYNCHRONIZED_IO
+@@ -203,15 +173,17 @@ static int unionfs_fsync(const char *pat
+ 		res = fsync(fi->fh);
+ 	}
+ 
+-	if (res == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (res == -1) return -errno;
+ 
+-	to_root();
+ 	return 0;
+ }
+ 
++/**
++  * unionfs getattr() function
++  * We don't have to do permission checks, since the kernel vfs already checks
++  * the permissions of the parent directory and only these are important
++  * for stat() call family.
++  */
+ static int unionfs_getattr(const char *path, struct stat *stbuf) {
+ 	DBG_IN();
+ 
+@@ -223,20 +195,13 @@ static int unionfs_getattr(const char *p
+ 		return 0;
+ 	}
+ 
+-	to_user();
+-
+ 	int i = find_rorw_branch(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+ 	int res = lstat(p, stbuf);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -255,22 +220,23 @@ static int unionfs_link(const char *from
+ static int unionfs_link(const char *from, const char *to) {
+ 	DBG_IN();
+ 	
+-	to_user();
+-
+ 	// hardlinks do not work across different filesystems so we need a copy of from first
+ 	int i = find_rw_branch_cow(from);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
+ 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.branches[i].path, from);
+ 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
+ 
+-	int res = link(f, t);
++	int res = parent_write_ok(t);
++	if (res) {
++		// TODO: Actually we shouldn't initiate the previous COW at all if we
++		//      don't have write permission. Or at least we need to delete the
++		//	file again.
++		 return res;
++	}
+ 
+-	to_root();
++	res = link(f, t);
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -287,20 +253,16 @@ static int unionfs_mkdir(const char *pat
+ static int unionfs_mkdir(const char *path, mode_t mode) {
+ 	DBG_IN();
+ 
+-	to_user();
++	int i = find_rw_branch_cutlast(path);
++	if (i == -1) return -errno;
+ 
+-	int i = find_rw_branch_cutlast(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	int res = parent_write_ok(path);
++	if (res)  return res;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+-	int res = mkdir(p, mode);
+-
+-	to_root();
++	res = mkdir(p, mode);
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -310,18 +272,16 @@ static int unionfs_mknod(const char *pat
+ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cutlast(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+-	int res = -1;
++	int res = parent_write_ok(p);
++	if (res)  return res;
++
++	res = -1;
+ 	if ((mode & S_IFMT) == S_IFREG) {
+ 		// under FreeBSD, only the super-user can create ordinary files using mknod
+ 		// Actually this workaround should not be required any more
+@@ -336,8 +296,6 @@ static int unionfs_mknod(const char *pat
+ 	} else {
+ 		res = mknod(p, mode, rdev);
+ 	}
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 	
+@@ -358,8 +316,6 @@ static int unionfs_open(const char *path
+ 		return -EACCES;
+ 	}
+ 
+-	to_user();
+-
+ 	int i;
+ 	if (fi->flags & (O_WRONLY | O_RDWR)) {
+ 		i = find_rw_branch_cutlast(path);
+@@ -367,32 +323,36 @@ static int unionfs_open(const char *path
+ 		i = find_rorw_branch(path);
+ 	}
+ 
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+-	int fd = open(p, fi->flags);
+-	if (fd == -1 && fi->flags == O_RDONLY) {
+-		// workround for for files having the x-bit, but no r-bit
+-		// nfs also handles it this way
+-		if (access(p, X_OK) == 0) {
+-			to_root();
+-			fd = open(p, fi->flags); // we need root rights here
+-			to_user();
+-		}
+-	} else if (fd == -1) {
+-		to_root();
+-		return -errno;
++	int permflag = R_OK;
++	switch (fi->flags) {
++		case O_RDONLY: permflag = R_OK; break;
++		case O_WRONLY: permflag = W_OK; break;
++		case O_RDWR:   permflag = R_OK | W_OK; break;
++		default: usyslog(LOG_WARNING, "%s: unknown open flag: %d\n", __func__, fi->flags);
+ 	}
+ 
+-	to_root();
++	int res = generic_permission(p, permflag);
++	if (res && fi->flags == O_RDONLY && access(p, X_OK)) {
++		// workround for for files having the x-bit, but no r-bit
++		// nfs also handles it this way. The real solution is to tell fuse
++		// to pass something like O_XONLY flag in fi->flags
++		// Use the glibc access here, since ours presentky ignores
++		// mount flags, including the execute bit!
++
++		// do nothing!
++	} else if (res) return res;
++
++	int fd = open(p, fi->flags);
++	if (fd == -1) return -errno;
+ 
+ 	if (fi->flags & (O_WRONLY | O_RDWR)) {
+-		// There might have been a hide file, but since we successfully wrote to the real file, a hide file must not exist anymore
++		// There might have been a hide file, but since we successfully
++		// wrote to the real file, a hide file must not exist anymore
+ 		remove_hidden(path, i);
+ 	}
+ 
+@@ -421,11 +381,7 @@ static int unionfs_read(const char *path
+ 		return s;
+ 	}
+ 
+-	to_user();
+-
+ 	int res = pread(fi->fh, buf, size, offset);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -434,24 +390,20 @@ static int unionfs_read(const char *path
+ 	return res;
+ }
+ 
+-
++/**
++ * unionfs' readlink() function
++ * for the same reason as with unionfs_getattr() we don't need to do security checks
++ */
+ static int unionfs_readlink(const char *path, char *buf, size_t size) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rorw_branch(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+ 	int res = readlink(p, buf, size - 1);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -465,12 +417,7 @@ static int unionfs_release(const char *p
+ 
+ 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+ 
+-	to_user();
+-
+ 	int res = close(fi->fh);
+-
+-	to_root();
+-
+ 	if (res == -1) return -errno;
+ 
+ 	return 0;
+@@ -486,30 +433,18 @@ static int unionfs_rename(const char *fr
+ 	
+ 	bool is_dir = false; // is 'from' a file or directory
+ 
+-	to_user();
+-
+ 	int j = find_rw_branch_cutlast(to);
+-	if (j == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (j == -1) return -errno;
+ 
+ 	int i = find_rorw_branch(from);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	if (!uopt.branches[i].rw) {
+ 		i = find_rw_branch_cow(from);
+-		if (i == -1) {
+-			to_root();
+-			return -errno;
+-		}
++		if (i == -1) return -errno;
+ 	}
+ 
+ 	if (i != j) {
+-		to_root();
+ 		usyslog(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
+ 		       "is not supported yet.\n", __func__, i, j);
+ 		return -EXDEV;
+@@ -519,11 +454,14 @@ static int unionfs_rename(const char *fr
+ 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.branches[i].path, from);
+ 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
+ 
+-	filetype_t res = path_is_dir(f);
+-	if (res == NOT_EXISTING) {
+-		to_root();
++	int res = parent_write_ok(t);
++	if (res) return res;
++
++	filetype_t ftype = path_is_dir(f);
++	if (ftype == NOT_EXISTING)  
+ 		return -ENOENT;
+-	} else if (res == IS_DIR) is_dir = true;
++	else if (ftype == IS_DIR) 
++		is_dir = true;
+ 
+ 	if (!uopt.branches[i].rw) {
+ 		// since original file is on a read-only branch, we copied the from file to a writable branch,
+@@ -532,15 +470,10 @@ static int unionfs_rename(const char *fr
+ 			res = hide_dir(from, i);
+ 		else
+ 			res = hide_file(from, i);
+-		if (res) {
+-			to_root();
+-			return -errno;
+-		}
++		if (res) return -errno;
+ 	}
+ 
+ 	res = rename(f, t);
+-
+-	to_root();
+ 
+ 	if (res == -1) {
+ 		int err = errno; // unlink() might overwrite errno
+@@ -573,8 +506,6 @@ static int unionfs_rename(const char *fr
+ 
+ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
+ 	(void)path;
+-
+-	to_user();
+ 
+ 	DBG_IN();
+ 
+@@ -625,30 +556,23 @@ static int unionfs_statfs(const char *pa
+ 
+ 	stbuf->f_fsid = 0;
+ 
+-	to_root();
+ 	return 0;
+ }
+ 
+ static int unionfs_symlink(const char *from, const char *to) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cutlast(to);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char t[PATHLEN_MAX];
+ 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
+ 
+-	int res = symlink(from, t);
++	int res = parent_write_ok(t);
++	if (res) return res;
+ 
+-	to_root();
+-
++	res = symlink(from, t);
+ 	if (res == -1) return -errno;
+-
+ 
+ 	remove_hidden(to, i); // remove hide file (if any)
+ 	return 0;
+@@ -657,45 +581,38 @@ static int unionfs_truncate(const char *
+ static int unionfs_truncate(const char *path, off_t size) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cow(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+-	int res = truncate(p, size);
++	int res = generic_permission(p, W_OK);
++	if (res) return res;
+ 
+-	to_root();
++	res = truncate(p, size);
+ 
+ 	if (res == -1) return -errno;
+ 
+ 	return 0;
+ }
+ 
++/**
++ * unionfs' utime() function
++ * for the same reason as with unionfs_getattr() we don't need to do security checks
++ */
+ static int unionfs_utime(const char *path, struct utimbuf *buf) {
+ 	DBG_IN();
+ 
+ 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cow(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+ 	int res = utime(p, buf);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -707,12 +624,7 @@ static int unionfs_write(const char *pat
+ 
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int res = pwrite(fi->fh, buf, size, offset);
+-
+-	to_root();
+-
+ 	if (res == -1) return -errno;
+ 
+ 	if (uopt.stats_enabled) stats_add_written(&stats, size);
+@@ -721,46 +633,40 @@ static int unionfs_write(const char *pat
+ }
+ 
+ #ifdef HAVE_SETXATTR
++/**
++ * unionfs' getxattr() function
++ * for the same reason as with unionfs_getattr() we don't need to do security checks
++ */
+ static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rorw_branch(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+ 	int res = lgetxattr(p, name, value, size);
+ 
+-	to_root();
+-
+ 	if (res == -1) return -errno;
+ 
+ 	return res;
+ }
+ 
++/**
++ * unionfs' listxattr() function
++ * for the same reason as with unionfs_getattr() we don't need to do security checks
++ */
+ static int unionfs_listxattr(const char *path, char *list, size_t size) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rorw_branch(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+ 	int res = llistxattr(p, list, size);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -770,20 +676,16 @@ static int unionfs_removexattr(const cha
+ static int unionfs_removexattr(const char *path, const char *name) {
+ 	DBG_IN();
+ 	
+-	to_user();
+-
+ 	int i = find_rw_branch_cow(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
++	int res = generic_permission(p, W_OK);
++	if (res) return res;
++
+ 	int res = lremovexattr(p, name);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 
+@@ -793,20 +695,16 @@ static int unionfs_setxattr(const char *
+ static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
+ 	DBG_IN();
+ 
+-	to_user();
+-
+ 	int i = find_rw_branch_cow(path);
+-	if (i == -1) {
+-		to_root();
+-		return -errno;
+-	}
++	if (i == -1) return -errno;
+ 
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
++	int res = generic_permission(p, W_OK);
++	if (res) return res;
++
+ 	int res = lsetxattr(p, name, value, size, flags);
+-
+-	to_root();
+ 
+ 	if (res == -1) return -errno;
+ 	
+diff --git a/src/unlink.c b/src/unlink.c
+--- a/src/unlink.c
++++ b/src/unlink.c
+@@ -28,6 +28,7 @@
+ #include "cow.h"
+ #include "general.h"
+ #include "findbranch.h"
++#include "permission.h"
+ 
+ /**
+   * If the branch that has the file to be unlinked is in read-only mode,
+@@ -74,15 +75,12 @@ int unionfs_unlink(const char *path) {
+ int unionfs_unlink(const char *path) {
+ 	DBG_IN();
+ 	
+-	to_user();
++	int i = find_rorw_branch(path);
++	if (i == -1) return errno;
+ 
+-	int i = find_rorw_branch(path);
+-	if (i == -1) {
+-		to_root();
+-		return errno;
+-	}
++	int res = parent_write_ok(path);
++	if (res) return res;
+ 
+-	int res;
+ 	if (!uopt.branches[i].rw) {
+ 		// read-only branch
+ 		if (!uopt.cow_enabled) {
+@@ -99,6 +97,5 @@ int unionfs_unlink(const char *path) {
+ 		}
+ 	}
+ 
+-	to_root();
+ 	return -res;
+ }

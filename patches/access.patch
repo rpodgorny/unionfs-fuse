@@ -1,0 +1,237 @@
+Write our own generic_permission() function, everything relying on permission checks should use this.
+
+Patch author: bernd.schubert@fastmail.fm
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -18,7 +18,7 @@ endif(WITH_XATTR)
+ endif(WITH_XATTR)
+ 
+ set(HASHTABLE_SRCS hashtable.c hashtable_itr.c)
+-set(UNIONFS_SRCS unionfs.c stats.c opts.c debug.c findbranch.c readdir.c general.c unlink.c cow.c cow_utils.c string.c rmdir.c)
++set(UNIONFS_SRCS unionfs.c stats.c opts.c debug.c findbranch.c readdir.c general.c unlink.c cow.c cow_utils.c string.c rmdir.c permission.c)
+ 
+ add_executable(unionfs ${UNIONFS_SRCS} ${HASHTABLE_SRCS})
+ target_link_libraries(unionfs fuse pthread m rt)
+diff --git a/src/Makefile b/src/Makefile
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -6,7 +6,7 @@ LIB = -lfuse -lpthread -lm
+ LIB = -lfuse -lpthread -lm
+ 
+ HASHTABLE_OBJ = hashtable.o hashtable_itr.o
+-UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o general.o unlink.o rmdir.o cow.o cow_utils.o string.o
++UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o general.o unlink.o rmdir.o cow.o cow_utils.o string.o access.o
+ 
+ 
+ unionfs: $(UNIONFS_OBJ) $(HASHTABLE_OBJ)
+diff --git a/src/general.c b/src/general.c
+--- a/src/general.c
++++ b/src/general.c
+@@ -203,19 +203,6 @@ int maybe_whiteout(const char *path, int
+ 	return 0;
+ }
+ 
+-static void initgroups_uid(uid_t uid) {
+-	DBG_IN();
+-
+-	struct passwd pwd;
+-	struct passwd *ppwd;
+-	char buf[BUFSIZ];
+-
+-	if (!uopt.initgroups) return;
+-
+-	getpwuid_r(uid, &pwd, buf, sizeof(buf), &ppwd);
+-	if (ppwd) initgroups(ppwd->pw_name, ppwd->pw_gid);
+-}
+-
+ /**
+  * Set the euid of the user performing the fs operation.
+  */
+@@ -238,8 +225,6 @@ void to_user(void) {
+ 
+ 	// disabled, since we temporarily enforce single threading
+ 	//pthread_mutex_lock(&mutex);
+-
+-	initgroups_uid(ctx->uid);
+ 
+ 	if (ctx->gid != 0) {
+ 		if (setegid(ctx->gid)) usyslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+@@ -271,8 +256,6 @@ void to_root(void) {
+ 		if (setegid(0)) usyslog(LOG_WARNING, "setegid(0) failed");
+ 	}
+ 
+-	initgroups_uid(0);
+-
+ 	// disabled, since we temporarily enforce single threading
+ 	//pthread_mutex_unlock(&mutex);
+ 
+diff --git a/src/permission.c b/src/permission.c
+new file mode 100644
+--- /dev/null
++++ b/src/permission.c
+@@ -0,0 +1,103 @@
++/*
++*  C Implementation: general
++*
++* Description: General functions, not directly related to file system operations
++*
++* original implementation by Radek Podgorny
++*
++* License: BSD-style license
++* Copyright: Radek Podgorny <radek@podgorny.cz>,
++*            Bernd Schubert <bernd-schubert@gmx.de>
++*
++*/
++
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <fuse.h>
++#include <stdbool.h>
++#include <errno.h>
++#include <stdlib.h>
++
++
++#include "unionfs.h"
++#include "opts.h"
++#include "string.h"
++#include "findbranch.h"
++#include "general.h"
++#include "debug.h"
++
++typedef struct gidlist {
++	int ngroups;
++	gid_t *groups;
++} gidlist_t;
++
++
++/**
++ * Find out the callers supplmentary group ids
++ */
++static int get_supplementary_groups(gidlist_t *gidlist, struct fuse_context *ctx) {
++	return -1;
++}
++
++/**
++ * Check if the callers gid matches the gid of the file
++ */
++static bool in_group (struct fuse_context *ctx, gid_t gid)
++{
++	if (ctx->gid == gid) return true;
++
++	gidlist_t gidlist;
++	if (get_supplementary_groups(&gidlist, ctx)) return false;
++
++	int i;
++	for (i = 0; i < gidlist.ngroups; i++)
++		if (gidlist.groups[i] == gid) return true;
++
++	return false;
++}
++
++/**
++ * Check the access of the given path, this is the actual function
++ * that does the access() check similar to the libc.
++ * We can't use the libc call, since the libc also honours mount flags.
++ * This is wrong, if we want to check if the user has the **permission**
++ * to write to a directory which is on a ro-branch (e.g. nfs) and
++ * the actual write will then go to a rw-branch.
++ */
++int generic_permission (const char *path, int mask)
++{
++	struct stat stat;
++	if (lstat (path, &stat)) {
++		// oops, file in the mean time deleted?
++		return -errno;
++	}
++
++	int mode = stat.st_mode;
++	struct fuse_context *ctx = fuse_get_context();
++
++	// bit shifting: user, group and other permissions are based on 3 bits each: uuugggooo
++	// later on we will check the last 3 bits only, thus to check the user rights, we need 
++	// to shift 6 bits and to check the groups rights 3 bits to the rigt
++	if (ctx->uid == stat.st_uid)          mode = mode >> 6;
++	else if  (in_group(ctx, stat.st_gid)) mode = mode >> 3;
++
++	// we compare the last three bits of st_mode with the requested mask
++	// if the request is allowed no bit will be flipped
++	if (( mode & mask & S_IRWXO) != mask) return -EACCES;
++
++	return 0;
++}
++
++/**
++  * Check for write permission of the parent directory
++  */
++int parent_write_ok (const char *path)
++{
++	char *dname = u_dirname(path);
++	int res = generic_permission (dname, W_OK);
++	free(dname);
++
++	return res;
++}
+diff --git a/src/permission.h b/src/permission.h
+new file mode 100644
+--- /dev/null
++++ b/src/permission.h
+@@ -0,0 +1,13 @@
++/*
++* License: BSD-style license
++* Copyright: Radek Podgorny <radek@podgorny.cz>,
++*            Bernd Schubert <bernd-schubert@gmx.de>
++*/
++
++#ifndef ACCESS_H
++#define ACCESS_H
++
++int generic_permission (const char *path, int mask);
++int parent_write_ok (const char *path);
++
++#endif
+diff --git a/src/unionfs.c b/src/unionfs.c
+--- a/src/unionfs.c
++++ b/src/unionfs.c
+@@ -40,8 +40,9 @@
+ #include "unlink.h"
+ #include "rmdir.h"
+ #include "readdir.h"
++#include "string.h"
+ #include "cow.h"
+-
++#include "permission.h"
+ 
+ static struct fuse_opt unionfs_opts[] = {
+ 	FUSE_OPT_KEY("--help", KEY_HELP),
+@@ -58,8 +59,6 @@ static int unionfs_access(const char *pa
+ static int unionfs_access(const char *path, int mask) {
+ 	DBG_IN();
+ 	
+-	to_user();
+-
+ 	int i = find_rorw_branch(path);
+ 	if (i == -1) {
+ 		to_root();
+@@ -67,15 +66,9 @@ static int unionfs_access(const char *pa
+ 	}
+ 
+ 	char p[PATHLEN_MAX];
+-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+-
+-	int res = access(p, mask);
+-
+-	to_root();
+-
+-	if (res == -1) return -errno;
+-
+-	return 0;
++	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -errno;
++	
++	return generic_permission(p, mask);
+ }
+ 
+ static int unionfs_chmod(const char *path, mode_t mode) {

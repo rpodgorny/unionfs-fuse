@@ -1,0 +1,98 @@
+Remove to_user() and to_root() functions
+
+Patch author: bernd.schubert@fastmail.fm
+
+diff --git a/src/general.c b/src/general.c
+--- a/src/general.c
++++ b/src/general.c
+@@ -29,10 +29,6 @@
+ #include "findbranch.h"
+ #include "general.h"
+ #include "debug.h"
+-
+-
+-static uid_t daemon_uid = -1; // the uid the daemon is running as
+-static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
+ 
+ 
+ /**
+@@ -195,67 +191,7 @@ int maybe_whiteout(const char *path, int
+ 	if (find_rorw_branch(path) != -1) {
+ 		return do_create_whiteout(path, branch_rw, mode);
+ 	}
+-
+ 	return 0;
+-}
+-
+-/**
+- * Set the euid of the user performing the fs operation.
+- */
+-void to_user(void) {
+-	DBG_IN();
+-
+-	static bool first = true;
+-	int errno_orig = errno;
+-
+-	if (first) {
+-		daemon_uid = getuid();
+-		pthread_mutex_init(&mutex, NULL);
+-		first = false;
+-	}
+-
+-	if (daemon_uid != 0) return;
+-
+-	struct fuse_context *ctx = fuse_get_context();
+-	if (!ctx) return;
+-
+-	// disabled, since we temporarily enforce single threading
+-	//pthread_mutex_lock(&mutex);
+-
+-	if (ctx->gid != 0) {
+-		if (setegid(ctx->gid)) usyslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
+-	}
+-	if (ctx->uid != 0) {
+-		if (seteuid(ctx->uid)) usyslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
+-	}
+-
+-	errno = errno_orig;
+-}
+-
+-/**
+- * Switch back to the root user.
+- */
+-void to_root(void) {
+-	DBG_IN();
+-
+-	int errno_orig = errno;
+-
+-	if (daemon_uid != 0) return;
+-
+-	struct fuse_context *ctx = fuse_get_context();
+-	if (!ctx) return;
+-
+-	if (ctx->uid != 0) {
+-		if (seteuid(0)) usyslog(LOG_WARNING, "seteuid(0) failed");
+-	}
+-	if (ctx->gid != 0) {
+-		if (setegid(0)) usyslog(LOG_WARNING, "setegid(0) failed");
+-	}
+-
+-	// disabled, since we temporarily enforce single threading
+-	//pthread_mutex_unlock(&mutex);
+-
+-	errno = errno_orig;
+ }
+ 
+ /**
+diff --git a/src/general.h b/src/general.h
+--- a/src/general.h
++++ b/src/general.h
+@@ -28,8 +28,6 @@ filetype_t path_is_dir (const char *path
+ filetype_t path_is_dir (const char *path);
+ int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode);
+ int set_owner(const char *path);
+-void to_user(void);
+-void to_root(void);
+ 
+ /**
+  * Calling syslog() will deadlock if the filesystem is for /etc or /var.

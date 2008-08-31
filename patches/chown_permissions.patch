@@ -1,0 +1,93 @@
+Permission checks for chown().
+
+Patch author: bernd.schubert@fastmail.fm
+
+diff --git a/src/permission.c b/src/permission.c
+--- a/src/permission.c
++++ b/src/permission.c
+@@ -103,3 +103,60 @@ int parent_write_ok (const char *path)
+ 
+ 	return res;
+ }
++
++/**
++ * check if the user has the permission to chown a file
++ * NOTE: We don't support the CAP_CHOWN capability, there is presently no posix
++ *       interface for that. Supporting it would be easy if could simply
++ *       use set*uid/set*gid here, but since posix-threads also don't allow
++ *       per thread IDs, this is also no option :(
++ *       Also, if set*uid/set*gid *would* be thread specific, the entire function
++ *       could be ways more simple.
++ */
++int chown_permission(const char *path, uid_t uid, gid_t gid)
++{
++
++	struct fuse_context *ctx = fuse_get_context();
++
++	if (ctx->uid == 0 || ctx->gid == 0) return 0; // root is always allowed
++	if (uid == -1 && gid == -1) {
++		// no change in ownership, quite useless, but allowed
++		return 0;
++	}
++
++	struct stat buf;
++	if (lstat(path, &buf) == -1) return -errno; // file deleted in the mean time?
++
++	if (buf.st_uid == uid && buf.st_gid == gid) {
++		// also no change in ownership, useless again, but allowed
++		return 0;
++	}
++
++	if (uid != ctx->uid && uid != -1) {
++		// So we are called by an ordinary user, but an ordinary user
++		// never can give away ownership, at least not without CAP_CHOWN
++		return -EPERM;
++	}
++	
++	gidlist_t gidlist;
++	if (get_supplementary_groups(&gidlist, ctx)) {
++		// Getting supplementary groups failed and since an ordinary user
++		// is only allowed to the change the group id to one of her/his
++		// supplementary groups, there is nothing left what would be allowed
++		return -EPERM;
++	}
++
++	int i;
++	for (i = 0; i < gidlist.ngroups; i++)
++		if ((gidlist.groups[i] == gid) && (buf.st_uid == ctx->uid)) {
++			// owner wants to change to one of his/her supplementary
++			// gids, which is allowed
++			return 0;
++		}
++
++	// TODO: any allowed case forgotten?
++
++	// everything else is dis-allowed
++	return -EPERM;
++}
++
+diff --git a/src/permission.h b/src/permission.h
+--- a/src/permission.h
++++ b/src/permission.h
+@@ -9,5 +9,6 @@
+ 
+ int generic_permission (const char *path, int mask);
+ int parent_write_ok (const char *path);
++int chown_permission(const char *path, uid_t uid, gid_t gid);
+ 
+ #endif
+diff --git a/src/unionfs.c b/src/unionfs.c
+--- a/src/unionfs.c
++++ b/src/unionfs.c
+@@ -96,7 +96,10 @@ static int unionfs_chown(const char *pat
+ 	char p[PATHLEN_MAX];
+ 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+ 
+-	int res = lchown(p, uid, gid);
++	int res = chown_permission(p, uid, gid);
++	if (res) return res;
++
++	res = lchown(p, uid, gid);
+ 	if (res == -1) return -errno;
+ 
+ 	return 0;
