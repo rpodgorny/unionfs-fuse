@@ -65,10 +65,7 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
 	DBG_IN();
 
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) {
-		usyslog(LOG_WARNING, "%s(): Path too long\n", __func__);
-		return;
-	}
+	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) return;
 
 	DIR *dp = opendir(p);
 	if (dp == NULL) return;

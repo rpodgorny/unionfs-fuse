@@ -22,6 +22,7 @@
 #include "unionfs.h"
 #include "opts.h"
 #include "debug.h"
+#include "general.h"
 
 
 /**
@@ -50,7 +51,7 @@ char *whiteout_tag(const char *fname) {
  *
  * This function requires a NULL as last argument!
  */
-int build_path(char *dest, int max_len, ...) {
+int build_path(char *dest, int max_len, char *callfunc, ...) {
 	DBG_IN();
 
 	va_list ap; // argument pointer
@@ -58,15 +59,18 @@ int build_path(char *dest, int max_len, ...) {
 
 	dest[0] = '\0';
 
-	va_start(ap, max_len);
+	va_start(ap, callfunc);
 	while (1) {
 		char *str = va_arg (ap, char *);
 		if (!str) break;
 
 		len += strlen(str) + 1; // + 1 for '/' between the pathes
 
-		if (len > max_len)
-			return -ENAMETOOLONG;
+		if (len > max_len) {
+			usyslog (LOG_WARNING, "%s: Path too long \n", callfunc);
+			errno = ENAMETOOLONG;
+			return -errno;
+		}
 
 		strcat (dest, str);
 	}
