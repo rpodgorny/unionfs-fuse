@@ -55,29 +55,6 @@ static struct fuse_opt unionfs_opts[] = {
 };
 
 
-static int unionfs_access(const char *path, int mask) {
-	DBG_IN();
-	
-	to_user();
-
-	int i = find_rorw_branch(path);
-	if (i == -1) {
-		to_root();
-		return -errno;
-	}
-
-	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
-
-	int res = access(p, mask);
-
-	to_root();
-
-	if (res == -1) return -errno;
-
-	return 0;
-}
-
 static int unionfs_chmod(const char *path, mode_t mode) {
 	DBG_IN();
 
@@ -822,7 +799,6 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 #endif // HAVE_SETXATTR
 
 static struct fuse_operations unionfs_oper = {
-	.access	= unionfs_access,
 	.chmod	= unionfs_chmod,
 	.chown	= unionfs_chown,
 	.create = unionfs_create,
@@ -877,6 +853,14 @@ int main(int argc, char *argv[]) {
 	if (fuse_opt_add_arg(&args, "-s")) {
 		fprintf(stderr, "Adding the single-thread option failed, but we present MUST run single threaded, aborting\n");
 		exit(1);
+	}
+
+	// enable fuse permission checks
+	if (getuid() == 0 || getgid() == 0) {
+		if (fuse_opt_add_arg(&args, "-o default_permissions")) {
+			fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
+			exit(1);
+		}
 	}
 
         // Prevent accidental umounts. Especially system shutdown scripts tend 
