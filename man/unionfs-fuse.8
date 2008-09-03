@@ -7,7 +7,7 @@
 .ft R
 .fi
 ..
-.TH "unionfs-fuse" "8" "June 2008" "unionfs-fuse 0.20" ""
+.TH "unionfs-fuse" "8" "June 2008" "unionfs-fuse 0.21" ""
 .SH "NAME"
 unionfs\-fuse \- A userspace unionfs implementation
 .SH "SYNOPSIS"
@@ -61,7 +61,7 @@ in lower level branches. So for example whiteouts in the group directory
 (/u/group/etc/.unionfs of the example above) will only hide file of the 
 common branch (/u/common/etc), but not these of the group and host branches.
 Especially for diskless-booted environments it is rather useful for the admin
-to create whiteout files his/her-self. For example one should blacklist
+to create whiteout files him/her-self. For example one should blacklist
 network re-initializations, /etc/mtab, /etc/nologin of the server and several 
 cron-scripts. This can be easily achieved by creating whiteout files for
 these scripts in the group meta directory.
