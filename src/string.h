@@ -7,6 +7,8 @@
 #ifndef UNIONFS_STRING_H
 #define UNIONFS_STRING_H
 
+#include <string.h>
+
 char *whiteout_tag(const char *fname);
 int build_path(char *dest, int max_len, ...);
 char *u_dirname(const char *path);
@@ -17,7 +19,7 @@ unsigned int string_hash(void *s);
  * a maximum string length. Since there is no way in C to determine the given number of arguments, we
  * simply add NULL here.
  */
-#define BUILD_PATH(dest, ...) build_path(dest, PATHLEN_MAX, __VA_ARGS__, NULL)
+#define BUILD_PATH(dest, ...) build_path(dest, PATHLEN_MAX, __func__, __VA_ARGS__, NULL)
 
 /**
   * Test if two strings are eqal.

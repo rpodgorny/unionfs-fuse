@@ -31,15 +31,13 @@ Enable copy\-on\-write
 .TP 
 \fB\-o stats
 Show statistics in the file 'stats' under the mountpoint.
-.TP 
-\fB\-o noinitgroups
-Disable initgroups. Initgroups are enabled by default to supply
-supplementary user groups, but will cause a deadlock of unions 
-including /etc.
+.SH "Options to libfuse"
+There are several further options available, which don't directly apply to
+unionfs, but to libuse. Please run "unionfs-fuse --help" to see these.
+We already set the "-o default-permissions" options on our own.
 .SH "EXAMPLES"
 .Vb 5
-\& unionfs\-fuse \-o cow \-o noinitgroups \e
-\&              \-o default_permissions \-o allow_other \e
+\& unionfs\-fuse \-o cow \-o allow_other \e
 \&              \-o use_ino \-o nonempty \e
 \&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
 \&              /u/union/etc

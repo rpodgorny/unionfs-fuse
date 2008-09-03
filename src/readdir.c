@@ -65,10 +65,7 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
 	DBG_IN();
 
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) {
-		usyslog(LOG_WARNING, "%s(): Path too long\n", __func__);
-		return;
-	}
+	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) return;
 
 	DIR *dp = opendir(p);
 	if (dp == NULL) return;
@@ -91,8 +88,6 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	(void)fi;
 	int i = 0;
 	
-	to_user();
-
 	// we will store already added files here to handle same file names across different branches
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 
@@ -151,6 +146,5 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		filler(buf, "stats", NULL, 0);
 	}
 
-	to_root();
 	return 0;
 }
