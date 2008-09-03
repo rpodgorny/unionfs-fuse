@@ -682,7 +682,7 @@ int main(int argc, char *argv[]) {
 	
 	// enable fuse permission checks
 	if (getuid() == 0 || getgid() == 0) {
-		if (fuse_opt_add_arg(&args, "-o default_permissions")) {
+		if (fuse_opt_add_arg(&args, "-odefault_permissions")) {
 			fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
 			exit(1);
 		}
