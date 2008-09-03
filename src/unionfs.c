@@ -101,6 +101,8 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	int res = open(p, fi->flags, mode);
 	if (res == -1) return -errno;
 
+	set_owner(p); // no error check, since creating the file succeeded
+
 	fi->fh = res;
 	remove_hidden(path, i);
 
@@ -203,6 +205,8 @@ static int unionfs_link(const char *from, const char *to) {
 	int res = link(f, t);
 	if (res == -1) return -errno;
 
+	set_owner(t); // no error check, since creating the file succeeded
+
 	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
 }
@@ -224,6 +228,8 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 
 	int res = mkdir(p, mode);
 	if (res == -1) return -errno;
+
+	set_owner(p); // no error check, since creating the file succeeded
 
 	return 0;
 }
@@ -255,6 +261,8 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
 	if (res == -1) return -errno;
 	
+	set_owner(p); // no error check, since creating the file succeeded
+
 	remove_hidden(path, i);
 
 	return 0;
@@ -431,6 +439,8 @@ static int unionfs_rename(const char *from, const char *to) {
 			maybe_whiteout(from, i, WHITEOUT_FILE);
 	}
 
+	set_owner(to); // no error check, since creating the file succeeded
+
 	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
 }
@@ -501,6 +511,8 @@ static int unionfs_symlink(const char *from, const char *to) {
 
 	int res = symlink(from, t);
 	if (res == -1) return -errno;
+
+	set_owner(to); // no error check, since creating the file succeeded
 
 	remove_hidden(to, i); // remove hide file (if any)
 	return 0;

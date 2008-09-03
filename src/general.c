@@ -195,3 +195,20 @@ int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 	return 0;
 }
 
+/**
+ * Set file owner of after an operation, which created a file.
+ */
+int set_owner(const char *path) {
+	struct fuse_context *ctx = fuse_get_context();
+	if (ctx->uid != 0 && ctx->gid != 0) {
+		int res = lchown(path, ctx->uid, ctx->gid);
+		if (res) {
+			usyslog(LOG_WARNING,
+			       ":%s: Setting the correct file owner failed: %s !\n", 
+			       __func__, strerror(errno));
+			return -errno;
+		}
+	}
+	return 0;
+}
+
