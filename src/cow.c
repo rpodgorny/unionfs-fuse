@@ -84,12 +84,9 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[nbranch_rw].path, path);
 
-	to_root(); // to make cow working, we need higher privileges
-
 	struct stat st;
 	if (!stat(p, &st)) {
 		// path does already exists, no need to create it
-		to_user();
 		return 0;
 	}
 
@@ -105,16 +102,12 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 		// +1 due to \0, which gets added automatically
 		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
 		int res = do_create(p, nbranch_ro, nbranch_rw);
-		if (res) {
-			to_user();
-			return res; // creating the directory failed
-		}
+		if (res) return res; // creating the directory failed
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
 		while (*walk != '\0' && *walk == '/') walk++;
 	} while (*walk != '\0');
 
-	to_user();
 	return 0;
 }
 
@@ -149,7 +142,6 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 
 	struct cow cow;
 
-	to_root();
 	cow.uid = getuid();
 
 	// Copy the umask for explicit mode setting.
@@ -180,12 +172,10 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 			break;
 		case S_IFSOCK:
 			usyslog(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
-			to_user();
 			return 1;
 		default:
 			res = copy_file(&cow);
 	}
 
-	to_user();
 	return res;
 }

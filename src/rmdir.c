@@ -84,13 +84,8 @@ static int rmdir_ro(const char *path, int branch_ro) {
 int unionfs_rmdir(const char *path) {
 	DBG_IN();
 
-	to_user();
-
 	int i = find_rorw_branch(path);
-	if (i == -1) {
-		to_root();
-		return -errno;
-	}
+	if (i == -1) return -errno;
 
 	int res;
 	if (!uopt.branches[i].rw) {
@@ -108,6 +103,5 @@ int unionfs_rmdir(const char *path) {
 		}
 	}
 
-	to_root();
 	return -res;
 }

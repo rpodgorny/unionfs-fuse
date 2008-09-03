@@ -31,10 +31,6 @@
 #include "debug.h"
 
 
-static uid_t daemon_uid = -1; // the uid the daemon is running as
-static pthread_mutex_t mutex; // the to_user() and to_root() locking mutex
-
-
 /**
  * Check if a file or directory with the hidden flag exists.
  */
@@ -145,11 +141,8 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 	DBG_IN();
 
 	char metapath[PATHLEN_MAX];
-	int res = -1;
 
-	to_root(); // whiteouts are root business
-
-	if (BUILD_PATH(metapath, METADIR, path))  goto out;
+	if (BUILD_PATH(metapath, METADIR, path))  return -1;
 
 	// p MUST be without path to branch prefix here! 2 x branch_rw is correct here!
 	// this creates e.g. branch/.unionfs/some_directory
@@ -157,18 +150,17 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath, HIDETAG))
-		goto out;
+		return -1;
 
+	int res;
 	if (mode == WHITEOUT_FILE) {
 		res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-		if (res == -1) goto out;
+		if (res == -1) return -1;
 		res = close(res);
 	} else {
 		res = mkdir(p, S_IRWXU);
 	}
 
-out:
-	to_user();
 	return res;
 }
 
@@ -203,78 +195,3 @@ int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 	return 0;
 }
 
-static void initgroups_uid(uid_t uid) {
-	DBG_IN();
-
-	struct passwd pwd;
-	struct passwd *ppwd;
-	char buf[BUFSIZ];
-
-	if (!uopt.initgroups) return;
-
-	getpwuid_r(uid, &pwd, buf, sizeof(buf), &ppwd);
-	if (ppwd) initgroups(ppwd->pw_name, ppwd->pw_gid);
-}
-
-/**
- * Set the euid of the user performing the fs operation.
- */
-void to_user(void) {
-	DBG_IN();
-
-	static bool first = true;
-	int errno_orig = errno;
-
-	if (first) {
-		daemon_uid = getuid();
-		pthread_mutex_init(&mutex, NULL);
-		first = false;
-	}
-
-	if (daemon_uid != 0) return;
-
-	struct fuse_context *ctx = fuse_get_context();
-	if (!ctx) return;
-
-	// disabled, since we temporarily enforce single threading
-	//pthread_mutex_lock(&mutex);
-
-	initgroups_uid(ctx->uid);
-
-	if (ctx->gid != 0) {
-		if (setegid(ctx->gid)) usyslog(LOG_WARNING, "setegid(%i) failed\n", ctx->gid);
-	}
-	if (ctx->uid != 0) {
-		if (seteuid(ctx->uid)) usyslog(LOG_WARNING, "seteuid(%i) failed\n", ctx->uid);
-	}
-
-	errno = errno_orig;
-}
-
-/**
- * Switch back to the root user.
- */
-void to_root(void) {
-	DBG_IN();
-
-	int errno_orig = errno;
-
-	if (daemon_uid != 0) return;
-
-	struct fuse_context *ctx = fuse_get_context();
-	if (!ctx) return;
-
-	if (ctx->uid != 0) {
-		if (seteuid(0)) usyslog(LOG_WARNING, "seteuid(0) failed");
-	}
-	if (ctx->gid != 0) {
-		if (setegid(0)) usyslog(LOG_WARNING, "setegid(0) failed");
-	}
-
-	initgroups_uid(0);
-
-	// disabled, since we temporarily enforce single threading
-	//pthread_mutex_unlock(&mutex);
-
-	errno = errno_orig;
-}

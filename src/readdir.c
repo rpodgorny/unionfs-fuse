@@ -88,8 +88,6 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	(void)fi;
 	int i = 0;
 	
-	to_user();
-
 	// we will store already added files here to handle same file names across different branches
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 
@@ -148,6 +146,5 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		filler(buf, "stats", NULL, 0);
 	}
 
-	to_root();
 	return 0;
 }
