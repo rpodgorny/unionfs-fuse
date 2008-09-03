@@ -7,6 +7,8 @@
 #ifndef UNIONFS_STRING_H
 #define UNIONFS_STRING_H
 
+#include <string.h>
+
 char *whiteout_tag(const char *fname);
 int build_path(char *dest, int max_len, ...);
 char *u_dirname(const char *path);
