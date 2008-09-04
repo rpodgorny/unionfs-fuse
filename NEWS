@@ -1,3 +1,11 @@
+0.23
+- remove to_user() and to_root() calls for autorization and use fuse build-in
+  default_permissions checks
+
+0.22
+- Fix a bug reported by Jens Hoelldampf <jens@hoelldampf.net>, in 0.21 cow 
+  didn't work for pathes.
+
 0.21
 - Fix a segmentation fault when COW was enabled, but no rw-branch was specified.
 - Proper handling when ro-branches are on top of rw-branches.
