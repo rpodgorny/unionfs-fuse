@@ -144,7 +144,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 
 	int res;
 	if (isdatasync) {
-#ifdef _POSIX_SYNCHRONIZED_IO
+#if _POSIX_SYNCHRONIZED_IO + 0 > 0
 		res = fdatasync(fi->fh);
 #else
 		res = fsync(fi->fh);
