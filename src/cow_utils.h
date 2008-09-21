@@ -22,6 +22,7 @@ struct cow {
 	char *to_path;
 };
 
+int setfile(const char *path, struct stat *fs);
 int copy_special(struct cow *cow);
 int copy_fifo(struct cow *cow);
 int copy_link(struct cow *cow);

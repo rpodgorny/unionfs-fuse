@@ -58,8 +58,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	if (nbranch_ro == nbranch_rw) return 0; // the special case again
 
-	res = chown(dirp, buf.st_uid, buf.st_gid);
-	if (res == -1) return 1; // directory already removed by another process?
+	if (setfile(dirp, &buf))  return 1; // directory already removed by another process?
 
 	// TODO: time, but its values are modified by the next dir/file creation steps?
 

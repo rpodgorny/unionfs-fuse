@@ -55,7 +55,7 @@
 /**
  * set the stat() data of a file
  **/
-static int setfile(const char *path, struct stat *fs)
+int setfile(const char *path, struct stat *fs)
 {
 	DBG_IN();
 
