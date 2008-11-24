@@ -448,54 +448,40 @@ static int unionfs_rename(const char *from, const char *to) {
 }
 
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
-	(void)path;
-
+	(void) path; // just to prevent compiler warning of unused variable
+	
 	DBG_IN();
 
-	int first = 1;
-
-	dev_t devno[uopt.nbranches];
-
+	bool first = true;
 	int i = 0;
-	for (i = 0; i < uopt.nbranches; i++) {
-		struct statvfs stb;
-		int res = statvfs(uopt.branches[i].path, &stb);
-		if (res == -1) continue;
 
-		struct stat st;
-		res = stat(uopt.branches[i].path, &st);
+	for (i = 0; i < ufeatures.statvfs.nbranches; i++) {
+		struct statvfs stb;
+		int branch = ufeatures.statvfs.branches[i];
+		int res = statvfs(uopt.branches[branch].path, &stb);
 		if (res == -1) continue;
-		devno[i] = st.st_dev;
 
 		if (first) {
 			memcpy(stbuf, &stb, sizeof(*stbuf));
-			first = 0;
+			first = false;
 			continue;
 		}
 
-		// Eliminate same devices
-		int j = 0;
-		for (j = 0; j < i; j ++) {
-			if (st.st_dev == devno[j]) break;
-		}
+		// Filesystem can have different block sizes -> normalize to first's block size
+		double ratio = (double)stb.f_bsize / (double)stbuf->f_bsize;
 
-		if (j == i) {
-			// Filesystem can have different block sizes -> normalize to first's block size
-			double ratio = (double)stb.f_bsize / (double)stbuf->f_bsize;
+		stbuf->f_blocks += stb.f_blocks * ratio;
+		stbuf->f_bfree += stb.f_bfree * ratio;
+		stbuf->f_bavail += stb.f_bavail * ratio;
 
-			stbuf->f_blocks += stb.f_blocks * ratio;
-			stbuf->f_bfree += stb.f_bfree * ratio;
-			stbuf->f_bavail += stb.f_bavail * ratio;
+		stbuf->f_files += stb.f_files;
+		stbuf->f_ffree += stb.f_ffree;
+		stbuf->f_favail += stb.f_favail;
 
-			stbuf->f_files += stb.f_files;
-			stbuf->f_ffree += stb.f_ffree;
-			stbuf->f_favail += stb.f_favail;
+		if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;
+		if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
 
-			if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;
-			if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
-
-			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
-		}
+		if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
 	}
 
 	stbuf->f_fsid = 0;
@@ -698,6 +684,8 @@ int main(int argc, char *argv[]) {
         for (i = 0; i < uopt.nbranches; i++) {
                 uopt.branches[i].fd = open(uopt.branches[i].path, O_RDONLY);
         }
+	
+	initialize_features();
 
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);

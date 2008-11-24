@@ -4,6 +4,12 @@ syntax: glob
 unionfs_debug.log
 unionfs
 
+# build directory
+build/*
+
+# vi tmp files
+*.swp
+
 # Autofoo entries
 *.o
 *.la

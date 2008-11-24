@@ -214,6 +214,72 @@ int set_owner(const char *path) {
 }
 
 /**
+ * Initialize statvfs() branches
+ */
+static void statvfs_branches(void)
+{
+	int nbranches;
+
+	// for counting the free space, we should only consider rw-branches
+	if (ufeatures.rw_branches.n_rw > 0) {
+		nbranches = ufeatures.rw_branches.n_rw;
+	} else {
+		 // no rw-branch, so free space not important, take everything then
+		nbranches = uopt.nbranches;
+	}
+
+	int i;
+	dev_t devno[uopt.nbranches];
+	int *stv = NULL;	// array of all branches we will do a statvfs on
+	int n_stv = 0;		// number of statvfs branches
+	for (i = 0; i < nbranches; i++) {
+		struct stat st;
+		branch_entry_t *branch;
+		int br_num; // branch number in the global uopt branches structure
+
+		if (ufeatures.rw_branches.n_rw > 0)
+			br_num = ufeatures.rw_branches.rw_br[i];
+		else
+			br_num = i;
+
+		branch = &uopt.branches[br_num];
+
+		int res = stat(branch->path, &st);
+		if (res == -1) continue;
+		devno[i] = st.st_dev;
+
+		// Eliminate same devices
+		int j = 0;
+		for (j = 0; j < i; j ++) {
+			if (st.st_dev == devno[j]) break;
+		}
+
+		if (j == i) {
+			n_stv++;
+			stv = realloc(stv, sizeof(*stv) * n_stv);
+			if (stv == NULL) {
+				fprintf(stderr, "%s:%d: Realloc failed\n", 
+					__func__, __LINE__);
+				// still very early stage when we are here, 
+				// so we can abort
+				exit (1);
+			}
+			stv[n_stv-1] = i;
+		}
+	}
+
+	if (n_stv < 1) {
+		fprintf(stderr, "%s:%d: Error, no statfs branches!\n",
+			__func__, __LINE__);
+		// still very early stage when we are here, so we can abort
+		exit (1);
+	}
+
+	ufeatures.statvfs.nbranches = n_stv;
+	ufeatures.statvfs.branches  = stv;
+}
+
+/**
   * Initialize our features structure, thus, fill in all the information.
   * This is to be called as late as possible, but before any access to the
   * filesystem. So either before fuse_main or from an extra fuse .init method.
@@ -235,6 +301,8 @@ int initialize_features(void)
 
 	ufeatures.rw_branches.n_rw  = n_rw;
 	ufeatures.rw_branches.rw_br = rw_br;
+
+	statvfs_branches();
 	
 	return 0;
 }
