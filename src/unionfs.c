@@ -54,6 +54,9 @@ static struct fuse_opt unionfs_opts[] = {
 };
 
 
+ufeatures_t ufeatures;
+
+
 static int unionfs_chmod(const char *path, mode_t mode) {
 	DBG_IN();
 

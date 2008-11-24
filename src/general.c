@@ -16,6 +16,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <pwd.h>
@@ -212,3 +213,28 @@ int set_owner(const char *path) {
 	return 0;
 }
 
+/**
+  * Initialize our features structure, thus, fill in all the information.
+  * This is to be called as late as possible, but before any access to the
+  * filesystem. So either before fuse_main or from an extra fuse .init method.
+  */
+int initialize_features(void)
+{
+	// the branch information
+	int i = 0;
+	int n_rw = 0; //number of rw_branches
+	unsigned *rw_br = NULL; // array of rw_branch numbers
+
+	for (i = 0; i < uopt.nbranches; i++) {
+		if (uopt.branches[i].rw) {
+			n_rw++;
+			rw_br = realloc(rw_br, sizeof(*rw_br) * n_rw);
+			rw_br[n_rw-1] = i;
+		}
+	}
+
+	ufeatures.rw_branches.n_rw  = n_rw;
+	ufeatures.rw_branches.rw_br = rw_br;
+	
+	return 0;
+}
