@@ -10,6 +10,12 @@ build/*
 # vi tmp files
 *.swp
 
+# build directory
+build/*
+
+# vi tmp files
+*.swp
+
 # Autofoo entries
 *.o
 *.la
