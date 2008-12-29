@@ -28,7 +28,7 @@ typedef struct {
 	} rw_branches;
 
 	// branches used for statfs
-	struct statvfs {
+	struct ustatvfs {
 		int nbranches;	// number of statvfs branches
 		int *branches;	// array of integers with the branch numbers
 	} statvfs;
