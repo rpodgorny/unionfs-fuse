@@ -200,9 +200,13 @@ static int unionfs_link(const char *from, const char *to) {
 	int i = find_rw_branch_cow(from);
 	if (i == -1) return -errno;
 
+	// FIXME, we actually MUST COW to i
+	int j = find_rw_branch_cutlast(to);
+	if (j == -1) return -errno;
+
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
 	snprintf(f, PATHLEN_MAX, "%s%s", uopt.branches[i].path, from);
-	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
+	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[j].path, to);
 
 	int res = link(f, t);
 	if (res == -1) return -errno;
