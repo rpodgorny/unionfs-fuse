@@ -87,9 +87,16 @@ char *u_dirname(const char *path) {
 	DBG_IN();
 
 	char *ret = strdup(path);
+	if (ret == NULL) {
+		usyslog("strdup failed, probably out of memory!\n");
+		return ret;
+	}
 
-	char *ri = rindex(ret, '/'); //this char should always be found
-	*ri = '\0';
+	char *ri = rindex(ret, '/'); 
+	if (ri != NULL) 
+		*ri = '\0'; // '/' found, so a full path
+	else 
+		strcpy(ret, "."); // '/' not found, so path is only a file
 
 	return ret;
 }

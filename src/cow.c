@@ -118,6 +118,8 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
 	DBG_IN();
 
 	char *dname = u_dirname(path);
+	if (dname == NULL)
+		return -ENOMEM;
 	int ret = path_create(dname, nbranch_ro, nbranch_rw);
 	free(dname);
 

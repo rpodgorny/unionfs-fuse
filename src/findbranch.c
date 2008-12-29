@@ -118,6 +118,10 @@ int find_rw_branch_cutlast(const char *path) {
 	// We MUST NOT call find_rw_branch_cow() // since this function 
 	// doesn't work properly for directories.
 	char *dname = u_dirname(path);
+	if (dname == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
 	branch = find_rorw_branch(dname);
 
 	if (branch < 0 || uopt.branches[branch].rw) goto out;
