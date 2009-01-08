@@ -23,4 +23,4 @@ set(UNIONFS_SRCS unionfs.c stats.c opts.c debug.c findbranch.c readdir.c general
 add_executable(unionfs ${UNIONFS_SRCS} ${HASHTABLE_SRCS})
 target_link_libraries(unionfs fuse pthread m rt)
 
-INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/unionfs DESTINATION sbin)
+INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/unionfs DESTINATION bin)
