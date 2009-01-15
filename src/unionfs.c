@@ -686,7 +686,14 @@ int main(int argc, char *argv[]) {
 	// this might cause unexpected behaviour.
         int i = 0;
         for (i = 0; i < uopt.nbranches; i++) {
-                uopt.branches[i].fd = open(uopt.branches[i].path, O_RDONLY);
+		char *path = uopt.branches[i].path;
+		int fd = open(path, O_RDONLY);
+		if (fd == -1) {
+			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n", 
+			        path, strerror(errno));
+			exit(1);
+		}
+                uopt.branches[i].fd = fd;
         }
 	
 	initialize_features();
