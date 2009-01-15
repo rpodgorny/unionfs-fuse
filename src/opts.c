@@ -151,7 +151,7 @@ static int parse_branches(const char *arg) {
 }
 
 static void print_help(const char *progname) {
-	fprintf (stderr,
+	printf (
 	"unionfs-fuse version "VERSION"\n"
 	"by Radek Podgorny <radek@podgorny.cz>\n"
 	"\n"
