@@ -61,10 +61,10 @@ static char *make_absolute(char *relpath) {
 	char *abspath = malloc(abslen);
 	if (abspath == NULL) {
 		fprintf(stderr, "%s: malloc failed\n", __func__);
-		exit (1); // still at early stage, we can't abort
+		exit (1); // still at early stage, we can abort
 	}
 
-	// the terminating '/' is important so that we are sure later on the
+	// the trailing '/' is important so that we are sure later on the
 	// directory components are properly seperated
 	snprintf(abspath, abslen, "%s/%s/", cwd, relpath);
 
