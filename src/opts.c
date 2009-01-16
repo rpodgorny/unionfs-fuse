@@ -49,9 +49,10 @@ static char *make_absolute(char *relpath) {
 		return NULL;
 	}
 
-	// 2 due to: +1 for '/' between cwd and relpath
+	// 3 due to: +1 for '/' between cwd and relpath
+	//           +1 for trailing '/'
 	//           +1 for terminating '\0'
-	int abslen = cwdlen + strlen(relpath) + 2;
+	int abslen = cwdlen + strlen(relpath) + 3;
 	if (abslen > PATHLEN_MAX) {
 		fprintf(stderr, "Absolute path too long!\n");
 		return NULL;
@@ -65,7 +66,7 @@ static char *make_absolute(char *relpath) {
 
 	// the terminating '/' is important so that we are sure later on the
 	// directory components are properly seperated
-	sprintf(abspath, "%s/%s/", cwd, relpath);
+	snprintf(abspath, abslen, "%s/%s/", cwd, relpath);
 
 	return abspath;
 }
