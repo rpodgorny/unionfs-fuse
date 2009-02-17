@@ -54,9 +54,6 @@ static struct fuse_opt unionfs_opts[] = {
 };
 
 
-ufeatures_t ufeatures;
-
-
 static int unionfs_chmod(const char *path, mode_t mode) {
 	DBG_IN();
 
@@ -452,40 +449,65 @@ static int unionfs_rename(const char *from, const char *to) {
 }
 
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
-	(void) path; // just to prevent compiler warning of unused variable
-	
+	(void)path;
+
 	DBG_IN();
 
-	bool first = true;
-	int i = 0;
+	int first = 1;
 
-	for (i = 0; i < ufeatures.statvfs.nbranches; i++) {
+	dev_t devno[uopt.nbranches];
+
+	int i = 0;
+	for (i = 0; i < uopt.nbranches; i++) {
 		struct statvfs stb;
-		int branch = ufeatures.statvfs.branches[i];
-		int res = statvfs(uopt.branches[branch].path, &stb);
+		int res = statvfs(uopt.branches[i].path, &stb);
 		if (res == -1) continue;
+
+		struct stat st;
+		res = stat(uopt.branches[i].path, &st);
+		if (res == -1) continue;
+		devno[i] = st.st_dev;
 
 		if (first) {
 			memcpy(stbuf, &stb, sizeof(*stbuf));
-			first = false;
+			first = 0;
 			continue;
 		}
 
-		// Filesystem can have different block sizes -> normalize to first's block size
-		double ratio = (double)stb.f_bsize / (double)stbuf->f_bsize;
+		// Eliminate same devices
+		int j = 0;
+		for (j = 0; j < i; j ++) {
+			if (st.st_dev == devno[j]) break;
+		}
 
-		stbuf->f_blocks += stb.f_blocks * ratio;
-		stbuf->f_bfree += stb.f_bfree * ratio;
-		stbuf->f_bavail += stb.f_bavail * ratio;
+		if (j == i) {
+			// Filesystem can have different block sizes -> normalize to first's block size
+			double ratio = (double)stb.f_bsize / (double)stbuf->f_bsize;
 
-		stbuf->f_files += stb.f_files;
-		stbuf->f_ffree += stb.f_ffree;
-		stbuf->f_favail += stb.f_favail;
+			if (uopt.branches[i].rw) {
+				stbuf->f_blocks += stb.f_blocks * ratio;
+				stbuf->f_bfree += stb.f_bfree * ratio;
+				stbuf->f_bavail += stb.f_bavail * ratio;
 
-		if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;
-		if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
+				stbuf->f_files += stb.f_files;
+				stbuf->f_ffree += stb.f_ffree;
+				stbuf->f_favail += stb.f_favail;
+			} else {
+				/*
+				 * NOTE: Actually adding f_blocks and f_files to the
+				 *       corresponding members would be correct, but this
+				 *       will break all tools relying on a correct
+				 *       free = blocks - avail count.
+				 */
+				// stbuf->f_blocks += stb.f_blocks * ratio;
+				// stbuf->f_files  += stb.f_files;
+			}
 
-		if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
+			if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;
+			if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
+
+			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
+		}
 	}
 
 	stbuf->f_fsid = 0;
@@ -696,8 +718,6 @@ int main(int argc, char *argv[]) {
                 uopt.branches[i].fd = fd;
         }
 	
-	initialize_features();
-
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
 	return uopt.doexit ? uopt.retval : res;
