@@ -24,6 +24,8 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/time.h>
 #include <sys/statvfs.h>
 
 #ifdef HAVE_SETXATTR
@@ -549,7 +551,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 	return 0;
 }
 
-static int unionfs_utime(const char *path, struct utimbuf *buf) {
+static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	DBG_IN();
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
@@ -560,7 +562,13 @@ static int unionfs_utime(const char *path, struct utimbuf *buf) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	int res = utime(p, buf);
+	struct timeval tv[2];
+        tv[0].tv_sec  = ts[0].tv_sec;
+        tv[0].tv_usec = ts[0].tv_nsec / 1000;
+        tv[1].tv_sec  = ts[1].tv_sec;
+        tv[1].tv_usec = ts[1].tv_nsec / 1000;
+
+	int res = utimes(p, tv);
 
 	if (res == -1) return -errno;
 
@@ -667,7 +675,7 @@ static struct fuse_operations unionfs_oper = {
 	.symlink	= unionfs_symlink,
 	.truncate	= unionfs_truncate,
 	.unlink	= unionfs_unlink,
-	.utime	= unionfs_utime,
+	.utimens	= unionfs_utimens,
 	.write	= unionfs_write,
 #ifdef HAVE_SETXATTR
 	.getxattr	= unionfs_getxattr,
