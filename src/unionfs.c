@@ -451,8 +451,6 @@ static int unionfs_rename(const char *from, const char *to) {
 			maybe_whiteout(from, i, WHITEOUT_FILE);
 	}
 
-	set_owner(to); // no error check, since creating the file succeeded
-
 	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
 }
