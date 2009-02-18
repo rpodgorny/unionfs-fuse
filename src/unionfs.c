@@ -273,7 +273,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	
 	set_owner(p); // no error check, since creating the file succeeded
 	// NOW, that the file has the proper owner we may set the requested mode
-	fchmod(res, mode);
+	chmod(p, mode);
 
 	remove_hidden(path, i);
 
