@@ -534,7 +534,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 	int res = symlink(from, t);
 	if (res == -1) return -errno;
 
-	set_owner(to); // no error check, since creating the file succeeded
+	set_owner(t); // no error check, since creating the file succeeded
 
 	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
