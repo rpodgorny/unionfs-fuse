@@ -236,10 +236,12 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	int res = mkdir(p, mode);
+	int res = mkdir(p, 0);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
+        // NOW, that the file has the proper owner we may set the requested mode
+        chmod(p, mode);
 
 	return 0;
 }
