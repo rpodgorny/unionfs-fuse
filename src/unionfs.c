@@ -99,10 +99,15 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	int res = open(p, fi->flags, mode);
+	// NOTE: Create the file with mode=0 first, otherwise we might create
+	//       a file as root + x-bit + suid bit set, which might be used for
+	//       security racing!
+	int res = open(p, fi->flags, 0);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
+	// NOW, that the file has the proper owner we may set the requested mode
+	fchmod(res, mode);
 
 	fi->fh = res;
 	remove_hidden(path, i);
@@ -257,16 +262,18 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		
 		usyslog (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
 		
-		res = creat(p, mode ^ S_IFREG);
+		res = creat(p, 0);
 		if (res > 0) 
 			if (close (res) == -1) usyslog (LOG_WARNING, "Warning, cannot close file\n");
 	} else {
-		res = mknod(p, mode, rdev);
+		res = mknod(p, 0, rdev);
 	}
 
 	if (res == -1) return -errno;
 	
 	set_owner(p); // no error check, since creating the file succeeded
+	// NOW, that the file has the proper owner we may set the requested mode
+	fchmod(res, mode);
 
 	remove_hidden(path, i);
 
