@@ -215,7 +215,7 @@ static int unionfs_link(const char *from, const char *to) {
 	int res = link(f, t);
 	if (res == -1) return -errno;
 
-	set_owner(t); // no error check, since creating the file succeeded
+	// no need for set_owner(), since owner and permissions are copied over by link()
 
 	remove_hidden(to, i); // remove hide file (if any)
 	return 0;
