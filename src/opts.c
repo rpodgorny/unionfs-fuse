@@ -193,6 +193,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 		case KEY_CORRECT_STATFS:
 			uopt.correct_statfs = true;
 			return 0;
+		case KEY_NOINITGROUPS:
+			// option only for compatibility with older versions
+			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
 			fuse_opt_add_arg(outargs, "-ho");

@@ -38,6 +38,10 @@ By default only blocks of rw-branches are counted in statfs() calls
 summarry of blocks, but still only rw-branches count for available blocks.
 While this is the most correct (TM) counting method, it will break all
 tools calculating the usage percentage of mounted partitions.
+.TP
+\fB\-o noinitgroups
+Since version 0.23 without any effect, just left over for compatibility.
+Might be removed in future versions.
 .SH "Options to libfuse"
 There are several further options available, which don't directly apply to
 unionfs, but to libuse. Please run "unionfs-fuse --help" to see these.

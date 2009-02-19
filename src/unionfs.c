@@ -52,6 +52,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("-V", KEY_VERSION),
 	FUSE_OPT_KEY("stats", KEY_STATS),
 	FUSE_OPT_KEY("cow", KEY_COW),
+	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
 	FUSE_OPT_KEY("correct_statfs", KEY_CORRECT_STATFS),
 	FUSE_OPT_END
 };
