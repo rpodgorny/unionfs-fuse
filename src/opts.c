@@ -22,11 +22,9 @@ uopt_t uopt;
 
 
 void uopt_init() {
-	uopt.doexit = 0;
-	uopt.retval = 0;
-	uopt.nbranches = 0;
-	uopt.stats_enabled = false;
-	uopt.cow_enabled = false; // copy-on-write
+	memset(&uopt, 0, sizeof(uopt_t)); // initialize options with zeros first
+
+	// so far nothing more required, so far initializing with zeros sufficient
 }
 
 /**
