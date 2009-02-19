@@ -31,6 +31,13 @@ Enable copy\-on\-write
 .TP 
 \fB\-o stats
 Show statistics in the file 'stats' under the mountpoint.
+.TP
+\fB\-o correct_statfs
+By default only blocks of rw-branches are counted in statfs() calls 
+(e.g. by 'df'). On setting this option all branches will be counted for the 
+summarry of blocks, but still only rw-branches count for available blocks.
+While this is the most correct (TM) counting method, it will break all
+tools calculating the usage percentage of mounted partitions.
 .SH "Options to libfuse"
 There are several further options available, which don't directly apply to
 unionfs, but to libuse. Please run "unionfs-fuse --help" to see these.

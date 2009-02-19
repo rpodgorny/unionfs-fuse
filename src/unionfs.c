@@ -52,6 +52,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("-V", KEY_VERSION),
 	FUSE_OPT_KEY("stats", KEY_STATS),
 	FUSE_OPT_KEY("cow", KEY_COW),
+	FUSE_OPT_KEY("correct_statfs", KEY_CORRECT_STATFS),
 	FUSE_OPT_END
 };
 
@@ -504,12 +505,14 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 			} else {
 				/*
 				 * NOTE: Actually adding f_blocks and f_files to the
-				 *       corresponding members would be correct, but this
-				 *       will break all tools relying on a correct
+				 *       corresponding members would is correct, but this
+				 *       breaks all tools relying on a correct
 				 *       free = blocks - avail count.
 				 */
-				// stbuf->f_blocks += stb.f_blocks * ratio;
-				// stbuf->f_files  += stb.f_files;
+				if (uopt.correct_statfs) {
+					stbuf->f_blocks += stb.f_blocks * ratio;
+					stbuf->f_files  += stb.f_files;
+				}
 			}
 
 			if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;

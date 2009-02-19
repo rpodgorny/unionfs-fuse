@@ -168,6 +168,7 @@ static void print_help(const char *progname) {
 	"    -o cow                 enable copy-on-write\n"
 	"    -o stats               show statistics in the file 'stats' under the\n"
 	"                           mountpoint\n"
+	"    -o correct_statfs      also count blocks of ro-branches\n"
 	"\n",
 	progname);
 }
@@ -188,6 +189,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_COW:
 			uopt.cow_enabled = true;
+			return 0;
+		case KEY_CORRECT_STATFS:
+			uopt.correct_statfs = true;
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
