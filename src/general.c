@@ -121,18 +121,18 @@ int remove_hidden(const char *path, int maxbranch) {
 /**
  * check if path is a directory
  *
- * return 1 if it is a directory, 0 if it is a file and -1 if it does not exist
+ * return proper types given by filetype_t
  */
 filetype_t path_is_dir(const char *path) {
 	DBG_IN();
 
 	struct stat buf;
 	
-	if (lstat(path, &buf) == -1) return -1;
+	if (lstat(path, &buf) == -1) return NOT_EXISTING;
 	
-	if (S_ISDIR(buf.st_mode)) return 1;
+	if (S_ISDIR(buf.st_mode)) return IS_DIR;
 	
-	return 0;
+	return IS_FILE;
 }
 
 /**
