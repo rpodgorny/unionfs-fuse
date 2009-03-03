@@ -53,7 +53,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("stats", KEY_STATS),
 	FUSE_OPT_KEY("cow", KEY_COW),
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
-	FUSE_OPT_KEY("correct_statfs", KEY_CORRECT_STATFS),
+	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
 	FUSE_OPT_END
 };
 
@@ -503,17 +503,11 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 				stbuf->f_files += stb.f_files;
 				stbuf->f_ffree += stb.f_ffree;
 				stbuf->f_favail += stb.f_favail;
-			} else {
-				/*
-				 * NOTE: Actually adding f_blocks and f_files to the
-				 *       corresponding members would is correct, but this
-				 *       breaks all tools relying on a correct
-				 *       free = blocks - avail count.
-				 */
-				if (uopt.correct_statfs) {
-					stbuf->f_blocks += stb.f_blocks * ratio;
-					stbuf->f_files  += stb.f_files;
-				}
+			} else if (!uopt.statfs_omit_ro) {
+				// omitting the RO branches is not correct regarding the block counts but it actually fixes the percentage of free space. so, let the user decide.
+
+				stbuf->f_blocks += stb.f_blocks * ratio;
+				stbuf->f_files  += stb.f_files;
 			}
 
 			if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;

@@ -22,11 +22,7 @@ typedef struct {
 
 	bool stats_enabled;
 	bool cow_enabled;
-
-	// correctly count all branches in unionfs_statfs(), 
-	// but cause wrong "free = block - avail" by external tools
-	bool correct_statfs; 
-
+	bool statfs_omit_ro; 
 	int doexit;
 	int retval;
 } uopt_t;
@@ -34,7 +30,7 @@ typedef struct {
 enum {
 	KEY_STATS,
 	KEY_COW,
-	KEY_CORRECT_STATFS,
+	KEY_STATFS_OMIT_RO,
 	KEY_NOINITGROUPS,
 	KEY_HELP,
 	KEY_VERSION

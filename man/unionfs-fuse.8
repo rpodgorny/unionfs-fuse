@@ -32,12 +32,11 @@ Enable copy\-on\-write
 \fB\-o stats
 Show statistics in the file 'stats' under the mountpoint.
 .TP
-\fB\-o correct_statfs
-By default only blocks of rw-branches are counted in statfs() calls 
-(e.g. by 'df'). On setting this option all branches will be counted for the 
-summarry of blocks, but still only rw-branches count for available blocks.
-While this is the most correct (TM) counting method, it will break all
-tools calculating the usage percentage of mounted partitions.
+\fB\-o statfs_omit_ro
+By default blocks of all branches are counted in statfs() calls 
+(e.g. by 'df'). On setting this option read-only branches will be omitted
+for the summary of blocks. This may sound weird but it actually fixes
+"wrong" percentage of free space.
 .TP
 \fB\-o noinitgroups
 Since version 0.23 without any effect, just left over for compatibility.
