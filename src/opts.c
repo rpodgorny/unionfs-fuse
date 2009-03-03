@@ -59,7 +59,7 @@ static char *make_absolute(char *relpath) {
 	char *abspath = malloc(abslen);
 	if (abspath == NULL) {
 		fprintf(stderr, "%s: malloc failed\n", __func__);
-		exit (1); // still at early stage, we can abort
+		exit(1); // still at early stage, we can abort
 	}
 
 	// the trailing '/' is important so that we are sure later on the
@@ -82,11 +82,11 @@ static char *add_trailing_slash(char *path) {
 	path = realloc(path, len + 2); // +1 for '/' and +1 for '\0'
 	if (!path) {
 		fprintf(stderr, "%s: realloc() failed, aborting\n", __func__);
-		exit (1); // still very early stage, we can abort here
+		exit(1); // still very early stage, we can abort here
 	}
 
-	strcat (path, "/");
-	return (path);
+	strcat(path, "/");
+	return path;
 }
 
 /**
@@ -97,7 +97,7 @@ static void add_branch(char *branch) {
 	uopt.branches = realloc(uopt.branches, (uopt.nbranches+1) * sizeof(branch_entry_t));
 	if (uopt.branches == NULL) {
 		fprintf(stderr, "%s: realloc failed\n", __func__);
-		exit (1); // still at early stage, we can't abort
+		exit(1); // still at early stage, we can't abort
 	}
 
 	char *res;
@@ -145,12 +145,13 @@ static int parse_branches(const char *arg) {
 		add_branch(branch);
 	}
 
-	free (buf);
+	free(buf);
+
 	return uopt.nbranches;
 }
 
 static void print_help(const char *progname) {
-	printf (
+	printf(
 	"unionfs-fuse version "VERSION"\n"
 	"by Radek Podgorny <radek@podgorny.cz>\n"
 	"\n"

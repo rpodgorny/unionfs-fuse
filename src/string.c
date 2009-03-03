@@ -93,10 +93,11 @@ char *u_dirname(const char *path) {
 	}
 
 	char *ri = rindex(ret, '/'); 
-	if (ri != NULL) 
+	if (ri != NULL) {
 		*ri = '\0'; // '/' found, so a full path
-	else 
+	} else {
 		strcpy(ret, "."); // '/' not found, so path is only a file
+	}
 
 	return ret;
 }
