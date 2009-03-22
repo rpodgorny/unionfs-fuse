@@ -50,8 +50,7 @@ char *make_absolute(char *relpath) {
 
 	// 3 due to: +1 for '/' between cwd and relpath
 	//           +1 for trailing '/'
-	//           +1 for terminating '\0'
-	int abslen = cwdlen + strlen(relpath) + 3;
+	int abslen = cwdlen + strlen(relpath) + 2;
 	if (abslen > PATHLEN_MAX) {
 		fprintf(stderr, "Absolute path too long!\n");
 		return NULL;
@@ -62,10 +61,6 @@ char *make_absolute(char *relpath) {
 		fprintf(stderr, "%s: malloc failed\n", __func__);
 		exit(1); // still at early stage, we can abort
 	}
-
-	// the trailing '/' is important so that we are sure later on the
-	// directory components are properly seperated
-	snprintf(abspath, abslen, "%s/%s/", cwd, relpath);
 
 	return abspath;
 }
