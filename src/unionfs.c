@@ -54,6 +54,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("cow", KEY_COW),
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
 	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
+	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
 	FUSE_OPT_END
 };
 
@@ -197,6 +198,46 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	if (S_ISDIR(stbuf->st_mode)) stbuf->st_nlink = 1;
 
 	return 0;
+}
+
+/**
+  * This method is to initialize options before any access to the filesystem
+  * () - real function argument we don't use it for now
+  */
+static void * unionfs_init(struct fuse_conn_info *conn) {
+	// just to prevent the compiler complaining about unused variables
+	conn->max_readahead = conn->max_readahead;
+
+	if (uopt.chroot) {
+		fprintf(stderr, "Chrooting to %s\n", uopt.chroot);
+		int res = chroot(uopt.chroot);
+		if (res) {
+			fprintf(stderr, "Chrooting to %s failed: %s ! Aborting!\n",
+				  uopt.chroot, strerror(errno));
+			exit(1);
+		}
+	}
+
+	/* This has to be called after a possible chroot */
+	int i;
+	for (i = 0; i<uopt.nbranches; i++) {
+		uopt.branches[i].path = make_absolute(uopt.branches[i].path);
+		uopt.branches[i].path = add_trailing_slash(uopt.branches[i].path);
+
+		// Prevent accidental umounts. Especially system shutdown scripts tend 
+		// to umount everything they can. If we don't have an open file descriptor, 
+		// this might cause unexpected behaviour.
+		char *path = uopt.branches[i].path;
+		int fd = open(path, O_RDONLY);
+		if (fd == -1) {
+			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n", 
+			        path, strerror(errno));
+			exit(1);
+		}
+                uopt.branches[i].fd = fd;
+	}
+
+	return NULL;
 }
 
 static int unionfs_link(const char *from, const char *to) {
@@ -662,11 +703,12 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 static struct fuse_operations unionfs_oper = {
 	.chmod	= unionfs_chmod,
 	.chown	= unionfs_chown,
-	.create = unionfs_create,
+	.create 	= unionfs_create,
 	.flush	= unionfs_flush,
 	.fsync	= unionfs_fsync,
 	.getattr	= unionfs_getattr,
-	.link	= unionfs_link,
+	.init		= unionfs_init,
+	.link		= unionfs_link,
 	.mkdir	= unionfs_mkdir,
 	.mknod	= unionfs_mknod,
 	.open	= unionfs_open,
@@ -683,10 +725,10 @@ static struct fuse_operations unionfs_oper = {
 	.utimens	= unionfs_utimens,
 	.write	= unionfs_write,
 #ifdef HAVE_SETXATTR
-	.getxattr	= unionfs_getxattr,
-	.listxattr	= unionfs_listxattr,
+	.getxattr		= unionfs_getxattr,
+	.listxattr		= unionfs_listxattr,
 	.removexattr	= unionfs_removexattr,
-	.setxattr	= unionfs_setxattr,
+	.setxattr		= unionfs_setxattr,
 #endif
 };
 
@@ -715,21 +757,6 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
 		exit(1);
 	}
-
-        // Prevent accidental umounts. Especially system shutdown scripts tend 
-	// to umount everything they can. If we don't have an open file descriptor, 
-	// this might cause unexpected behaviour.
-        int i = 0;
-        for (i = 0; i < uopt.nbranches; i++) {
-		char *path = uopt.branches[i].path;
-		int fd = open(path, O_RDONLY);
-		if (fd == -1) {
-			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n", 
-			        path, strerror(errno));
-			exit(1);
-		}
-                uopt.branches[i].fd = fd;
-        }
 	
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);

@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 #include "opts.h"
 #include "stats.h"
@@ -31,7 +32,7 @@ void uopt_init() {
  * Take a relative path as argument and return the absolute path by using the 
  * current working directory. The return string is malloc'ed with this function.
  */
-static char *make_absolute(char *relpath) {
+char *make_absolute(char *relpath) {
 	// Already an absolute path
 	if (*relpath == '/') return relpath;
 
@@ -73,7 +74,7 @@ static char *make_absolute(char *relpath) {
  * Add a trailing slash at the end of a branch. So functions using this
  * path don't have to care about this slash themselves.
  **/
-static char *add_trailing_slash(char *path) {
+char *add_trailing_slash(char *path) {
 	int len = strlen(path);
 	if (path[len - 1] == '/') {
 		return path; // no need to add a slash, already there
@@ -109,8 +110,6 @@ static void add_branch(char *branch) {
 	// for string manipulations it is important to copy the string, otherwise
 	// make_absolute() and add_trailing_slash() will corrupt our input (parse string)
 	uopt.branches[uopt.nbranches].path = strdup(res);
-	uopt.branches[uopt.nbranches].path = make_absolute(uopt.branches[uopt.nbranches].path);
-	uopt.branches[uopt.nbranches].path = add_trailing_slash(uopt.branches[uopt.nbranches].path);
 	uopt.branches[uopt.nbranches].rw = 0;
 
 	res = strsep(ptr, "=");
@@ -133,6 +132,7 @@ static void add_branch(char *branch) {
  * example arg string: "branch1=RW:branch2=RO:branch3=RO"
  */
 static int parse_branches(const char *arg) {
+	// the last argument is  our mountpoint, don't take it as branch!
 	if (uopt.nbranches) return 0;
 
 	// We don't free the buf as parts of it may go to branches
@@ -149,6 +149,41 @@ static int parse_branches(const char *arg) {
 
 	return uopt.nbranches;
 }
+
+/**
+  * fuse passes arguments with the argument prefix, e.g.
+  * "-o chroot=/path/to/chroot/" will give us "chroot=/path/to/chroot/"
+  * and we need to cut off the "chroot=" part
+  * NOTE: If the user specifies a relative path of the branches
+  *       to the chroot, it is absolutely required 
+  *       -o chroot=path is provided before specifying the braches!
+  */
+char * get_chroot(const char *arg)
+{
+	char *str = index(arg, '=');
+	
+	if (!str) {
+		fprintf(stderr, "-o chroot parameter not properly specified, aborting!\n");
+		exit(1); // still early phase, we can abort
+	}
+
+	if (strlen(str) < 3) {	
+		fprintf(stderr, "Chroot path has not sufficient characters, aborting!\n");
+		exit(1);
+	}
+
+	str++; // just jump over the '='
+	
+	// copy of the given parameter, just in case something messes around 
+	// with command line parameters later on
+	str = strdup(str);
+	if (!str) {
+		fprintf(stderr, "strdup failed: %s Aborting!\n", strerror(errno));
+		exit(1);
+	}
+	return str;
+}
+
 
 static void print_help(const char *progname) {
 	printf(
@@ -167,7 +202,8 @@ static void print_help(const char *progname) {
 	"    -o cow                 enable copy-on-write\n"
 	"    -o stats               show statistics in the file 'stats' under the\n"
 	"                           mountpoint\n"
-	"    -o statfs_omit_ro      also count blocks of ro-branches\n"
+	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
+	"    -o chroot=path         chroot into this path\n"
 	"\n",
 	progname);
 }
@@ -194,6 +230,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_NOINITGROUPS:
 			// option only for compatibility with older versions
+			return 0;
+		case KEY_CHROOT:
+			uopt.chroot = get_chroot(arg);
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);

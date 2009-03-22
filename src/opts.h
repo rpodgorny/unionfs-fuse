@@ -22,9 +22,11 @@ typedef struct {
 
 	bool stats_enabled;
 	bool cow_enabled;
-	bool statfs_omit_ro; 
+	bool statfs_omit_ro;
 	int doexit;
 	int retval;
+	char *chroot; 		// chroot we might go into
+
 } uopt_t;
 
 enum {
@@ -32,6 +34,7 @@ enum {
 	KEY_COW,
 	KEY_STATFS_OMIT_RO,
 	KEY_NOINITGROUPS,
+	KEY_CHROOT,
 	KEY_HELP,
 	KEY_VERSION
 };
@@ -42,6 +45,7 @@ extern uopt_t uopt;
 
 void uopt_init();
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs);
-
+char *make_absolute(char *relpath);
+char *add_trailing_slash(char *path) ;
 
 #endif
