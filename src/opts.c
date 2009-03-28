@@ -21,7 +21,6 @@
 
 uopt_t uopt;
 
-
 void uopt_init() {
 	memset(&uopt, 0, sizeof(uopt_t)); // initialize options with zeros first
 
@@ -179,7 +178,6 @@ char * get_chroot(const char *arg)
 	return str;
 }
 
-
 static void print_help(const char *progname) {
 	printf(
 	"unionfs-fuse version "VERSION"\n"
@@ -201,6 +199,40 @@ static void print_help(const char *progname) {
 	"    -o chroot=path         chroot into this path\n"
 	"\n",
 	progname);
+}
+
+/**
+  * This method is to post-process options once we know all of them
+  */
+void unionfs_post_opts(void) {
+	// chroot to the given chroot
+	if (uopt.chroot) {
+		int res = chroot(uopt.chroot);
+		if (res) {
+			fprintf(stderr, "Chrooting to %s failed: %s ! Aborting!\n",
+				  uopt.chroot, strerror(errno));
+			exit(1);
+		}
+	}
+
+	/* This has to be called after a possible chroot */
+	int i;
+	for (i = 0; i<uopt.nbranches; i++) {
+		uopt.branches[i].path = make_absolute(uopt.branches[i].path);
+		uopt.branches[i].path = add_trailing_slash(uopt.branches[i].path);
+
+		// Prevent accidental umounts. Especially system shutdown scripts tend 
+		// to umount everything they can. If we don't have an open file descriptor, 
+		// this might cause unexpected behaviour.
+		char *path = uopt.branches[i].path;
+		int fd = open(path, O_RDONLY);
+		if (fd == -1) {
+			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n", 
+				path, strerror(errno));
+			exit(1);
+		}
+		uopt.branches[i].fd = fd;
+	}
 }
 
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs) {
