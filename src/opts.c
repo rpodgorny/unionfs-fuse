@@ -215,7 +215,8 @@ void unionfs_post_opts(void) {
 		}
 	}
 
-	/* This has to be called after a possible chroot */
+	// Make the pathes absolute and add trailing slashes
+	// This has to be called after a possible chroot!
 	int i;
 	for (i = 0; i<uopt.nbranches; i++) {
 		uopt.branches[i].path = make_absolute(uopt.branches[i].path);
