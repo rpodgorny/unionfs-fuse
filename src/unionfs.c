@@ -206,7 +206,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
   */
 static void * unionfs_init(struct fuse_conn_info *conn) {
 	// just to prevent the compiler complaining about unused variables
-	conn->max_readahead = conn->max_readahead;
+	(void) conn->max_readahead;
 
 	if (uopt.chroot) {
 		fprintf(stderr, "Chrooting to %s\n", uopt.chroot);
