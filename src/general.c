@@ -60,8 +60,7 @@ bool path_hidden(const char *path, int branch) {
 	if (!uopt.cow_enabled) return false;
 
 	char whiteoutpath[PATHLEN_MAX];
-	if (BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path))
-		return false;
+	if (BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path)) return false;
 
 	char *walk = whiteoutpath;
 
@@ -105,12 +104,11 @@ int remove_hidden(const char *path, int maxbranch) {
 	int i;
 	for (i = 0; i <= maxbranch; i++) {
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.branches[i].path, METADIR, path, HIDETAG))
-			return 1;
+		if (BUILD_PATH(p, uopt.branches[i].path, METADIR, path, HIDETAG)) return 1;
 
 		switch (path_is_dir(p)) {
-			case IS_FILE: unlink (p); break;
-			case IS_DIR:  rmdir  (p); break;
+			case IS_FILE: unlink(p); break;
+			case IS_DIR: rmdir(p); break;
 			case NOT_EXISTING: continue;
 		}
 	}
@@ -150,8 +148,7 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 	path_create_cutlast(metapath, branch_rw, branch_rw);
 
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath, HIDETAG))
-		return -1;
+	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath, HIDETAG)) return -1;
 
 	int res;
 	if (mode == WHITEOUT_FILE) {
