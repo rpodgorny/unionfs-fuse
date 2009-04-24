@@ -1,3 +1,8 @@
+??
+
+- Added support for chrooting and "mount as root" feature.
+- Added recursive directory COW.
+
 0.23
 - remove to_user() and to_root() calls for autorization and use fuse build-in
   default_permissions checks
@@ -19,7 +24,7 @@
 - Add a man page.
 
 0.20
-- Fix a critical bug introduced in 0.19 when we disabled threadding
+- Fix a critical bug introduced in 0.19 when we disabled threadding.
 
 0.19
 - Several copy-on-write fixes (readdir, unlink, rmdir, rename).
@@ -29,7 +34,5 @@
 - Add supplementary group support.
 
 0.18
-- First release with copy-on-write (COW) support
+- First release with copy-on-write (COW) support.
 - Many many internal code changes.
-
-- 
