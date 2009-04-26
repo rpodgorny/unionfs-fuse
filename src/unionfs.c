@@ -105,12 +105,13 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	// NOTE: Create the file with mode=0 first, otherwise we might create
 	//       a file as root + x-bit + suid bit set, which might be used for
 	//       security racing!
-	int res = open(p, fi->flags, 0);
+///	int res = open(p, fi->flags, 0);
+	int res = open(p, fi->flags, mode);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
 	// NOW, that the file has the proper owner we may set the requested mode
-	fchmod(res, mode);
+///	fchmod(res, mode);
 
 	fi->fh = res;
 	remove_hidden(path, i);
@@ -212,8 +213,7 @@ static void * unionfs_init(struct fuse_conn_info *conn) {
 		fprintf(stderr, "Chrooting to %s\n", uopt.chroot);
 		int res = chroot(uopt.chroot);
 		if (res) {
-			fprintf(stderr, "Chrooting to %s failed: %s ! Aborting!\n",
-				  uopt.chroot, strerror(errno));
+			fprintf(stderr, "Chrooting to %s failed: %s ! Aborting!\n", uopt.chroot, strerror(errno));
 			exit(1);
 		}
 	}
@@ -230,11 +230,10 @@ static void * unionfs_init(struct fuse_conn_info *conn) {
 		char *path = uopt.branches[i].path;
 		int fd = open(path, O_RDONLY);
 		if (fd == -1) {
-			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n", 
-			        path, strerror(errno));
+			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n",  path, strerror(errno));
 			exit(1);
 		}
-                uopt.branches[i].fd = fd;
+		uopt.branches[i].fd = fd;
 	}
 
 	return NULL;
@@ -279,12 +278,13 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	int res = mkdir(p, 0);
+///	int res = mkdir(p, 0);
+	int res = mkdir(p, mode);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
-        // NOW, that the file has the proper owner we may set the requested mode
-        chmod(p, mode);
+	// NOW, that the file has the proper owner we may set the requested mode
+///	chmod(p, mode);
 
 	return 0;
 }
@@ -308,16 +308,17 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		usyslog (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
 
 		res = creat(p, 0);
-		if (res > 0 && close(res) == -1) usyslog (LOG_WARNING, "Warning, cannot close file\n");
+		if (res > 0 && close(res) == -1) usyslog(LOG_WARNING, "Warning, cannot close file\n");
 	} else {
-		res = mknod(p, 0, rdev);
+		///res = mknod(p, 0, rdev);
+		res = mknod(p, mode, rdev);
 	}
 
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
 	// NOW, that the file has the proper owner we may set the requested mode
-	chmod(p, mode);
+	///chmod(p, mode);
 
 	remove_hidden(path, i);
 
