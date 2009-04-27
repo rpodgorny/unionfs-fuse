@@ -258,8 +258,11 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
+	int file_type = mode & S_IFMT;
+	int file_perm = mode & (S_PROT_MASK);
+
 	int res = -1;
-	if ((mode & S_IFMT) == S_IFREG) {
+	if ((file_type) == S_IFREG) {
 		// under FreeBSD, only the super-user can create ordinary files using mknod
 		// Actually this workaround should not be required any more
 		// since we now have the unionfs_create() method
@@ -271,14 +274,14 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		if (res > 0) 
 			if (close (res) == -1) usyslog (LOG_WARNING, "Warning, cannot close file\n");
 	} else {
-		res = mknod(p, 0, rdev);
+		res = mknod(p, file_type, rdev);
 	}
 
 	if (res == -1) return -errno;
 	
 	set_owner(p); // no error check, since creating the file succeeded
 	// NOW, that the file has the proper owner we may set the requested mode
-	chmod(p, mode);
+	chmod(p, file_perm);
 
 	remove_hidden(path, i);
 
