@@ -15,6 +15,7 @@
 #include <locale.h>
 #include <errno.h>
 #include <stdio.h>
+#include <dirent.h>
 
 #include "opts.h"
 #include "findbranch.h"
@@ -162,7 +163,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 			res = copy_link(&cow);
 			break;
 		case S_IFDIR:
-			res = path_create(path, branch_ro, branch_rw);
+			res = copy_directory(path, branch_ro, branch_rw);
 			break;
 		case S_IFBLK:
 		case S_IFCHR:
@@ -179,4 +180,37 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 	}
 
 	return res;
+}
+
+/**
+ * copy a directory between branches (includes all contents of the directory)
+ */
+int copy_directory(const char *path, int branch_ro, int branch_rw) {
+	DBG_IN();
+
+	/* create the directory on the destination branch */
+	int res = path_create(path, branch_ro, branch_rw);
+	if (res != 0) {
+		return res;
+	}
+
+	/* determine path to source directory on read-only branch */
+	char from[PATHLEN_MAX];
+	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path)) return 1;
+
+	DIR *dp = opendir(from);
+	if (dp == NULL) return 1;
+
+	struct dirent *de;
+	while ((de = readdir(dp)) != NULL) {
+		if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) continue;
+
+		char member[PATHLEN_MAX];
+		if (BUILD_PATH(member, path, de->d_name)) return 1;
+		res = cow_cp(member, branch_ro, branch_rw);
+		if (res != 0) return res;
+	}
+
+	closedir(dp);
+	return 0;
 }

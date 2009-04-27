@@ -109,8 +109,7 @@ int find_rw_branch_cutlast(const char *path) {
 
 	int branch = find_rw_branch_cow(path);
 
-	if (branch >= 0 || (branch < 0 && errno != ENOENT))
-		return branch;
+	if (branch >= 0 || (branch < 0 && errno != ENOENT)) return branch;
 
 	DBG("Check for parent directory\n");
 
@@ -128,6 +127,7 @@ int find_rw_branch_cutlast(const char *path) {
 
 	if (!uopt.cow_enabled) {
 		// So path exists, but is not writable.
+		branch = -1;
 		errno = EACCES;
 		goto out;
 	}
@@ -137,12 +137,12 @@ int find_rw_branch_cutlast(const char *path) {
 
 	// no writable branch found, we must return an error
 	if (branch_rw < 0) {
+		branch = -1;
 		errno = EACCES;
 		goto out;
 	}
 
-	if (path_create(dname, branch, branch_rw) == 0)
-		branch = branch_rw; // path successfully copied
+	if (path_create(dname, branch, branch_rw) == 0) branch = branch_rw; // path successfully copied
 
 out:
 	free(dname);

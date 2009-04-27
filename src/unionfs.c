@@ -102,15 +102,14 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	// NOTE: Create the file with mode=0 first, otherwise we might create
+	// NOTE: We should do:
+	//       Create the file with mode=0 first, otherwise we might create
 	//       a file as root + x-bit + suid bit set, which might be used for
 	//       security racing!
-	int res = open(p, fi->flags, 0);
+	int res = open(p, fi->flags, mode);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
-	// NOW, that the file has the proper owner we may set the requested mode
-	fchmod(res, mode);
 
 	fi->fh = res;
 	remove_hidden(path, i);
@@ -239,7 +238,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	int res = mkdir(p, 0);
+	int res = mkdir(p, mode);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
@@ -267,18 +266,17 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		// Actually this workaround should not be required any more
 		// since we now have the unionfs_create() method
 		// So can we remove it?
-		
+
 		usyslog (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
-		
+
 		res = creat(p, 0);
-		if (res > 0) 
-			if (close (res) == -1) usyslog (LOG_WARNING, "Warning, cannot close file\n");
+		if (res > 0 && close(res) == -1) usyslog(LOG_WARNING, "Warning, cannot close file\n");
 	} else {
 		res = mknod(p, file_type, rdev);
 	}
 
 	if (res == -1) return -errno;
-	
+
 	set_owner(p); // no error check, since creating the file succeeded
 	// NOW, that the file has the proper owner we may set the requested mode
 	chmod(p, file_perm);
