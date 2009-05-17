@@ -17,6 +17,7 @@
 #include "opts.h"
 #include "stats.h"
 #include "version.h"
+#include "string.h"
 
 
 uopt_t uopt;
@@ -28,7 +29,7 @@ void uopt_init() {
 }
 
 /**
- * Take a relative path as argument and return the absolute path by using the 
+ * Take a relative path as argument and return the absolute path by using the
  * current working directory. The return string is malloc'ed with this function.
  */
 char *make_absolute(char *relpath) {
@@ -149,26 +150,26 @@ static int parse_branches(const char *arg) {
   * "-o chroot=/path/to/chroot/" will give us "chroot=/path/to/chroot/"
   * and we need to cut off the "chroot=" part
   * NOTE: If the user specifies a relative path of the branches
-  *       to the chroot, it is absolutely required 
+  *       to the chroot, it is absolutely required
   *       -o chroot=path is provided before specifying the braches!
   */
 char * get_chroot(const char *arg)
 {
 	char *str = index(arg, '=');
-	
+
 	if (!str) {
 		fprintf(stderr, "-o chroot parameter not properly specified, aborting!\n");
 		exit(1); // still early phase, we can abort
 	}
 
-	if (strlen(str) < 3) {	
+	if (strlen(str) < 3) {
 		fprintf(stderr, "Chroot path has not sufficient characters, aborting!\n");
 		exit(1);
 	}
 
 	str++; // just jump over the '='
-	
-	// copy of the given parameter, just in case something messes around 
+
+	// copy of the given parameter, just in case something messes around
 	// with command line parameters later on
 	str = strdup(str);
 	if (!str) {
@@ -205,30 +206,41 @@ static void print_help(const char *progname) {
   * This method is to post-process options once we know all of them
   */
 void unionfs_post_opts(void) {
-	// chroot to the given chroot
+	// chdir to the given chroot, we
 	if (uopt.chroot) {
-		int res = chroot(uopt.chroot);
+		int res = chdir(uopt.chroot);
 		if (res) {
-			fprintf(stderr, "Chrooting to %s failed: %s ! Aborting!\n",
+			fprintf(stderr, "Chdir to %s failed: %s ! Aborting!\n",
 				  uopt.chroot, strerror(errno));
 			exit(1);
 		}
 	}
 
 	// Make the pathes absolute and add trailing slashes
-	// This has to be called after a possible chroot!
 	int i;
 	for (i = 0; i<uopt.nbranches; i++) {
-		uopt.branches[i].path = make_absolute(uopt.branches[i].path);
+		// if -ochroot= is specified, the path has to be given absolute
+		// or relative to the chroot, so no need to make it absolute
+		// also won't work, since we are not yet in the chroot here
+		if (!uopt.chroot) {
+			uopt.branches[i].path = make_absolute(uopt.branches[i].path);
+		}
 		uopt.branches[i].path = add_trailing_slash(uopt.branches[i].path);
 
-		// Prevent accidental umounts. Especially system shutdown scripts tend 
-		// to umount everything they can. If we don't have an open file descriptor, 
+		// Prevent accidental umounts. Especially system shutdown scripts tend
+		// to umount everything they can. If we don't have an open file descriptor,
 		// this might cause unexpected behaviour.
-		char *path = uopt.branches[i].path;
+		char path[PATHLEN_MAX];
+
+		if (!uopt.chroot) {
+			BUILD_PATH(path, uopt.branches[i].path);
+		} else {
+			BUILD_PATH(path, uopt.chroot, uopt.branches[i].path);
+		}
+
 		int fd = open(path, O_RDONLY);
 		if (fd == -1) {
-			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n", 
+			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n",
 				path, strerror(errno));
 			exit(1);
 		}

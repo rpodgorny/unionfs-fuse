@@ -2,7 +2,7 @@
 *
 * This is offered under a BSD-style license. This means you can use the code for whatever you
 * desire in any way you may want but you MUST NOT forget to give me appropriate credits when
-* spreading your work which is based on mine. Something like "original implementation by Radek 
+* spreading your work which is based on mine. Something like "original implementation by Radek
 * Podgorny" should be fine.
 *
 * License: BSD-style license
@@ -121,8 +121,8 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 }
 
 
-/** 
- * flush may be called multiple times for an open file, this must not really 
+/**
+ * flush may be called multiple times for an open file, this must not really
  * close the file. This is important if used on a network filesystem like NFS
  * which flush the data/metadata on close()
  */
@@ -190,7 +190,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	int res = lstat(p, stbuf);
 	if (res == -1) return -errno;
 
-	/* This is a workaround for broken gnu find implementations. Actually, 
+	/* This is a workaround for broken gnu find implementations. Actually,
 	 * n_links is not defined at all for directories by posix. However, it
 	 * seems to be common for filesystems to set it to one if the actual value
 	 * is unknown. Since nlink_t is unsigned and since these broken implementations
@@ -202,9 +202,30 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	return 0;
 }
 
+/**
+ * init method
+ * called before first access to the filesystem
+ */
+static void * unionfs_init(struct fuse_conn_info *conn) {
+	// just to prevent the compiler complaining about unused variables
+	(void) conn->max_readahead;
+
+	// we only now (from unionfs_init) may go into the chroot, since otherwise
+	// fuse_main() will fail to open /dev/fuse and to call mount
+	if (uopt.chroot) {
+		int res = chroot(uopt.chroot);
+		if (res) {
+			usyslog("Chdir to %s failed: %s ! Aborting!\n",
+				 uopt.chroot, strerror(errno));
+			exit(1);
+		}
+	}
+	return NULL;
+}
+
 static int unionfs_link(const char *from, const char *to) {
 	DBG_IN();
-	
+
 	// hardlinks do not work across different filesystems so we need a copy of from first
 	int i = find_rw_branch_cow(from);
 	if (i == -1) return -errno;
@@ -387,12 +408,12 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 
 /**
  * unionfs rename function
- * TODO: If we rename a directory on a read-only branch, we need to copy over 
+ * TODO: If we rename a directory on a read-only branch, we need to copy over
  *       all files to the renamed directory on the read-write branch.
  */
 static int unionfs_rename(const char *from, const char *to) {
 	DBG_IN();
-	
+
 	bool is_dir = false; // is 'from' a file or directory
 
 	int j = find_rw_branch_cutlast(to);
@@ -417,9 +438,9 @@ static int unionfs_rename(const char *from, const char *to) {
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
 
 	filetype_t ftype = path_is_dir(f);
-	if (ftype == NOT_EXISTING)  
+	if (ftype == NOT_EXISTING)
 		return -ENOENT;
-	else if (ftype == IS_DIR) 
+	else if (ftype == IS_DIR)
 		is_dir = true;
 
 	int res;
@@ -442,7 +463,7 @@ static int unionfs_rename(const char *from, const char *to) {
 			if (unlink(f))
 				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also unlink()  failed\n", __func__, from);
-			
+
 			if (remove_hidden(from, i))
 				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also removing the whiteout  failed\n", __func__, from);
@@ -633,7 +654,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 
 static int unionfs_removexattr(const char *path, const char *name) {
 	DBG_IN();
-	
+
 	int i = find_rw_branch_cow(path);
 	if (i == -1) return -errno;
 
@@ -659,7 +680,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	int res = lsetxattr(p, name, value, size, flags);
 
 	if (res == -1) return -errno;
-	
+
 	return res;
 }
 #endif // HAVE_SETXATTR
@@ -671,6 +692,7 @@ static struct fuse_operations unionfs_oper = {
 	.flush	= unionfs_flush,
 	.fsync	= unionfs_fsync,
 	.getattr	= unionfs_getattr,
+	.init		= unionfs_init,
 	.link		= unionfs_link,
 	.mkdir	= unionfs_mkdir,
 	.mknod	= unionfs_mknod,
@@ -713,15 +735,15 @@ int main(int argc, char *argv[]) {
 
 		if (uopt.stats_enabled) stats_init(&stats);
 	}
-	
-	// enable fuse permission checks, we need to set this, even we we are 
+
+	// enable fuse permission checks, we need to set this, even we we are
 	// not root, since we don't have our own access() function
 	if (fuse_opt_add_arg(&args, "-odefault_permissions")) {
 		fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
 		exit(1);
 	}
 	unionfs_post_opts();
-	
+
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
 	return uopt.doexit ? uopt.retval : res;
