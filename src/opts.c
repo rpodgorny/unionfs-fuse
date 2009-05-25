@@ -222,7 +222,8 @@ static void print_help(const char *progname) {
 	"    -o stats               show statistics in the file 'stats' under the\n"
 	"                           mountpoint\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
-	"    -o chroot=path         chroot into this path\n"
+	"    -o chroot=path         chroot into this path. Use this if you \n"
+        "                           want to have a union of \"/\" \n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
 	"\n",
 	progname);
