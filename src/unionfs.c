@@ -358,9 +358,9 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 		char out[STATS_SIZE] = "";
 		stats_sprint(&stats, out);
 
-		int s = size;
-		if (offset < strlen(out)) {
-			if (s > strlen(out)-offset) s = strlen(out)-offset;
+		off_t s = size;
+		if (offset < (off_t) strlen(out)) {
+			if (s > (off_t) strlen(out) - offset) s = strlen(out)-offset;
 			memcpy(buf, out+offset, s);
 		} else {
 			s = 0;
