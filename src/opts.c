@@ -28,7 +28,7 @@ int set_max_open_files(const char *arg)
 {
 	struct rlimit rlim;
 	unsigned long max_files;
-	if (sscanf(arg, "%ld\n", &max_files)) {
+	if (sscanf(arg, "max_files=%ld\n", &max_files) != 1) {
 		fprintf(stderr, "%s Converting %s to number failed, aborting!\n",
 			__func__, arg);
 		exit(1);
