@@ -1,11 +1,12 @@
-??
-
-- Added support for chrooting and "mount as root" feature.
+0.24
+- Support for liveCDs / live USB sticks (-o chroot)
+- Build-in support to change the maximum number of open files
 - Added recursive directory COW.
 
 0.23
 - remove to_user() and to_root() calls for autorization and use fuse build-in
   default_permissions checks
+- bugfix: rename created wrong whiteout type
 
 0.22
 - Fix a bug reported by Jens Hoelldampf <jens@hoelldampf.net>, in 0.21 cow 
