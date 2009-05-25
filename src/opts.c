@@ -13,11 +13,36 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "opts.h"
 #include "stats.h"
 #include "version.h"
 #include "string.h"
+
+/**
+ * Set the maximum number of open files
+ */
+int set_max_open_files(const char *arg)
+{
+	struct rlimit rlim;
+	unsigned long max_files;
+	if (sscanf(arg, "%ld\n", &max_files)) {
+		fprintf(stderr, "%s Converting %s to number failed, aborting!\n",
+			__func__, arg);
+		exit(1);
+	}
+	rlim.rlim_cur = max_files;
+	rlim.rlim_max = max_files;
+	if (setrlimit(RLIMIT_NOFILE, &rlim)) {
+		fprintf(stderr, "%s: Setting the maximum number of files failed: %s\n",
+			__func__, strerror(errno));
+		exit(1);
+	}
+
+	return 0;
+}
 
 
 uopt_t uopt;
@@ -198,6 +223,7 @@ static void print_help(const char *progname) {
 	"                           mountpoint\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
 	"    -o chroot=path         chroot into this path\n"
+	"    -o max_files=number    Increase the maximum number of open files\n"
 	"\n",
 	progname);
 }
@@ -273,6 +299,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_CHROOT:
 			uopt.chroot = get_chroot(arg);
+			return 0;
+		case KEY_MAX_FILES:
+			set_max_open_files(arg);
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);

@@ -55,6 +55,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
 	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
+	FUSE_OPT_KEY("max_files=%s", KEY_MAX_FILES),
 	FUSE_OPT_END
 };
 
