@@ -63,8 +63,8 @@ unionfs, but to libfuse. Please run "unionfs-fuse --help" to see these.
 We already set the "-o default-permissions" options on our own.
 .SH "EXAMPLES"
 .Vb 5
-\& unionfs\-fuse \-o cow \-o allow_other \e
-\&              \-o use_ino \-o nonempty \e
+\& unionfs\-fuse \-o cow,max_files=32768 \e
+\&              -o allow_other,use_ino,suid,dev,nonempty \e
 \&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
 \&              /u/union/etc
 .Ve
