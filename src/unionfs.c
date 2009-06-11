@@ -538,8 +538,9 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 				stbuf->f_ffree += stb.f_ffree;
 				stbuf->f_favail += stb.f_favail;
 			} else if (!uopt.statfs_omit_ro) {
-				// omitting the RO branches is not correct regarding the block counts but it actually fixes the percentage of free space. so, let the user decide.
-
+				// omitting the RO branches is not correct regarding
+				// the block counts but it actually fixes the 
+				// percentage of free space. so, let the user decide.
 				stbuf->f_blocks += stb.f_blocks * ratio;
 				stbuf->f_files  += stb.f_files;
 			}
