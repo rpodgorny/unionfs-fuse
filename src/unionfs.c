@@ -26,7 +26,11 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/statvfs.h>
+#ifdef linux
+	#include <sys/vfs.h>
+#else
+	#include <sys/statvfs.h>
+#endif
 
 #ifdef HAVE_SETXATTR
 	#include <sys/xattr.h>
@@ -487,6 +491,54 @@ static int unionfs_rename(const char *from, const char *to) {
 }
 
 /**
+ * Wrapper function to convert the result of statfs() to statvfs()
+ * libfuse uses statvfs, since it conforms to POSIX. Unfortunately,
+ * glibc's statvfs parses /proc/mounts, which then results in reading
+ * the filesystem itself again - which would result in a deadlock.
+ * TODO: BSD/MacOSX
+ */
+static int statvfs_local(const char *path, struct statvfs *stbuf) {
+#ifdef linux
+	/* glibc's statvfs walks /proc/mounts and stats entries found there
+	 * in order to extract their mount flags, which may deadlock if they
+	 * are mounted under the unionfs. As a result, we have to do this
+	 * ourselves.
+	 */
+	struct statfs stfs;
+	int res = statfs(path, &stfs);
+	if (res == -1) return res;
+
+	memset(stbuf, 0, sizeof(*stbuf));
+	stbuf->f_bsize = stfs.f_bsize;
+	if (stfs.f_frsize)
+		stbuf->f_frsize = stfs.f_frsize;
+	else
+		stbuf->f_frsize = stfs.f_bsize;
+	stbuf->f_blocks = stfs.f_blocks;
+	stbuf->f_bfree = stfs.f_bfree;
+	stbuf->f_bavail = stfs.f_bavail;
+	stbuf->f_files = stfs.f_files;
+	stbuf->f_ffree = stfs.f_ffree;
+	stbuf->f_favail = stfs.f_ffree; /* nobody knows */
+	stbuf->f_fsid = stfs.f_fsid.__val[0];
+
+	/* We don't worry about flags, exactly because this would
+	 * require reading /proc/mounts, and avoiding that and the
+	 * resulting deadlocks is exactly what we're trying to avoid
+	 * by doing this rather than using statvfs.
+	 */
+	stbuf->f_flag = 0;
+	stbuf->f_namemax = stfs.f_namelen;
+
+	return 0;
+#else
+	return statvfs(path, stbuf);
+#endif
+}
+
+
+
+/**
  * statvs implementation
  * TODO: fsid: It would be optimal, if we would store a once generated random
  *	       fsid. But what if the same branch with the fsid used for different 
@@ -504,7 +556,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
 		struct statvfs stb;
-		int res = statvfs(uopt.branches[i].path, &stb);
+		int res = statvfs_local(uopt.branches[i].path, &stb);
 		if (res == -1) continue;
 
 		struct stat st;
