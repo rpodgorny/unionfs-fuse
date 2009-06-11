@@ -486,6 +486,12 @@ static int unionfs_rename(const char *from, const char *to) {
 	return 0;
 }
 
+/**
+ * statvs implementation
+ * TODO: fsid: It would be optimal, if we would store a once generated random
+ *	       fsid. But what if the same branch with the fsid used for different 
+ *	       unions? Is the present way ok for most cases?
+ */
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	(void)path;
 
@@ -509,6 +515,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 		if (first) {
 			memcpy(stbuf, &stb, sizeof(*stbuf));
 			first = 0;
+			stbuf->f_fsid = stb.f_fsid << 8;
 			continue;
 		}
 
@@ -541,10 +548,12 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 			if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
 
 			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
+
+			// we don't care about overflows, the fsid just should be different
+			// from other fsids
+			stbuf->f_fsid += stb.f_fsid;
 		}
 	}
-
-	stbuf->f_fsid = 0;
 
 	return 0;
 }
