@@ -597,8 +597,8 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 				stbuf->f_files  += stb.f_files;
 			}
 
-			if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;
-			if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
+			if (!(stb.f_flag & ST_RDONLY)) stbuf->f_flag &= ~ST_RDONLY;
+			if (!(stb.f_flag & ST_NOSUID)) stbuf->f_flag &= ~ST_NOSUID;
 
 			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
 
