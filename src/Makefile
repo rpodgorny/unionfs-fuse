@@ -1,9 +1,12 @@
 CFLAGS += -Wall
-CPPFLAGS += -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26
-#CPPFLAGS += -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26 -DHAVE_SETXATTR
+CPPFLAGS += $(shell pkg-config --cflags fuse)
+CPPFLAGS += -DFUSE_USE_VERSION=26
+#CPPFLAGS += -DHAVE_SETXATTR
+
 LDFLAGS += 
 
-LIB = -lfuse -lpthread -lm
+LIB = $(shell pkg-config --libs fuse)
+LIB += -lm  # For ceil(3)
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o general.o unlink.o rmdir.o cow.o cow_utils.o string.o
