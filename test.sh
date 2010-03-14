@@ -7,7 +7,7 @@ echo v1 > original/file
 echo v1 > original/play-with-me
 echo v1 > original/delete-me
 
-./unionfs -o cow working-copy=rw:original=ro base
+src/unionfs -o cow working-copy=rw:original=ro base
 trap 'if [ "$(ls base)" ]; then umount base; fi; rm -rf base original working-copy' EXIT
 sleep 1
 
