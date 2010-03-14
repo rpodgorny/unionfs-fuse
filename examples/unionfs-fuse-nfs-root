@@ -87,7 +87,7 @@ mount -n -t nfs $NFS_OPT ${NFS_SERV}:/${UPATH}/hosts/${IP} /${UPATH}/host
 mkdir -p /${UPATH}/host/root
 mount -n -omode=0655 -t tmpfs tmpfs /${UPATH}/host/root
 
-function unionmount()
+unionmount()
 {
 	dir=$1
 

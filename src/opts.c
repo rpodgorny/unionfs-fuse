@@ -13,14 +13,39 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "opts.h"
 #include "stats.h"
 #include "version.h"
+#include "string.h"
+
+/**
+ * Set the maximum number of open files
+ */
+int set_max_open_files(const char *arg)
+{
+	struct rlimit rlim;
+	unsigned long max_files;
+	if (sscanf(arg, "max_files=%ld\n", &max_files) != 1) {
+		fprintf(stderr, "%s Converting %s to number failed, aborting!\n",
+			__func__, arg);
+		exit(1);
+	}
+	rlim.rlim_cur = max_files;
+	rlim.rlim_max = max_files;
+	if (setrlimit(RLIMIT_NOFILE, &rlim)) {
+		fprintf(stderr, "%s: Setting the maximum number of files failed: %s\n",
+			__func__, strerror(errno));
+		exit(1);
+	}
+
+	return 0;
+}
 
 
 uopt_t uopt;
-
 
 void uopt_init() {
 	memset(&uopt, 0, sizeof(uopt_t)); // initialize options with zeros first
@@ -29,7 +54,7 @@ void uopt_init() {
 }
 
 /**
- * Take a relative path as argument and return the absolute path by using the 
+ * Take a relative path as argument and return the absolute path by using the
  * current working directory. The return string is malloc'ed with this function.
  */
 char *make_absolute(char *relpath) {
@@ -48,7 +73,7 @@ char *make_absolute(char *relpath) {
 		return NULL;
 	}
 
-	// 3 due to: +1 for '/' between cwd and relpath
+	// 2 due to: +1 for '/' between cwd and relpath
 	//           +1 for trailing '/'
 	int abslen = cwdlen + strlen(relpath) + 2;
 	if (abslen > PATHLEN_MAX) {
@@ -61,6 +86,9 @@ char *make_absolute(char *relpath) {
 		fprintf(stderr, "%s: malloc failed\n", __func__);
 		exit(1); // still at early stage, we can abort
 	}
+	
+	// the ending required slash is added later by add_trailing_slash()
+	snprintf(abspath, abslen, "%s/%s", cwd, relpath);
 
 	return abspath;
 }
@@ -150,26 +178,26 @@ static int parse_branches(const char *arg) {
   * "-o chroot=/path/to/chroot/" will give us "chroot=/path/to/chroot/"
   * and we need to cut off the "chroot=" part
   * NOTE: If the user specifies a relative path of the branches
-  *       to the chroot, it is absolutely required 
+  *       to the chroot, it is absolutely required
   *       -o chroot=path is provided before specifying the braches!
   */
 char * get_chroot(const char *arg)
 {
 	char *str = index(arg, '=');
-	
+
 	if (!str) {
 		fprintf(stderr, "-o chroot parameter not properly specified, aborting!\n");
 		exit(1); // still early phase, we can abort
 	}
 
-	if (strlen(str) < 3) {	
+	if (strlen(str) < 3) {
 		fprintf(stderr, "Chroot path has not sufficient characters, aborting!\n");
 		exit(1);
 	}
 
 	str++; // just jump over the '='
-	
-	// copy of the given parameter, just in case something messes around 
+
+	// copy of the given parameter, just in case something messes around
 	// with command line parameters later on
 	str = strdup(str);
 	if (!str) {
@@ -178,7 +206,6 @@ char * get_chroot(const char *arg)
 	}
 	return str;
 }
-
 
 static void print_help(const char *progname) {
 	printf(
@@ -198,9 +225,57 @@ static void print_help(const char *progname) {
 	"    -o stats               show statistics in the file 'stats' under the\n"
 	"                           mountpoint\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
-	"    -o chroot=path         chroot into this path\n"
+	"    -o chroot=path         chroot into this path. Use this if you \n"
+        "                           want to have a union of \"/\" \n"
+	"    -o max_files=number    Increase the maximum number of open files\n"
 	"\n",
 	progname);
+}
+
+/**
+  * This method is to post-process options once we know all of them
+  */
+void unionfs_post_opts(void) {
+	// chdir to the given chroot, we
+	if (uopt.chroot) {
+		int res = chdir(uopt.chroot);
+		if (res) {
+			fprintf(stderr, "Chdir to %s failed: %s ! Aborting!\n",
+				  uopt.chroot, strerror(errno));
+			exit(1);
+		}
+	}
+
+	// Make the pathes absolute and add trailing slashes
+	int i;
+	for (i = 0; i<uopt.nbranches; i++) {
+		// if -ochroot= is specified, the path has to be given absolute
+		// or relative to the chroot, so no need to make it absolute
+		// also won't work, since we are not yet in the chroot here
+		if (!uopt.chroot) {
+			uopt.branches[i].path = make_absolute(uopt.branches[i].path);
+		}
+		uopt.branches[i].path = add_trailing_slash(uopt.branches[i].path);
+
+		// Prevent accidental umounts. Especially system shutdown scripts tend
+		// to umount everything they can. If we don't have an open file descriptor,
+		// this might cause unexpected behaviour.
+		char path[PATHLEN_MAX];
+
+		if (!uopt.chroot) {
+			BUILD_PATH(path, uopt.branches[i].path);
+		} else {
+			BUILD_PATH(path, uopt.chroot, uopt.branches[i].path);
+		}
+
+		int fd = open(path, O_RDONLY);
+		if (fd == -1) {
+			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n",
+				path, strerror(errno));
+			exit(1);
+		}
+		uopt.branches[i].fd = fd;
+	}
 }
 
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs) {
@@ -228,6 +303,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_CHROOT:
 			uopt.chroot = get_chroot(arg);
+			return 0;
+		case KEY_MAX_FILES:
+			set_max_open_files(arg);
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);

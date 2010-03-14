@@ -11,6 +11,9 @@
 #define HIDETAG "_HIDDEN~"
 #define METADIR ".unionfs/"
 
+// file access protection mask
+#define S_PROT_MASK (S_ISUID| S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
+
 typedef struct {
 	char *path;
 	int fd;			 // used to prevent accidental umounts of path

@@ -245,8 +245,10 @@ int copy_link(struct cow *cow)
 		usyslog(LOG_WARNING,   "readlink: %s", cow->from_path);
 		return (1);
 	}
+
+	link[len] = '\0';
 	
-	if (symlink(cow->from_path, cow->to_path)) {
+	if (symlink(link, cow->to_path)) {
 		usyslog(LOG_WARNING,   "symlink: %s", link);
 		return (1);
 	}

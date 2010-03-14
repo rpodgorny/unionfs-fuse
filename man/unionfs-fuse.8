@@ -41,14 +41,30 @@ for the summary of blocks. This may sound weird but it actually fixes
 \fB\-o noinitgroups
 Since version 0.23 without any effect, just left over for compatibility.
 Might be removed in future versions.
+.TP
+\fB\-o chroot=path
+Path to chroot into. By using this option unionfs-fuse
+may be used for live CDs or live USB sticks, etc. So it can serve
+"/" as filesystem. If you do not specify this option and try to use
+it for "/" it will deadlock on calling 'pivot_root'. 
+If you do set this option, you also need to specify the branches relativly
+to the given chroot directory. See examples/S01a-unionfs-fuse-live-cd.sh
+for an example.
+.TP
+\fB\-o max_files=number
+Maximum number of open files. Most system have a default of 1024 open
+files per process. For example if unionfs-fuse servs "/" applications like
+KDE or GNOME might have much more open files, which will make the unionfs-fuse 
+process to exceed this limit. Suggested for "/" is >16000 or even >32000 files.
+If this limit exceeds unionfs-fuse will not be able to open further files.
 .SH "Options to libfuse"
 There are several further options available, which don't directly apply to
 unionfs, but to libfuse. Please run "unionfs-fuse --help" to see these.
 We already set the "-o default-permissions" options on our own.
 .SH "EXAMPLES"
 .Vb 5
-\& unionfs\-fuse \-o cow \-o allow_other \e
-\&              \-o use_ino \-o nonempty \e
+\& unionfs\-fuse \-o cow,max_files=32768 \e
+\&              -o allow_other,use_ino,suid,dev,nonempty \e
 \&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
 \&              /u/union/etc
 .Ve
@@ -77,11 +93,10 @@ cron-scripts. This can be easily achieved by creating whiteout files for
 these scripts in the group meta directory.
 .SH "KNOWN ISSUES"
 .Vb 5
-\&1) Presently it is not possible to create a union for /\. This is work in progress. 
-\&2) Another issue is that presently there is no support for read-only branches
+\&1) Another issue is that presently there is no support for read-only branches
 when copy-on-write is disabled, thus, -ocow is NOT specified! Support for 
 that might be added in later releases.
-.VE
+.Ve
 .SH "AUTHORS"
 .B unionfs\-fuse
 Original implemention by Radek Podgorny <radek@podgorny.cz>

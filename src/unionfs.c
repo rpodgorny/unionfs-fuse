@@ -2,7 +2,7 @@
 *
 * This is offered under a BSD-style license. This means you can use the code for whatever you
 * desire in any way you may want but you MUST NOT forget to give me appropriate credits when
-* spreading your work which is based on mine. Something like "original implementation by Radek 
+* spreading your work which is based on mine. Something like "original implementation by Radek
 * Podgorny" should be fine.
 *
 * License: BSD-style license
@@ -26,7 +26,11 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/statvfs.h>
+#ifdef linux
+	#include <sys/vfs.h>
+#else
+	#include <sys/statvfs.h>
+#endif
 
 #ifdef HAVE_SETXATTR
 	#include <sys/xattr.h>
@@ -55,6 +59,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
 	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
+	FUSE_OPT_KEY("max_files=%s", KEY_MAX_FILES),
 	FUSE_OPT_END
 };
 
@@ -106,10 +111,13 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	//       Create the file with mode=0 first, otherwise we might create
 	//       a file as root + x-bit + suid bit set, which might be used for
 	//       security racing!
-	int res = open(p, fi->flags, mode);
+	int res = open(p, fi->flags, 0);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
+
+	// NOW, that the file has the proper owner we may set the requested mode
+	fchmod(res, mode);
 
 	fi->fh = res;
 	remove_hidden(path, i);
@@ -118,8 +126,8 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 }
 
 
-/** 
- * flush may be called multiple times for an open file, this must not really 
+/**
+ * flush may be called multiple times for an open file, this must not really
  * close the file. This is important if used on a network filesystem like NFS
  * which flush the data/metadata on close()
  */
@@ -187,7 +195,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	int res = lstat(p, stbuf);
 	if (res == -1) return -errno;
 
-	/* This is a workaround for broken gnu find implementations. Actually, 
+	/* This is a workaround for broken gnu find implementations. Actually,
 	 * n_links is not defined at all for directories by posix. However, it
 	 * seems to be common for filesystems to set it to one if the actual value
 	 * is unknown. Since nlink_t is unsigned and since these broken implementations
@@ -200,46 +208,29 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 }
 
 /**
-  * This method is to initialize options before any access to the filesystem
-  * () - real function argument we don't use it for now
-  */
+ * init method
+ * called before first access to the filesystem
+ */
 static void * unionfs_init(struct fuse_conn_info *conn) {
 	// just to prevent the compiler complaining about unused variables
 	(void) conn->max_readahead;
 
+	// we only now (from unionfs_init) may go into the chroot, since otherwise
+	// fuse_main() will fail to open /dev/fuse and to call mount
 	if (uopt.chroot) {
-		fprintf(stderr, "Chrooting to %s\n", uopt.chroot);
 		int res = chroot(uopt.chroot);
 		if (res) {
-			fprintf(stderr, "Chrooting to %s failed: %s ! Aborting!\n", uopt.chroot, strerror(errno));
+			usyslog("Chdir to %s failed: %s ! Aborting!\n",
+				 uopt.chroot, strerror(errno));
 			exit(1);
 		}
 	}
-
-	/* This has to be called after a possible chroot */
-	int i;
-	for (i = 0; i<uopt.nbranches; i++) {
-		uopt.branches[i].path = make_absolute(uopt.branches[i].path);
-		uopt.branches[i].path = add_trailing_slash(uopt.branches[i].path);
-
-		// Prevent accidental umounts. Especially system shutdown scripts tend 
-		// to umount everything they can. If we don't have an open file descriptor, 
-		// this might cause unexpected behaviour.
-		char *path = uopt.branches[i].path;
-		int fd = open(path, O_RDONLY);
-		if (fd == -1) {
-			fprintf(stderr, "\nFailed to open %s: %s. Aborting!\n\n",  path, strerror(errno));
-			exit(1);
-		}
-		uopt.branches[i].fd = fd;
-	}
-
 	return NULL;
 }
 
 static int unionfs_link(const char *from, const char *to) {
 	DBG_IN();
-	
+
 	// hardlinks do not work across different filesystems so we need a copy of from first
 	int i = find_rw_branch_cow(from);
 	if (i == -1) return -errno;
@@ -276,10 +267,12 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	int res = mkdir(p, mode);
+	int res = mkdir(p, 0);
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
+        // NOW, that the file has the proper owner we may set the requested mode
+        chmod(p, mode);
 
 	return 0;
 }
@@ -293,8 +286,11 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
+	int file_type = mode & S_IFMT;
+	int file_perm = mode & (S_PROT_MASK);
+
 	int res = -1;
-	if ((mode & S_IFMT) == S_IFREG) {
+	if ((file_type) == S_IFREG) {
 		// under FreeBSD, only the super-user can create ordinary files using mknod
 		// Actually this workaround should not be required any more
 		// since we now have the unionfs_create() method
@@ -305,12 +301,14 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		res = creat(p, 0);
 		if (res > 0 && close(res) == -1) usyslog(LOG_WARNING, "Warning, cannot close file\n");
 	} else {
-		res = mknod(p, mode, rdev);
+		res = mknod(p, file_type, rdev);
 	}
 
 	if (res == -1) return -errno;
 
 	set_owner(p); // no error check, since creating the file succeeded
+	// NOW, that the file has the proper owner we may set the requested mode
+	chmod(p, file_perm);
 
 	remove_hidden(path, i);
 
@@ -364,9 +362,9 @@ static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, 
 		char out[STATS_SIZE] = "";
 		stats_sprint(&stats, out);
 
-		int s = size;
-		if (offset < strlen(out)) {
-			if (s > strlen(out)-offset) s = strlen(out)-offset;
+		off_t s = size;
+		if (offset < (off_t) strlen(out)) {
+			if (s > (off_t) strlen(out) - offset) s = strlen(out)-offset;
 			memcpy(buf, out+offset, s);
 		} else {
 			s = 0;
@@ -415,12 +413,12 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 
 /**
  * unionfs rename function
- * TODO: If we rename a directory on a read-only branch, we need to copy over 
+ * TODO: If we rename a directory on a read-only branch, we need to copy over
  *       all files to the renamed directory on the read-write branch.
  */
 static int unionfs_rename(const char *from, const char *to) {
 	DBG_IN();
-	
+
 	bool is_dir = false; // is 'from' a file or directory
 
 	int j = find_rw_branch_cutlast(to);
@@ -445,9 +443,9 @@ static int unionfs_rename(const char *from, const char *to) {
 	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
 
 	filetype_t ftype = path_is_dir(f);
-	if (ftype == NOT_EXISTING)  
+	if (ftype == NOT_EXISTING)
 		return -ENOENT;
-	else if (ftype == IS_DIR) 
+	else if (ftype == IS_DIR)
 		is_dir = true;
 
 	int res;
@@ -470,7 +468,7 @@ static int unionfs_rename(const char *from, const char *to) {
 			if (unlink(f))
 				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also unlink()  failed\n", __func__, from);
-			
+
 			if (remove_hidden(from, i))
 				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also removing the whiteout  failed\n", __func__, from);
@@ -492,6 +490,60 @@ static int unionfs_rename(const char *from, const char *to) {
 	return 0;
 }
 
+/**
+ * Wrapper function to convert the result of statfs() to statvfs()
+ * libfuse uses statvfs, since it conforms to POSIX. Unfortunately,
+ * glibc's statvfs parses /proc/mounts, which then results in reading
+ * the filesystem itself again - which would result in a deadlock.
+ * TODO: BSD/MacOSX
+ */
+static int statvfs_local(const char *path, struct statvfs *stbuf) {
+#ifdef linux
+	/* glibc's statvfs walks /proc/mounts and stats entries found there
+	 * in order to extract their mount flags, which may deadlock if they
+	 * are mounted under the unionfs. As a result, we have to do this
+	 * ourselves.
+	 */
+	struct statfs stfs;
+	int res = statfs(path, &stfs);
+	if (res == -1) return res;
+
+	memset(stbuf, 0, sizeof(*stbuf));
+	stbuf->f_bsize = stfs.f_bsize;
+	if (stfs.f_frsize)
+		stbuf->f_frsize = stfs.f_frsize;
+	else
+		stbuf->f_frsize = stfs.f_bsize;
+	stbuf->f_blocks = stfs.f_blocks;
+	stbuf->f_bfree = stfs.f_bfree;
+	stbuf->f_bavail = stfs.f_bavail;
+	stbuf->f_files = stfs.f_files;
+	stbuf->f_ffree = stfs.f_ffree;
+	stbuf->f_favail = stfs.f_ffree; /* nobody knows */
+	stbuf->f_fsid = stfs.f_fsid.__val[0];
+
+	/* We don't worry about flags, exactly because this would
+	 * require reading /proc/mounts, and avoiding that and the
+	 * resulting deadlocks is exactly what we're trying to avoid
+	 * by doing this rather than using statvfs.
+	 */
+	stbuf->f_flag = 0;
+	stbuf->f_namemax = stfs.f_namelen;
+
+	return 0;
+#else
+	return statvfs(path, stbuf);
+#endif
+}
+
+
+
+/**
+ * statvs implementation
+ * TODO: fsid: It would be optimal, if we would store a once generated random
+ *	       fsid. But what if the same branch with the fsid used for different 
+ *	       unions? Is the present way ok for most cases?
+ */
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	(void)path;
 
@@ -504,7 +556,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
 		struct statvfs stb;
-		int res = statvfs(uopt.branches[i].path, &stb);
+		int res = statvfs_local(uopt.branches[i].path, &stb);
 		if (res == -1) continue;
 
 		struct stat st;
@@ -515,6 +567,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 		if (first) {
 			memcpy(stbuf, &stb, sizeof(*stbuf));
 			first = 0;
+			stbuf->f_fsid = stb.f_fsid << 8;
 			continue;
 		}
 
@@ -537,20 +590,23 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 				stbuf->f_ffree += stb.f_ffree;
 				stbuf->f_favail += stb.f_favail;
 			} else if (!uopt.statfs_omit_ro) {
-				// omitting the RO branches is not correct regarding the block counts but it actually fixes the percentage of free space. so, let the user decide.
-
+				// omitting the RO branches is not correct regarding
+				// the block counts but it actually fixes the 
+				// percentage of free space. so, let the user decide.
 				stbuf->f_blocks += stb.f_blocks * ratio;
 				stbuf->f_files  += stb.f_files;
 			}
 
-			if (!stb.f_flag & ST_RDONLY) stbuf->f_flag &= ~ST_RDONLY;
-			if (!stb.f_flag & ST_NOSUID) stbuf->f_flag &= ~ST_NOSUID;
+			if (!(stb.f_flag & ST_RDONLY)) stbuf->f_flag &= ~ST_RDONLY;
+			if (!(stb.f_flag & ST_NOSUID)) stbuf->f_flag &= ~ST_NOSUID;
 
 			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
+
+			// we don't care about overflows, the fsid just should be different
+			// from other fsids
+			stbuf->f_fsid += stb.f_fsid;
 		}
 	}
-
-	stbuf->f_fsid = 0;
 
 	return 0;
 }
@@ -661,7 +717,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 
 static int unionfs_removexattr(const char *path, const char *name) {
 	DBG_IN();
-	
+
 	int i = find_rw_branch_cow(path);
 	if (i == -1) return -errno;
 
@@ -687,7 +743,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	int res = lsetxattr(p, name, value, size, flags);
 
 	if (res == -1) return -errno;
-	
+
 	return res;
 }
 #endif // HAVE_SETXATTR
@@ -742,14 +798,15 @@ int main(int argc, char *argv[]) {
 
 		if (uopt.stats_enabled) stats_init(&stats);
 	}
-	
-	// enable fuse permission checks, we need to set this, even we we are 
+
+	// enable fuse permission checks, we need to set this, even we we are
 	// not root, since we don't have our own access() function
 	if (fuse_opt_add_arg(&args, "-odefault_permissions")) {
 		fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
 		exit(1);
 	}
-	
+	unionfs_post_opts();
+
 	umask(0);
 	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
 	return uopt.doexit ? uopt.retval : res;
