@@ -1,7 +1,15 @@
+0.25
+- use BUILD_PATH instead of snprintf, which will 
+  return -ENAMETOOLONG if the path is too long instead of simply 
+  using a wrong path
+- new options "-o relaxed_permissions" and "-o hide_meta_dir"
+- included the debian directory
+
 0.24
 - Support for liveCDs / live USB sticks (-o chroot)
 - Build-in support to change the maximum number of open files
 - Added recursive directory COW.
+- relative paths: Critical bug fix, had been completely broken in 0.23
 
 0.23
 - remove to_user() and to_root() calls for autorization and use fuse build-in
