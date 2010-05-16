@@ -8,6 +8,9 @@ unionfs
 build/*
 BUILD/*
 
+# codelite project files
+*.project
+
 # vi tmp files
 *.swp
 
