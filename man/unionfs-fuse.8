@@ -49,6 +49,13 @@ If this limit exceeds unionfs-fuse will not be able to open further files.
 Since version 0.23 without any effect, just left over for compatibility.
 Might be removed in future versions.
 .TP
+\fB\-o relaxed_permissions
+Usually we automatically add the libfuse option "-odefault_permissions"
+so that libfuse takes over permission checks. However, if running not
+as root (so as uid =! 0  and gid != 0), permissions of the underlying
+filesystem are already sufficient. In order to prevent from severe 
+security issues, this option is not allowed if running as root.
+.TP
 \fB\-o statfs_omit_ro
 By default blocks of all branches are counted in statfs() calls 
 (e.g. by 'df'). On setting this option read-only branches will be omitted
