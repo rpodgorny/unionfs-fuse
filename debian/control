@@ -1,0 +1,13 @@
+Source: unionfs-fuse
+Section: misc
+Priority: optional
+Maintainer: Bernd Schubert <bernd.schubert@fastmail.fm>
+Build-Depends: debhelper (>= 7.0.0), libfuse-dev, quilt (>= 0.40), cmake
+Standards-Version: 3.8.4
+
+Package: unionfs-fuse
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, fuse-utils
+Description: Fuse implementation of unionfs
+ This is another unionfs implementation using filesystem in 
+ userspace (fuse).
