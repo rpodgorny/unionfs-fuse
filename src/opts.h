@@ -27,6 +27,7 @@ typedef struct {
 	int retval;
 	char *chroot; 		// chroot we might go into
 	bool hide_meta_dir;
+	bool relaxed_permissions;
 
 } uopt_t;
 
@@ -37,6 +38,7 @@ enum {
 	KEY_HIDE_METADIR,
 	KEY_MAX_FILES,
 	KEY_NOINITGROUPS,
+	KEY_RELAXED_PERMISSIONS,
 	KEY_STATFS_OMIT_RO,
 	KEY_STATS,
 	KEY_VERSION

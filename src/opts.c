@@ -228,6 +228,8 @@ static void print_help(const char *progname) {
 	"    -o hide_meta_dir       \".unionfs\" is a secret directory not\n"
 	"                           print by readdir()\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
+	"    -o relaxed_permissions Disable permissions checks, but only if\n"
+	"                           running neither as UID=0 or GID=0\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
 	"    -o stats               show statistics in the file 'stats' under the\n"
 	"\n",
@@ -313,6 +315,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_STATFS_OMIT_RO:
 			uopt.statfs_omit_ro = true;
+			return 0;
+		case KEY_RELAXED_PERMISSIONS:
+			uopt.relaxed_permissions = true;
 			return 0;
 		case KEY_STATS:
 			uopt.stats_enabled = 1;

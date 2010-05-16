@@ -58,6 +58,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("hide_meta_dir", KEY_HIDE_METADIR),
 	FUSE_OPT_KEY("max_files=%s", KEY_MAX_FILES),
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
+	FUSE_OPT_KEY("relaxed_permissions", KEY_RELAXED_PERMISSIONS),
 	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
 	FUSE_OPT_KEY("stats", KEY_STATS),
 	FUSE_OPT_KEY("--version", KEY_VERSION),
@@ -803,9 +804,24 @@ int main(int argc, char *argv[]) {
 
 	// enable fuse permission checks, we need to set this, even we we are
 	// not root, since we don't have our own access() function
-	if (fuse_opt_add_arg(&args, "-odefault_permissions")) {
-		fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
+	int uid = getuid();
+	int gid = getgid();
+	bool default_permissions = true;
+	
+	if (uid != 0 && gid != 0 && uopt.relaxed_permissions) {
+		default_permissions = false;
+	} else if (uopt.relaxed_permissions) {
+		// protec the user of a very critical security issue
+		fprintf(stderr, "Relaxed permissions disallowed for root!\n");
 		exit(1);
+	}
+	
+	if (default_permissions) {
+		fprintf(stderr, "Enabling default permissions\n");
+		if (fuse_opt_add_arg(&args, "-odefault_permissions")) {
+			fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
+			exit(1);
+		}
 	}
 	unionfs_post_opts();
 
