@@ -50,29 +50,66 @@ char *whiteout_tag(const char *fname) {
  * check if the sum of the strings is larger than PATHLEN_MAX
  *
  * This function requires a NULL as last argument!
+ * 
+ * path already MUST have been allocated!
  */
-int build_path(char *dest, int max_len, char *callfunc, ...) {
+int build_path(char *path, int max_len, char *callfunc, ...) {
 	DBG_IN();
 
 	va_list ap; // argument pointer
 	int len = 0;
 
-	dest[0] = '\0';
+	path[0] = '\0'; // that way can easily strcat even the first element
 
 	va_start(ap, callfunc);
 	while (1) {
-		char *str = va_arg (ap, char *);
+		char *str = va_arg (ap, char *); // the next path element
 		if (!str) break;
 
-		len += strlen(str) + 1; // + 1 for '/' between the pathes
+		/* Prevent '//' in pathes, if len > 0 we are not in the first 
+		 * loop-run. This is rather ugly, but I don't see another way to 
+		 * make sure there really is a '/'. By simply cutting off
+		 * the initial '/' of the added string, we could run into a bug
+		 * and would not have a '/' between path elements at all
+		 * if somewhere else a directory slash has been forgotten... */
+		if (len > 0) {
+			// walk to the end of path
+			while (*path != '\0') path++;
+			
+			// we are on '\0', now go back to the last char
+			path--;
+			
+			if (*path == '/') {
+				int count = len;
+				
+				// count makes sure nobody tricked us and gave
+				// slashes as first path only...
+				while (*path == '/' && count > 1) {
+					// possibly there are several slashes...
+					// But we want only one slash
+					path--;
+					count--; 
+				}
+					
+				// now we are *before* '/', walk to slash again
+				path++;
+				
+				// eventually we walk over the slashes of the
+				// next string
+				while (*str == '/') str++;
+			}
+		}
 
-		if (len > max_len) {
+		len += strlen(str);
+
+		// +1 for final \0 not counted by strlen
+		if (len + 1 > max_len) {
 			usyslog (LOG_WARNING, "%s: Path too long \n", callfunc);
 			errno = ENAMETOOLONG;
 			return -errno;
 		}
 
-		strcat (dest, str);
+		strcat (path, str);
 	}
 
 	return 0;
