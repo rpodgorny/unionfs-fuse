@@ -31,6 +31,27 @@
 #include "general.h"
 #include "string.h"
 
+
+/**
+  * Hide our METADIR (.unionfs). As is causes a slight slowndown this is optional
+  */
+static bool hide_meta_dir(int branch, const char *path, struct dirent *de)
+{
+
+	if (uopt.hide_meta_dir == false) return false;
+
+	fprintf(stderr, "uopt.branches[branch].path = %s path = %s\n", uopt.branches[branch].path, path);
+	fprintf(stderr, "METANAME = %s, de->d_name = %s\n", METANAME, de->d_name);
+
+	// TODO Would it be faster to add hash comparison here?
+	if (strcmp(uopt.branches[branch].path, path) == 0
+	&&  strcmp(METANAME, de->d_name) == 0) {
+		return true;
+	}
+
+	return false;
+}
+
 /**
  * Check if fname has a hiding tag and return its status.
  * Also, add this file and to the hiding hash table.
@@ -101,7 +122,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		if (subdir_hidden) break;
 
 		char p[PATHLEN_MAX];
-		snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+		BUILD_PATH(p, uopt.branches[i].path, path);
 
 		// check if branches below this branch are hidden
 		if (path_hidden(path, i)) subdir_hidden = true;
@@ -122,6 +143,8 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 				// file should be hidden from the user
 				if (hashtable_search(whiteouts, de->d_name) != NULL) continue;
 			}
+
+			if (hide_meta_dir(i, p, de) == true) continue;
 
 			// fill with something dummy, we're interested in key existence only
 			hashtable_insert(files, strdup(de->d_name), malloc(1));

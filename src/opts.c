@@ -221,13 +221,15 @@ static void print_help(const char *progname) {
 	"    -V   --version         print version\n"
 	"\n"
 	"UnionFS options:\n"
-	"    -o cow                 enable copy-on-write\n"
-	"    -o stats               show statistics in the file 'stats' under the\n"
-	"                           mountpoint\n"
-	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
 	"    -o chroot=path         chroot into this path. Use this if you \n"
         "                           want to have a union of \"/\" \n"
+	"    -o cow                 enable copy-on-write\n"
+	"                           mountpoint\n"
+	"    -o hide_meta_dir       \".unionfs\" is a secret directory not\n"
+	"                           print by readdir()\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
+	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
+	"    -o stats               show statistics in the file 'stats' under the\n"
 	"\n",
 	progname);
 }
@@ -289,28 +291,31 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			if (res > 0) return 0;
 			uopt.retval = 1;
 			return 1;
-		case KEY_STATS:
-			uopt.stats_enabled = 1;
-			return 0;
-		case KEY_COW:
-			uopt.cow_enabled = true;
-			return 0;
-		case KEY_STATFS_OMIT_RO:
-			uopt.statfs_omit_ro = true;
-			return 0;
-		case KEY_NOINITGROUPS:
-			// option only for compatibility with older versions
-			return 0;
 		case KEY_CHROOT:
 			uopt.chroot = get_chroot(arg);
 			return 0;
-		case KEY_MAX_FILES:
-			set_max_open_files(arg);
+		case KEY_COW:
+			uopt.cow_enabled = true;
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
 			fuse_opt_add_arg(outargs, "-ho");
 			uopt.doexit = 1;
+			return 0;
+		case KEY_HIDE_METADIR:
+			uopt.hide_meta_dir = true;
+			return 0;
+		case KEY_MAX_FILES:
+			set_max_open_files(arg);
+			return 0;
+		case KEY_NOINITGROUPS:
+			// option only for compatibility with older versions
+			return 0;
+		case KEY_STATFS_OMIT_RO:
+			uopt.statfs_omit_ro = true;
+			return 0;
+		case KEY_STATS:
+			uopt.stats_enabled = 1;
 			return 0;
 		case KEY_VERSION:
 			printf("unionfs-fuse version: "VERSION"\n");

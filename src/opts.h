@@ -26,17 +26,19 @@ typedef struct {
 	int doexit;
 	int retval;
 	char *chroot; 		// chroot we might go into
+	bool hide_meta_dir;
 
 } uopt_t;
 
 enum {
-	KEY_STATS,
-	KEY_COW,
-	KEY_STATFS_OMIT_RO,
-	KEY_NOINITGROUPS,
 	KEY_CHROOT,
-	KEY_MAX_FILES,
+	KEY_COW,
 	KEY_HELP,
+	KEY_HIDE_METADIR,
+	KEY_MAX_FILES,
+	KEY_NOINITGROUPS,
+	KEY_STATFS_OMIT_RO,
+	KEY_STATS,
 	KEY_VERSION
 };
 

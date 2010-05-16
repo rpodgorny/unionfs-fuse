@@ -9,7 +9,9 @@
 
 #define PATHLEN_MAX 1024
 #define HIDETAG "_HIDDEN~"
-#define METADIR ".unionfs/"
+
+#define METANAME ".unionfs"
+#define METADIR (METANAME  "/") // string concetanation!
 
 // file access protection mask
 #define S_PROT_MASK (S_ISUID| S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
