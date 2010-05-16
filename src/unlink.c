@@ -28,6 +28,7 @@
 #include "cow.h"
 #include "general.h"
 #include "findbranch.h"
+#include "string.h"
 
 /**
   * If the branch that has the file to be unlinked is in read-only mode,
@@ -36,7 +37,7 @@
   * lower level file.
   */
 static int unlink_ro(const char *path, int branch_ro) {
-	DBG_IN()	
+	DBG_IN();
 
 	// find a writable branch above branch_ro
 	int branch_rw = find_lowest_rw_branch(branch_ro);
@@ -60,7 +61,7 @@ static int unlink_rw(const char *path, int branch_rw) {
 	DBG_IN();
 	
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[branch_rw].path, path);
+	if (BUILD_PATH(p, uopt.branches[branch_rw].path, path)) return ENAMETOOLONG;
 
 	int res = unlink(p);
 	if (res == -1) return errno;

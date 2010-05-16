@@ -21,7 +21,7 @@ typedef enum filetype {
 	IS_FILE=1,
 } filetype_t;
 
-bool path_hidden(const char *path, int branch);
+int path_hidden(const char *path, int branch);
 int remove_hidden(const char *path, int maxbranch);
 int hide_file(const char *path, int branch_rw);
 int hide_dir(const char *path, int branch_rw);

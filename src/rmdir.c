@@ -40,7 +40,7 @@ static int rmdir_rw(const char *path, int branch_rw) {
 	DBG_IN();
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[branch_rw].path, path);
+	if (BUILD_PATH(p, uopt.branches[branch_rw].path, path)) return ENAMETOOLONG;
 
 	int res = rmdir(p);
 	if (res == -1) return errno;

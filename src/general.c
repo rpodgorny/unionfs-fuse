@@ -35,14 +35,14 @@
 /**
  * Check if a file or directory with the hidden flag exists.
  */
-static bool filedir_hidden(const char *path) {
+static int filedir_hidden(const char *path) {
 	DBG_IN();
 
 	// cow mode disabled, no need for hidden files
 	if (!uopt.cow_enabled) return false;
 	
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG);
+	if (BUILD_PATH(p, path, HIDETAG)) return -ENAMETOOLONG;
 
 	struct stat stbuf;
 	int res = lstat(p, &stbuf);
@@ -54,7 +54,7 @@ static bool filedir_hidden(const char *path) {
 /**
  * check if any dir or file within path is hidden
  */
-bool path_hidden(const char *path, int branch) {
+int path_hidden(const char *path, int branch) {
 	DBG_IN();
 
 	if (!uopt.cow_enabled) return false;
@@ -79,9 +79,10 @@ bool path_hidden(const char *path, int branch) {
 		}
 		// +1 due to \0, which gets added automatically
 		char p[PATHLEN_MAX];
-		snprintf(p, (walk - whiteoutpath) + 1, "%s", whiteoutpath); // walk - path = strlen(/dir1)
-		bool res = filedir_hidden(p);
-		if (res) return res; // path is hidden
+		// walk - path = strlen(/dir1)
+		snprintf(p, (walk - whiteoutpath) + 1, "%s", whiteoutpath);
+		int res = filedir_hidden(p);
+		if (res) return res; // path is hidden or error
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
 		while (*walk != '\0' && *walk == '/') walk++;

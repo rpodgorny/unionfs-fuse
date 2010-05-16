@@ -59,7 +59,7 @@ static int find_branch(const char *path, searchflag_t flag) {
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
 		char p[PATHLEN_MAX];
-		snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+		if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 		struct stat stbuf;
 		int res = lstat(p, &stbuf);
@@ -81,9 +81,13 @@ static int find_branch(const char *path, searchflag_t flag) {
 		}
 
 		// check check for a hide file, checking first here is the magic to hide files *below* this level
-		if (path_hidden(path, i)) {
+		res = path_hidden(path, i);
+		if (res > 0) {
 			// So no path, but whiteout found. No need to search in further branches
 			errno = ENOENT;
+			return -1;
+		} else if (res < 0) {
+			errno = res; // error
 			return -1;
 		}
 	}

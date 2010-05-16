@@ -74,15 +74,9 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	DBG_IN();
 
 	if (!uopt.cow_enabled) return 0;
-
-	if (strlen(path) + strlen(uopt.branches[nbranch_rw].path) > PATHLEN_MAX
-	|| strlen(path) + strlen(uopt.branches[nbranch_ro].path) > PATHLEN_MAX) {
-		// TODO: how to handle that?
-		return 1;
-	}
-
+	
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[nbranch_rw].path, path);
+	if (BUILD_PATH(p, uopt.branches[nbranch_rw].path, path)) return -ENAMETOOLONG;
 
 	struct stat st;
 	if (!stat(p, &st)) {
@@ -137,8 +131,10 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 	path_create_cutlast(path, branch_ro, branch_rw);
 
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
-	snprintf(from, PATHLEN_MAX, "%s%s", uopt.branches[branch_ro].path, path);
-	snprintf(to, PATHLEN_MAX, "%s%s", uopt.branches[branch_rw].path, path);
+	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path))
+		return -ENAMETOOLONG;
+	if (BUILD_PATH(to, uopt.branches[branch_rw].path, path))
+		return -ENAMETOOLONG;
 
 	setlocale(LC_ALL, "");
 

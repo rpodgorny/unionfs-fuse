@@ -47,6 +47,7 @@
 #include "rmdir.h"
 #include "readdir.h"
 #include "cow.h"
+#include "string.h"
 
 
 static struct fuse_opt unionfs_opts[] = {
@@ -72,7 +73,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = chmod(p, mode);
 	if (res == -1) return -errno;
@@ -87,7 +88,7 @@ static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = lchown(p, uid, gid);
 	if (res == -1) return -errno;
@@ -106,7 +107,7 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	// NOTE: We should do:
 	//       Create the file with mode=0 first, otherwise we might create
@@ -191,7 +192,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = lstat(p, stbuf);
 	if (res == -1) return -errno;
@@ -241,8 +242,8 @@ static int unionfs_link(const char *from, const char *to) {
 	if (j == -1) return -errno;
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
-	snprintf(f, PATHLEN_MAX, "%s%s", uopt.branches[i].path, from);
-	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[j].path, to);
+	if (BUILD_PATH(f, uopt.branches[i].path, from)) return -ENAMETOOLONG;
+	if (BUILD_PATH(t, uopt.branches[j].path, to)) return -ENAMETOOLONG;
 
 	int res = link(f, t);
 	if (res == -1) return -errno;
@@ -266,7 +267,7 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = mkdir(p, 0);
 	if (res == -1) return -errno;
@@ -285,7 +286,7 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int file_type = mode & S_IFMT;
 	int file_perm = mode & (S_PROT_MASK);
@@ -338,7 +339,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int fd = open(p, fi->flags);
 	if (fd == -1) return -errno;
@@ -390,7 +391,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = readlink(p, buf, size - 1);
 
@@ -440,8 +441,8 @@ static int unionfs_rename(const char *from, const char *to) {
 	}
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
-	snprintf(f, PATHLEN_MAX, "%s%s", uopt.branches[i].path, from);
-	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
+	if (BUILD_PATH(f, uopt.branches[i].path, from)) return -ENAMETOOLONG;
+	if (BUILD_PATH(t, uopt.branches[i].path, to)) return -ENAMETOOLONG;
 
 	filetype_t ftype = path_is_dir(f);
 	if (ftype == NOT_EXISTING)
@@ -619,7 +620,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 	if (i == -1) return -errno;
 
 	char t[PATHLEN_MAX];
-	snprintf(t, PATHLEN_MAX, "%s%s", uopt.branches[i].path, to);
+	if (BUILD_PATH(t, uopt.branches[i].path, to)) return -ENAMETOOLONG;
 
 	int res = symlink(from, t);
 	if (res == -1) return -errno;
@@ -637,7 +638,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = truncate(p, size);
 
@@ -655,7 +656,7 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	struct timeval tv[2];
         tv[0].tv_sec  = ts[0].tv_sec;
@@ -691,7 +692,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = lgetxattr(p, name, value, size);
 
@@ -707,7 +708,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = llistxattr(p, list, size);
 
@@ -723,7 +724,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = lremovexattr(p, name);
 
@@ -739,7 +740,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	if (i == -1) return -errno;
 
 	char p[PATHLEN_MAX];
-	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
+	if (BUILD_PATH(p, uopt.branches[i].path, path)) return -ENAMETOOLONG;
 
 	int res = lsetxattr(p, name, value, size, flags);
 
