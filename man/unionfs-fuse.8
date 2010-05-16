@@ -38,6 +38,14 @@ for an example.
 \fB\-o cow
 Enable copy\-on\-write
 .TP
+\fB\-o hide_meta_dir
+In our unionfs root path we have a .unionfs directory that includes
+metadata, such as hidden (deleted) files. This options make this 
+directory invisible from readdir(), so for example "ls -la /union_root/" 
+will not show it. However, this directory is still there and "cd .unionfs"
+or "ls -l .unionfs" still work. This option is especially usufull for 
+package builders.
+.TP
 \fB\-o max_files=number
 Maximum number of open files. Most system have a default of 1024 open
 files per process. For example if unionfs-fuse servs "/" applications like
