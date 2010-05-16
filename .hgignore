@@ -6,6 +6,7 @@ unionfs
 
 # build directory
 build/*
+BUILD/*
 
 # vi tmp files
 *.swp
