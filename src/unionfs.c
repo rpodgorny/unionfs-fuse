@@ -817,7 +817,6 @@ int main(int argc, char *argv[]) {
 	}
 	
 	if (default_permissions) {
-		fprintf(stderr, "Enabling default permissions\n");
 		if (fuse_opt_add_arg(&args, "-odefault_permissions")) {
 			fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
 			exit(1);
