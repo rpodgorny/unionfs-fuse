@@ -26,22 +26,6 @@ the file is copied to to a higher level read\-write branch if the
 .SH "OPTIONS"
 Below is a summary of unionfs\-fuse options
 .TP 
-\fB\-o cow
-Enable copy\-on\-write
-.TP 
-\fB\-o stats
-Show statistics in the file 'stats' under the mountpoint.
-.TP
-\fB\-o statfs_omit_ro
-By default blocks of all branches are counted in statfs() calls 
-(e.g. by 'df'). On setting this option read-only branches will be omitted
-for the summary of blocks. This may sound weird but it actually fixes
-"wrong" percentage of free space.
-.TP
-\fB\-o noinitgroups
-Since version 0.23 without any effect, just left over for compatibility.
-Might be removed in future versions.
-.TP
 \fB\-o chroot=path
 Path to chroot into. By using this option unionfs-fuse
 may be used for live CDs or live USB sticks, etc. So it can serve
@@ -51,12 +35,28 @@ If you do set this option, you also need to specify the branches relativly
 to the given chroot directory. See examples/S01a-unionfs-fuse-live-cd.sh
 for an example.
 .TP
+\fB\-o cow
+Enable copy\-on\-write
+.TP
 \fB\-o max_files=number
 Maximum number of open files. Most system have a default of 1024 open
 files per process. For example if unionfs-fuse servs "/" applications like
 KDE or GNOME might have much more open files, which will make the unionfs-fuse 
 process to exceed this limit. Suggested for "/" is >16000 or even >32000 files.
 If this limit exceeds unionfs-fuse will not be able to open further files.
+.TP 
+\fB\-o noinitgroups
+Since version 0.23 without any effect, just left over for compatibility.
+Might be removed in future versions.
+.TP
+\fB\-o statfs_omit_ro
+By default blocks of all branches are counted in statfs() calls 
+(e.g. by 'df'). On setting this option read-only branches will be omitted
+for the summary of blocks. This may sound weird but it actually fixes
+"wrong" percentage of free space.
+.TP
+\fB\-o stats
+Show statistics in the file 'stats' under the mountpoint.
 .SH "Options to libfuse"
 There are several further options available, which don't directly apply to
 unionfs, but to libfuse. Please run "unionfs-fuse --help" to see these.
