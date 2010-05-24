@@ -53,17 +53,18 @@ char *whiteout_tag(const char *fname) {
  * 
  * path already MUST have been allocated!
  */
-int build_path(char *path, int max_len, char *callfunc, ...) {
-
+int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 	va_list ap; // argument pointer
 	int len = 0;
 	char *str_ptr = path;
 
 	(void)str_ptr; // please the compile to avoid warning in non-debug mode
+	(void)line;
+	(void)callfunc; 
 
 	path[0] = '\0'; // that way can easily strcat even the first element
 
-	va_start(ap, callfunc);
+	va_start(ap, line);
 	while (1) {
 		char *str = va_arg (ap, char *); // the next path element
 		if (!str) break;
@@ -111,7 +112,7 @@ int build_path(char *path, int max_len, char *callfunc, ...) {
 
 		// +1 for final \0 not counted by strlen
 		if (len + 1 > max_len) {
-			usyslog (LOG_WARNING, "%s: Path too long \n", callfunc);
+			usyslog (LOG_WARNING, "%s():%d Path too long \n", callfunc, line);
 			errno = ENAMETOOLONG;
 			return -errno;
 		}
@@ -120,12 +121,12 @@ int build_path(char *path, int max_len, char *callfunc, ...) {
 	}
 	
 	if (len == 0) {
-		usyslog(LOG_ERR, "from: %s : No argument given?\n", callfunc);
+		usyslog(LOG_ERR, "from: %s():%d : No argument given?\n", callfunc, line);
 		errno = EIO;
 		return -errno;
 	}
 	
-	DBG("from: %s path: %s\n", callfunc, str_ptr);
+	DBG("from: %s():%d path: %s\n", callfunc, line, str_ptr);
 	return 0;
 }
 
