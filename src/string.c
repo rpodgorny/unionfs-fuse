@@ -119,8 +119,13 @@ int build_path(char *path, int max_len, char *callfunc, ...) {
 		strcat (path, str);
 	}
 	
+	if (len == 0) {
+		usyslog(LOG_ERR, "from: %s : No argument given?\n", callfunc);
+		errno = EIO;
+		return -errno;
+	}
+	
 	DBG("from: %s path: %s\n", callfunc, str_ptr);
-
 	return 0;
 }
 
