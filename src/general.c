@@ -40,14 +40,15 @@ static int filedir_hidden(const char *path) {
 	if (!uopt.cow_enabled) return false;
 	
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, path, HIDETAG)) return -ENAMETOOLONG;
+	if (strlen(path) + strlen(HIDETAG) > PATHLEN_MAX) return -ENAMETOOLONG;
+	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG); 
 	DBG("%s\n", p);
 
 	struct stat stbuf;
 	int res = lstat(p, &stbuf);
 	if (res == 0) return true;
 
-	return false;
+	return 0;
 }
 
 /**
@@ -104,7 +105,9 @@ int remove_hidden(const char *path, int maxbranch) {
 	int i;
 	for (i = 0; i <= maxbranch; i++) {
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.branches[i].path, METADIR, path, HIDETAG)) return 1;
+		if (BUILD_PATH(p, uopt.branches[i].path, METADIR, path)) return -ENAMETOOLONG;
+		if (strlen(p) + strlen(HIDETAG) > PATHLEN_MAX) return -ENAMETOOLONG;
+		strcat(p, HIDETAG); // TODO check length
 
 		switch (path_is_dir(p)) {
 			case IS_FILE: unlink(p); break;
@@ -148,7 +151,8 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 	path_create_cutlast(metapath, branch_rw, branch_rw);
 
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath, HIDETAG)) return -1;
+	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath)) return -1;
+	strcat(p, HIDETAG); // TODO check length
 
 	int res;
 	if (mode == WHITEOUT_FILE) {
