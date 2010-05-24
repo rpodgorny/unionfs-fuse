@@ -649,7 +649,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 }
 
 static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) return 0;
 
@@ -666,6 +666,19 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
         tv[1].tv_usec = ts[1].tv_nsec / 1000;
 
 	int res = utimes(p, tv);
+	if (res == -1 && errno == ENOENT) {
+		// weird utimes() symlink bug?
+		struct stat buf;
+		res = lstat(p, &buf);
+		if (res || !S_ISLNK(buf.st_mode)) return - ENOENT;
+		// nothing we can do something about, seems to be a failure
+		// of the underlying filesystem or the syscall itself is not
+		// supported on symlinks. utime() also does not work.
+		// As the error is annyoing and point to a non-existing error
+		// in unionfs-fuse, we ignore it
+		// The real solution will be utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
+		res = 0;
+	}
 
 	if (res == -1) return -errno;
 
