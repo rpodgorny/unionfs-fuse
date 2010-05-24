@@ -6,11 +6,11 @@
 
 #include "debug.h"
 
+#ifdef DEBUG
 
 FILE* dbgfile = NULL;
 
-int debug_init() {
-#ifdef DEBUG
+int debug_init(void) {
 	char *dbgpath = "./unionfs_debug.log";
 	printf("Debug mode, log will be written to %s\n", dbgpath);
 
@@ -19,6 +19,7 @@ int debug_init() {
 		printf("Failed to open %s for writing, exitting\n", dbgpath);
 		return 2;
 	}
-#endif
 	return 0;
 }
+
+#endif // DEBUG

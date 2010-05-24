@@ -30,7 +30,7 @@
  * Actually create the directory here.
  */
 static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	char dirp[PATHLEN_MAX]; // dir path to create
 	sprintf(dirp, "%s%s", uopt.branches[nbranch_rw].path, path);

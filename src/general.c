@@ -36,13 +36,12 @@
  * Check if a file or directory with the hidden flag exists.
  */
 static int filedir_hidden(const char *path) {
-	DBG_IN();
-
 	// cow mode disabled, no need for hidden files
 	if (!uopt.cow_enabled) return false;
 	
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, path, HIDETAG)) return -ENAMETOOLONG;
+	DBG("%s\n", p);
 
 	struct stat stbuf;
 	int res = lstat(p, &stbuf);

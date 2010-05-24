@@ -54,10 +54,12 @@ char *whiteout_tag(const char *fname) {
  * path already MUST have been allocated!
  */
 int build_path(char *path, int max_len, char *callfunc, ...) {
-	DBG_IN();
 
 	va_list ap; // argument pointer
 	int len = 0;
+	char *str_ptr = path;
+
+	(void)str_ptr; // please the compile to avoid warning in non-debug mode
 
 	path[0] = '\0'; // that way can easily strcat even the first element
 
@@ -111,6 +113,8 @@ int build_path(char *path, int max_len, char *callfunc, ...) {
 
 		strcat (path, str);
 	}
+	
+	DBG("from: %s path: %s\n", callfunc, str_ptr);
 
 	return 0;
 }
@@ -125,7 +129,7 @@ char *u_dirname(const char *path) {
 
 	char *ret = strdup(path);
 	if (ret == NULL) {
-		usyslog("strdup failed, probably out of memory!\n");
+		usyslog(LOG_WARNING, "strdup failed, probably out of memory!\n");
 		return ret;
 	}
 
