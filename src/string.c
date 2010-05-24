@@ -99,6 +99,11 @@ int build_path(char *path, int max_len, char *callfunc, ...) {
 				// eventually we walk over the slashes of the
 				// next string
 				while (*str == '/') str++;
+			} else if (*str != '/') {
+				// neither path ends with a slash, nor str
+				// starts with a slash, prevent a wrong path
+				strcat(path, "/");
+				len++;
 			}
 		}
 
