@@ -107,6 +107,7 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 				len++;
 			}
 		}
+		va_end(ap);
 
 		len += strlen(str);
 
