@@ -1,14 +1,16 @@
 #!/bin/bash
+
 set -v
 set -e
+
 rm -rf original base working-copy
 mkdir original base working-copy original/play-dir original/del-dir
 echo v1 > original/file
 echo v1 > original/play-with-me
 echo v1 > original/delete-me
 
-src/unionfs -o cow working-copy=rw:original=ro base
-trap 'if [ "$(ls base)" ]; then umount base; fi; rm -rf base original working-copy' EXIT
+src/unionfs -d -o cow working-copy=rw:original=ro base >unionfs.log 2>&1 &
+trap 'if [ "$(ls base)" ]; then fusermount -u base; fi; rm -rf base original working-copy' EXIT
 sleep 1
 
 [ "$(cat base/file)" = "v1" ]
