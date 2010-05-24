@@ -62,21 +62,16 @@ int path_hidden(const char *path, int branch) {
 	char whiteoutpath[PATHLEN_MAX];
 	if (BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path)) return false;
 
-	char *walk = whiteoutpath;
+	// -1 as we MUST not end on the next path element 
+	char *walk = whiteoutpath + uopt.branches[branch].path_len + strlen(METADIR) - 1;
 
 	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
 	while (*walk != '\0' && *walk == '/') walk++;
 
-	bool first = true;
 	do {
 		// walk over the directory name, walk will now be /dir2
 		while (*walk != '\0' && *walk != '/') walk++;
 	
-		if (first) {
-			// first dir in path is our branch, no need to check if it is hidden
-			first = false;
-			continue;
-		}
 		// +1 due to \0, which gets added automatically
 		char p[PATHLEN_MAX];
 		// walk - path = strlen(/dir1)

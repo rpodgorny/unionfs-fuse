@@ -18,6 +18,7 @@
 
 typedef struct {
 	char *path;
+	int path_len;		// strlen(path)
 	int fd;			 // used to prevent accidental umounts of path
 	unsigned char rw;	 // the writable flag
 } branch_entry_t;

@@ -279,6 +279,7 @@ void unionfs_post_opts(void) {
 			exit(1);
 		}
 		uopt.branches[i].fd = fd;
+		uopt.branches[i].path_len = strlen(path);
 	}
 }
 
