@@ -1,7 +1,8 @@
 /*
-* License: BSD-style license
-* Copyright: Radek Podgorny <radek@podgorny.cz>,
-*/
+ * License: BSD-style license
+ * Copyright: Radek Podgorny <radek@podgorny.cz>,
+ *            Bernd Schubert <bernd.schubert@fastmail.fm
+ */
 
 #ifndef DEBUG_H
 #define DEBUG_H
