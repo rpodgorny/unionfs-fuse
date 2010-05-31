@@ -31,6 +31,7 @@
 #include "general.h"
 #include "findbranch.h"
 #include "string.h"
+#include "readdir.h"
 
 /**
   * If the branch that has the directory to be removed is in read-write mode,
@@ -83,6 +84,8 @@ static int rmdir_ro(const char *path, int branch_ro) {
   */
 int unionfs_rmdir(const char *path) {
 	DBG_IN();
+
+	if (dir_not_empty(path)) return -ENOTEMPTY;
 
 	int i = find_rorw_branch(path);
 	if (i == -1) return -errno;

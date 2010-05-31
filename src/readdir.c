@@ -182,3 +182,83 @@ out:
 
 	return rc;
 }
+
+/**
+ * check if a directory on all paths is empty
+ * return 0 if empty, 1 if not and negative value on error
+ *
+ * TODO: This shares lots of code with unionfs_readdir(), can we merge 
+ *       both functions?
+ */
+int dir_not_empty(const char *path) {
+
+	DBG_IN();
+
+	int i = 0;
+	int rc = 0;
+	int not_empty = 0;
+	
+	struct hashtable *whiteouts = NULL;
+
+	if (uopt.cow_enabled) whiteouts = create_hashtable(16, string_hash, string_equal);
+
+	bool subdir_hidden = false;
+
+	for (i = 0; i < uopt.nbranches; i++) {
+		if (subdir_hidden) break;
+
+		char p[PATHLEN_MAX];
+		if (BUILD_PATH(p, uopt.branches[i].path, path)) {
+			rc = -ENAMETOOLONG;
+			goto out;
+		}
+
+		// check if branches below this branch are hidden
+		int res = path_hidden(path, i);
+		if (res < 0) {
+			rc = res; // error
+			goto out;
+		}
+
+		if (res > 0) subdir_hidden = true;
+
+		DIR *dp = opendir(p);
+		if (dp == NULL) {
+			if (uopt.cow_enabled) read_whiteouts(path, whiteouts, i);
+			continue;
+		}
+
+		struct dirent *de;
+		while ((de = readdir(dp)) != NULL) {
+			
+			// Ignore . and ..
+			if ((strcmp(de->d_name, ".") == 0) ||  (strcmp(de->d_name, "..") == 0)) 
+				continue;
+
+			// check if we need file hiding
+			if (uopt.cow_enabled) {
+				// file should be hidden from the user
+				if (hashtable_search(whiteouts, de->d_name) != NULL) continue;
+			}
+
+			if (hide_meta_dir(i, p, de) == true) continue;
+
+			// When we arrive here, a valid entry was found
+			not_empty = 1;
+			closedir(dp);
+			goto out;
+		}
+
+		closedir(dp);
+		if (uopt.cow_enabled) read_whiteouts(path, whiteouts, i);
+	}
+
+out:
+	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 1);
+
+	if (rc) return rc;
+	
+	return not_empty;
+}
+
+

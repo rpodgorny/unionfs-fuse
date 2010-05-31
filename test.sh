@@ -55,6 +55,32 @@ rm union/del-dir/foo
 rmdir union/del-dir
 [ ! -d union/del-dir ]
 
+# rmdir() test
+set +e
+set +v
+rc=0
+mkdir original/testdir
+touch original/testdir/testfile
+mkdir working-copy/testdir
+rmdir union/testdir 2>/dev/null
+if [ $? -eq 0 ]; then
+	echo "rmdir succeeded, although it must not"
+	rc=$(($rc + $?))
+fi
+rm union/testdir/testfile
+rc=$(($rc + $?))
+rmdir union/testdir/
+rc=$(($rc + $?))
+if [ $rc -ne 0 ]; then
+	echo "rmdir test failed"
+	exit 1
+else
+	echo "rmdir test passed"
+fi
+set -e
+
+
+
 fusermount -u union
 
 [ "$(cat original/file)" = "v1" ]
