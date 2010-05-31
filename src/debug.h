@@ -6,6 +6,8 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include "opts.h"
+
 extern FILE* dbgfile;
 
 #define DBG_IN() DBG("\n");
@@ -13,6 +15,7 @@ extern FILE* dbgfile;
 #ifdef DEBUG
 #define DBG(format, ...) 						\
 	do {								\
+		if (!uopt.debug) break;					\
 		fprintf(stderr, "%s(): %d: ", __func__, __LINE__);	\
 		fprintf(dbgfile, "%s(): %d: ", __func__, __LINE__);	\
 		fprintf(stderr, format, ##__VA_ARGS__);			\

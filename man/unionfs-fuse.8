@@ -46,6 +46,14 @@ will not show it. However, this directory is still there and "cd .unionfs"
 or "ls -l .unionfs" still work. This option is especially usufull for 
 package builders.
 .TP
+\fB\-d
+Enable debugging for unionfs and libfuse. Useful for developers if the code
+if the code does not behave as expected. Debug information will be written
+to stderr and a debug file (./unionfs_debug.log by default).
+.TP
+\fB\-o debug_file=file
+Write unionfs debug information into that file. 
+.TP
 \fB\-o max_files=number
 Maximum number of open files. Most system have a default of 1024 open
 files per process. For example if unionfs-fuse servs "/" applications like

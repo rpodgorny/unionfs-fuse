@@ -53,6 +53,8 @@
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
 	FUSE_OPT_KEY("cow", KEY_COW),
+	FUSE_OPT_KEY("-d", KEY_DEBUG),
+	FUSE_OPT_KEY("debug_file=%s", KEY_DEBUG_FILE),
 	FUSE_OPT_KEY("--help", KEY_HELP),
 	FUSE_OPT_KEY("-h", KEY_HELP),
 	FUSE_OPT_KEY("hide_meta_dir", KEY_HIDE_METADIR),
@@ -799,12 +801,11 @@ static struct fuse_operations unionfs_oper = {
 int main(int argc, char *argv[]) {
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-	int res = debug_init();
-	if (res != 0) return res;
-
 	uopt_init();
 
 	if (fuse_opt_parse(&args, NULL, unionfs_opts, unionfs_opt_proc) == -1) return 1;
+
+	if (uopt.debug)	debug_init();
 
 	if (!uopt.doexit) {
 		if (uopt.nbranches == 0) {
@@ -838,6 +839,6 @@ int main(int argc, char *argv[]) {
 	unionfs_post_opts();
 
 	umask(0);
-	res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
+	int res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
 	return uopt.doexit ? uopt.retval : res;
 }

@@ -174,6 +174,9 @@ static int parse_branches(const char *arg) {
 }
 
 /**
+  * get_opt_str - get the parameter string
+  * @arg	- option argument
+  * @opt_name	- option name, used for error messages
   * fuse passes arguments with the argument prefix, e.g.
   * "-o chroot=/path/to/chroot/" will give us "chroot=/path/to/chroot/"
   * and we need to cut off the "chroot=" part
@@ -181,17 +184,19 @@ static int parse_branches(const char *arg) {
   *       to the chroot, it is absolutely required
   *       -o chroot=path is provided before specifying the braches!
   */
-char * get_chroot(const char *arg)
+static char * get_opt_str(const char *arg, char *opt_name)
 {
 	char *str = index(arg, '=');
 
 	if (!str) {
-		fprintf(stderr, "-o chroot parameter not properly specified, aborting!\n");
+		fprintf(stderr, "-o %s parameter not properly specified, aborting!\n",
+		        opt_name);
 		exit(1); // still early phase, we can abort
 	}
 
 	if (strlen(str) < 3) {
-		fprintf(stderr, "Chroot path has not sufficient characters, aborting!\n");
+		fprintf(stderr, "%s path has not sufficient characters, aborting!\n",
+		        opt_name);
 		exit(1);
 	}
 
@@ -225,6 +230,8 @@ static void print_help(const char *progname) {
         "                           want to have a union of \"/\" \n"
 	"    -o cow                 enable copy-on-write\n"
 	"                           mountpoint\n"
+	"    -d                     Enable debug output\n"
+	"    -o debug_file          file to write debug information into\n"
 	"    -o hide_meta_dir       \".unionfs\" is a secret directory not\n"
 	"                           print by readdir()\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
@@ -295,10 +302,17 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			uopt.retval = 1;
 			return 1;
 		case KEY_CHROOT:
-			uopt.chroot = get_chroot(arg);
+			uopt.chroot = get_opt_str(arg, "chroot");
 			return 0;
 		case KEY_COW:
 			uopt.cow_enabled = true;
+			return 0;
+		case KEY_DEBUG:
+			uopt.debug = true;
+			return 1;
+		case KEY_DEBUG_FILE:
+			uopt.dbgpath = get_opt_str(arg, "debug_file");
+			uopt.debug = true;
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
