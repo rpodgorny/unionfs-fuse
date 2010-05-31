@@ -12,7 +12,6 @@ extern FILE* dbgfile;
 
 #define DBG_IN() DBG("\n");
 
-#ifdef DEBUG
 #define DBG(format, ...) 						\
 	do {								\
 		if (!uopt.debug) break;					\
@@ -23,10 +22,6 @@ extern FILE* dbgfile;
 		fflush(stderr);						\
 		fflush(stdout);						\
 	} while (0)
-#else
-#define DBG(...) do {} while (0)
-#endif
-
 
 /**
  * Calling syslog() will deadlock if the filesystem is for /etc or /var.
@@ -45,13 +40,8 @@ extern FILE* dbgfile;
 /* In order to prevent useless function calls and to make the compiler
  * to optimize those out, debug.c will only have definitions if DEBUG 
  * is defined. So if DEBUG is NOT defined, we define empty functions here */
-#ifdef DEBUG
 int debug_init();
 void dbg_in(const char *function);
-#else
-static inline int debug_init(void) {return 0;};
-static inline void dbg_in(void) {};
-#endif // DEBUG
 
 
 #endif // DEBUG_H

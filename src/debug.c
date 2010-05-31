@@ -10,8 +10,6 @@
 #include "opts.h"
 #include "debug.h"
 
-#ifdef DEBUG
-
 static char default_debug_path[] = "./unionfs_debug.log";
 
 FILE* dbgfile = NULL;
@@ -31,5 +29,3 @@ int debug_init(void) {
 	}
 	return 0;
 }
-
-#endif // DEBUG
