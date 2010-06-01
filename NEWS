@@ -4,6 +4,11 @@
   using a wrong path
 - new options "-o relaxed_permissions" and "-o hide_meta_dir"
 - included the debian directory
+- Properly check on rmdir() if sub-branches are also empty
+- Always compile with debug code, but only enable debugging on request
+- New option -o debug_file
+- Lots of bug fixed for BUILD_PATH
+- Improved search of white-out files
 
 0.24
 - Support for liveCDs / live USB sticks (-o chroot)
