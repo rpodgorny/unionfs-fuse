@@ -232,8 +232,9 @@ static void print_help(const char *progname) {
 	"                           mountpoint\n"
 	"    -d                     Enable debug output\n"
 	"    -o debug_file          file to write debug information into\n"
-	"    -o hide_meta_dir       \".unionfs\" is a secret directory not\n"
-	"                           print by readdir()\n"
+	"    -o hide_meta_files     \".unionfs\" is a secret directory not\n"
+	"                           visible by readdir(), and so are\n" 
+        "                           .fuse_hidden* files\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
@@ -319,8 +320,11 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			fuse_opt_add_arg(outargs, "-ho");
 			uopt.doexit = 1;
 			return 0;
+		case KEY_HIDE_META_FILES:
+			uopt.hide_meta_files = true;
+			return 0;
 		case KEY_HIDE_METADIR:
-			uopt.hide_meta_dir = true;
+			uopt.hide_meta_files = true;
 			return 0;
 		case KEY_MAX_FILES:
 			set_max_open_files(arg);

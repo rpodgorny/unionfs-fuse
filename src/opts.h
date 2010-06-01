@@ -28,7 +28,7 @@ typedef struct {
 	char *chroot; 		// chroot we might go into
 	bool debug;		// enable debugging
 	char *dbgpath;		// debug file we write debug information into
-	bool hide_meta_dir;
+	bool hide_meta_files;
 	bool relaxed_permissions;
 
 } uopt_t;
@@ -39,6 +39,7 @@ enum {
 	KEY_DEBUG,
 	KEY_DEBUG_FILE,
 	KEY_HELP,
+	KEY_HIDE_META_FILES,
 	KEY_HIDE_METADIR,
 	KEY_MAX_FILES,
 	KEY_NOINITGROUPS,

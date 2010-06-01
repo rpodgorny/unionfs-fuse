@@ -38,12 +38,14 @@ for an example.
 \fB\-o cow
 Enable copy\-on\-write
 .TP
-\fB\-o hide_meta_dir
+\fB\-o hide_meta_files
 In our unionfs root path we have a .unionfs directory that includes
 metadata, such as hidden (deleted) files. This options make this 
 directory invisible from readdir(), so for example "ls -la /union_root/" 
 will not show it. However, this directory is still there and "cd .unionfs"
-or "ls -l .unionfs" still work. This option is especially usufull for 
+or "ls -l .unionfs" still work. Also, libfuse will create .fuse_hidden* 
+files, if a file is open, but will be deleted. Those fuse meta files also
+will be invisble. This option is especially usufull for 
 package builders.
 .TP
 \fB\-d

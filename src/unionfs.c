@@ -58,6 +58,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("--help", KEY_HELP),
 	FUSE_OPT_KEY("-h", KEY_HELP),
 	FUSE_OPT_KEY("hide_meta_dir", KEY_HIDE_METADIR),
+	FUSE_OPT_KEY("hide_meta_files", KEY_HIDE_META_FILES),
 	FUSE_OPT_KEY("max_files=%s", KEY_MAX_FILES),
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
 	FUSE_OPT_KEY("relaxed_permissions", KEY_RELAXED_PERMISSIONS),

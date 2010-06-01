@@ -33,21 +33,28 @@
 
 
 /**
-  * Hide our METADIR (.unionfs). As is causes a slight slowndown this is optional
+  * Hide metadata. As is causes a slight slowndown this is optional
+  * 
   */
-static bool hide_meta_dir(int branch, const char *path, struct dirent *de)
+static bool hide_meta_files(int branch, const char *path, struct dirent *de)
 {
 
-	if (uopt.hide_meta_dir == false) return false;
+	if (uopt.hide_meta_files == false) return false;
 
 	fprintf(stderr, "uopt.branches[branch].path = %s path = %s\n", uopt.branches[branch].path, path);
 	fprintf(stderr, "METANAME = %s, de->d_name = %s\n", METANAME, de->d_name);
 
-	// TODO Would it be faster to add hash comparison here?
+	// TODO Would it be faster to add hash comparison?
+
+	// HIDE out .unionfs directory
 	if (strcmp(uopt.branches[branch].path, path) == 0
 	&&  strcmp(METANAME, de->d_name) == 0) {
 		return true;
 	}
+
+	// HIDE fuse META files
+	if  (strncmp(FUSE_META_FILE, de->d_name, FUSE_META_LENGTH) == 0) 
+		return true;
 
 	return false;
 }
@@ -154,7 +161,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 				if (hashtable_search(whiteouts, de->d_name) != NULL) continue;
 			}
 
-			if (hide_meta_dir(i, p, de) == true) continue;
+			if (hide_meta_files(i, p, de) == true) continue;
 
 			// fill with something dummy, we're interested in key existence only
 			hashtable_insert(files, strdup(de->d_name), malloc(1));
@@ -241,7 +248,7 @@ int dir_not_empty(const char *path) {
 				if (hashtable_search(whiteouts, de->d_name) != NULL) continue;
 			}
 
-			if (hide_meta_dir(i, p, de) == true) continue;
+			if (hide_meta_files(i, p, de) == true) continue;
 
 			// When we arrive here, a valid entry was found
 			not_empty = 1;
