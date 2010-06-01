@@ -107,8 +107,10 @@ int find_rorw_branch(const char *path) {
 /**
  * Find a writable branch. If file does not exist, we check for
  * the parent directory.
+ * @path 	- the path to find or to copy (with last element cut off)
+ * @ rw_hint	- the rw branch to copy to, set to -1 to autodetect it
  */
-int find_rw_branch_cutlast(const char *path) {
+int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	DBG_IN();
 
 	int branch = find_rw_branch_cow(path);
@@ -136,8 +138,12 @@ int find_rw_branch_cutlast(const char *path) {
 		goto out;
 	}
 
+	int branch_rw;
 	// since it is a directory, any rw-branch is fine
-	int branch_rw = find_lowest_rw_branch(uopt.nbranches);
+	if (rw_hint == -1)
+		branch_rw = find_lowest_rw_branch(uopt.nbranches);
+	else
+		branch_rw = rw_hint;
 
 	// no writable branch found, we must return an error
 	if (branch_rw < 0) {
@@ -152,6 +158,14 @@ out:
 	free(dname);
 
 	return branch;
+}
+
+/**
+ * Call __find_rw_branch_cutlast()
+ */
+int find_rw_branch_cutlast(const char *path) {
+	int rw_hint = -1; // autodetect rw_branch
+	return __find_rw_branch_cutlast(path, rw_hint);
 }
 
 /**

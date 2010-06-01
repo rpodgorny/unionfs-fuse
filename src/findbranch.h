@@ -15,6 +15,7 @@ typedef enum searchflag {
 int find_rorw_branch(const char *path);
 int find_lowest_rw_branch(int branch_ro);
 int find_rw_branch_cutlast(const char *path);
+int __find_rw_branch_cutlast(const char *path, int rw_hint);
 int find_rw_branch_cow(const char *path);
 
 #endif

@@ -241,9 +241,10 @@ static int unionfs_link(const char *from, const char *to) {
 	int i = find_rw_branch_cow(from);
 	if (i == -1) return -errno;
 
-	// FIXME, we actually MUST COW to i
-	int j = find_rw_branch_cutlast(to);
+	int j = __find_rw_branch_cutlast(to, i);
 	if (j == -1) return -errno;
+
+	DBG("from branch: %d to branch: %d\n", i, j);
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
 	if (BUILD_PATH(f, uopt.branches[i].path, from)) return -ENAMETOOLONG;
