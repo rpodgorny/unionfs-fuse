@@ -9,6 +9,7 @@
 - New option -o debug_file
 - Lots of bug fixed for BUILD_PATH
 - Improved search of white-out files
+- Properly fix Debian Bug#509516.
 
 0.24
 - Support for liveCDs / live USB sticks (-o chroot)
