@@ -111,9 +111,8 @@ int find_rorw_branch(const char *path) {
  * @ rw_hint	- the rw branch to copy to, set to -1 to autodetect it
  */
 int __find_rw_branch_cutlast(const char *path, int rw_hint) {
-	DBG_IN();
-
 	int branch = find_rw_branch_cow(path);
+	DBG("branch = %d\n", branch);
 
 	if (branch >= 0 || (branch < 0 && errno != ENOENT)) return branch;
 
@@ -127,9 +126,17 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 		errno = ENOMEM;
 		return -1;
 	}
-	branch = find_rorw_branch(dname);
 
-	if (branch < 0 || uopt.branches[branch].rw) goto out;
+	branch = find_rorw_branch(dname);
+	DBG("branch = %d\n", branch);
+
+	// No branch found, so path does nowhere exist, error
+	if (branch < 0) goto out; 
+
+	// branch is write and we do not care which branch it is (rw_hint == -1)
+	// or branch is writable and matches rw_hint
+	if (uopt.branches[branch].rw 
+	&& (rw_hint == -1 || branch == rw_hint)) goto out;
 
 	if (!uopt.cow_enabled) {
 		// So path exists, but is not writable.
@@ -144,6 +151,8 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 		branch_rw = find_lowest_rw_branch(uopt.nbranches);
 	else
 		branch_rw = rw_hint;
+
+	DBG("branch_rw = %d\n", branch_rw);
 
 	// no writable branch found, we must return an error
 	if (branch_rw < 0) {
