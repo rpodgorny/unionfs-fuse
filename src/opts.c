@@ -321,8 +321,6 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			uopt.doexit = 1;
 			return 0;
 		case KEY_HIDE_META_FILES:
-			uopt.hide_meta_files = true;
-			return 0;
 		case KEY_HIDE_METADIR:
 			uopt.hide_meta_files = true;
 			return 0;
