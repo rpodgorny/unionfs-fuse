@@ -133,8 +133,7 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	// No branch found, so path does nowhere exist, error
 	if (branch < 0) goto out; 
 
-	// branch is write and we do not care which branch it is (rw_hint == -1)
-	// or branch is writable and matches rw_hint
+	// Reminder rw_hint == -1 -> autodetect, we do not care which branch it is
 	if (uopt.branches[branch].rw 
 	&& (rw_hint == -1 || branch == rw_hint)) goto out;
 
