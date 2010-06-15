@@ -71,7 +71,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
  * nbranch for an other COW operation.
  */
 int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	if (!uopt.cow_enabled) return 0;
 	
@@ -110,7 +110,7 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
  * i.e. it might be a filename.
  */
 int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	char *dname = u_dirname(path);
 	if (dname == NULL)
@@ -125,7 +125,7 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
  * initiate the cow-copy action
  */
 int cow_cp(const char *path, int branch_ro, int branch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	// create the path to the file
 	path_create_cutlast(path, branch_ro, branch_rw);
@@ -182,7 +182,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
  * copy a directory between branches (includes all contents of the directory)
  */
 int copy_directory(const char *path, int branch_ro, int branch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	/* create the directory on the destination branch */
 	int res = path_create(path, branch_ro, branch_rw);

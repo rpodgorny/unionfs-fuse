@@ -29,7 +29,7 @@
  * Check if the given fname suffixes the hide tag
  */
 char *whiteout_tag(const char *fname) {
-	DBG_IN();
+	DBG("%s\n", fname);
 
 	char *tag = strstr(fname, HIDETAG);
 
@@ -137,7 +137,7 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
  * implementation
  */
 char *u_dirname(const char *path) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	char *ret = strdup(path);
 	if (ret == NULL) {
@@ -164,7 +164,7 @@ char *u_dirname(const char *path) {
  * str needs to NULL terminated
  */
 static unsigned int elfhash(const char *str) {
-	DBG_IN();
+	DBG("%s\n", str);
 
 	unsigned int hash = 0;
 

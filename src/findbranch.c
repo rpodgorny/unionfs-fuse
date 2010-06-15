@@ -54,7 +54,7 @@
  *  Find a branch that has "path". Return the branch number.
  */
 static int find_branch(const char *path, searchflag_t flag) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
@@ -100,7 +100,7 @@ static int find_branch(const char *path, searchflag_t flag) {
  * Find a ro or rw branch.
  */
 int find_rorw_branch(const char *path) {
-	DBG_IN();
+	DBG("%s\n", path);
 	return find_branch(path, RWRO);
 }
 
@@ -185,7 +185,7 @@ int find_rw_branch_cutlast(const char *path) {
  *       and a directory is to be copied from ro- to rw-branch.
  */
 int find_rw_branch_cow(const char *path) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	int branch_rorw = find_rorw_branch(path);
 

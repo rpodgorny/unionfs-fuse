@@ -65,7 +65,7 @@ static bool hide_meta_files(int branch, const char *path, struct dirent *de)
  * Warning: If fname has the tag, fname gets modified.
  */
 static bool is_hiding(struct hashtable *hides, char *fname) {
-	DBG_IN();
+	DBG("%s\n", fname);
 
 	char *tag;
 
@@ -90,7 +90,7 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
  * Read whiteout files
  */
 static void read_whiteouts(const char *path, struct hashtable *whiteouts, int branch) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch].path, METADIR, path)) return;
@@ -110,7 +110,7 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
  * unionfs-fuse readdir function
  */
 int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	(void)offset;
 	(void)fi;
@@ -199,7 +199,7 @@ out:
  */
 int dir_not_empty(const char *path) {
 
-	DBG_IN();
+	DBG("%s\n", path);
 
 	int i = 0;
 	int rc = 0;

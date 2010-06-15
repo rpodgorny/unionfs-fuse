@@ -38,7 +38,7 @@
   * we can really delete the file.
   */
 static int rmdir_rw(const char *path, int branch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch_rw].path, path)) return ENAMETOOLONG;
@@ -56,7 +56,7 @@ static int rmdir_rw(const char *path, int branch_rw) {
   * lower level directory.
   */
 static int rmdir_ro(const char *path, int branch_ro) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	// find a writable branch above branch_ro
 	int branch_rw = find_lowest_rw_branch(branch_ro);
@@ -83,7 +83,7 @@ static int rmdir_ro(const char *path, int branch_ro) {
   * rmdir() call
   */
 int unionfs_rmdir(const char *path) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	if (dir_not_empty(path)) return -ENOTEMPTY;
 

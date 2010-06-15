@@ -55,7 +55,7 @@ static int filedir_hidden(const char *path) {
  * check if any dir or file within path is hidden
  */
 int path_hidden(const char *path, int branch) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	if (!uopt.cow_enabled) return false;
 
@@ -91,7 +91,7 @@ int path_hidden(const char *path, int branch) {
  * If maxbranch == -1, try to delete it in all branches.
  */
 int remove_hidden(const char *path, int maxbranch) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	if (!uopt.cow_enabled) return 0;
 
@@ -120,7 +120,7 @@ int remove_hidden(const char *path, int maxbranch) {
  * return proper types given by filetype_t
  */
 filetype_t path_is_dir(const char *path) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	struct stat buf;
 	
@@ -135,7 +135,7 @@ filetype_t path_is_dir(const char *path) {
  * Create a file or directory that hides path below branch_rw
  */
 static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mode) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	char metapath[PATHLEN_MAX];
 
@@ -165,7 +165,7 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
  * Create a file that hides path below branch_rw
  */
 int hide_file(const char *path, int branch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 	return do_create_whiteout(path, branch_rw, WHITEOUT_FILE);
 }
 
@@ -173,7 +173,7 @@ int hide_file(const char *path, int branch_rw) {
  * Create a directory that hides path below branch_rw
  */
 int hide_dir(const char *path, int branch_rw) {
-	DBG_IN();
+	DBG("%s\n", path);
 	return do_create_whiteout(path, branch_rw, WHITEOUT_DIR);
 }
 
@@ -182,7 +182,7 @@ int hide_dir(const char *path, int branch_rw) {
  * if the same file/dir does exist in a lower branch
  */
 int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	// we are not interested in the branch itself, only if it exists at all
 	if (find_rorw_branch(path) != -1) {

@@ -57,7 +57,7 @@
  **/
 int setfile(const char *path, struct stat *fs)
 {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	struct utimbuf ut;
 	int rval;
@@ -115,7 +115,7 @@ int setfile(const char *path, struct stat *fs)
  **/
 static int setlink(const char *path, struct stat *fs)
 {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	if (lchown(path, fs->st_uid, fs->st_gid)) {
 		if (errno != EPERM) {
@@ -132,7 +132,7 @@ static int setlink(const char *path, struct stat *fs)
  **/
 int copy_file(struct cow *cow)
 {
-	DBG_IN();
+	DBG("from %s to %s\n", cow->from_path, cow->to_path);
 
 	static char buf[MAXBSIZE];
 	struct stat to_stat, *fs;
@@ -236,7 +236,7 @@ int copy_file(struct cow *cow)
  */
 int copy_link(struct cow *cow)
 {
-	DBG_IN();
+	DBG("from %s to %s\n", cow->from_path, cow->to_path);
 
 	int len;
 	char link[PATHLEN_MAX];
@@ -262,7 +262,7 @@ int copy_link(struct cow *cow)
  **/
 int copy_fifo(struct cow *cow)
 {
-	DBG_IN();
+	DBG("from %s to %s\n", cow->from_path, cow->to_path);
 
 	if (mkfifo(cow->to_path, cow->stat->st_mode)) {
 		usyslog(LOG_WARNING,   "mkfifo: %s", cow->to_path);
@@ -277,7 +277,7 @@ int copy_fifo(struct cow *cow)
  */
 int copy_special(struct cow *cow)
 {
-	DBG_IN();
+	DBG("from %s to %s\n", cow->from_path, cow->to_path);
 
 	if (mknod(cow->to_path, cow->stat->st_mode, cow->stat->st_rdev)) {
 		usyslog(LOG_WARNING,   "mknod: %s", cow->to_path);
