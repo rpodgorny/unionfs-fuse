@@ -25,7 +25,7 @@ int debug_init(void) {
 	if (!dbgfile) {
 		printf("Failed to open %s for writing: %s.\nAborting!\n", 
 		       dbgpath, strerror(errno));
-		return 2;
+		RETURN(2);
 	}
-	return 0;
+	RETURN(0);
 }

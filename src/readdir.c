@@ -39,7 +39,7 @@
 static bool hide_meta_files(int branch, const char *path, struct dirent *de)
 {
 
-	if (uopt.hide_meta_files == false) return false;
+	if (uopt.hide_meta_files == false) RETURN(false);
 
 	fprintf(stderr, "uopt.branches[branch].path = %s path = %s\n", uopt.branches[branch].path, path);
 	fprintf(stderr, "METANAME = %s, de->d_name = %s\n", METANAME, de->d_name);
@@ -49,14 +49,14 @@ static bool hide_meta_files(int branch, const char *path, struct dirent *de)
 	// HIDE out .unionfs directory
 	if (strcmp(uopt.branches[branch].path, path) == 0
 	&&  strcmp(METANAME, de->d_name) == 0) {
-		return true;
+		RETURN(true);
 	}
 
 	// HIDE fuse META files
 	if  (strncmp(FUSE_META_FILE, de->d_name, FUSE_META_LENGTH) == 0) 
-		return true;
+		RETURN(true);
 
-	return false;
+	RETURN(false);
 }
 
 /**
@@ -80,10 +80,10 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
 			hashtable_insert(hides, strdup(fname), malloc(1));
 		}
 
-		return true;
+		RETURN(true);
 	}
 
-	return false;
+	RETURN(false);
 }
 
 /**
@@ -187,7 +187,7 @@ out:
 		filler(buf, "stats", NULL, 0);
 	}
 
-	return rc;
+	RETURN(rc);
 }
 
 /**
@@ -263,9 +263,9 @@ int dir_not_empty(const char *path) {
 out:
 	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 1);
 
-	if (rc) return rc;
+	if (rc) RETURN(rc);
 	
-	return not_empty;
+	RETURN(not_empty);
 }
 
 

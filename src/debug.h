@@ -38,6 +38,13 @@ extern FILE* dbgfile;
 #define usyslog(priority, format, ...)	DBG(format, ##__VA_ARGS__)
 
 
+#define RETURN(returncode) 						\
+	do {								\
+		if (uopt.debug) DBG("return %d\n", returncode);		\
+		return returncode;					\
+	} while (0)
+
+
 /* In order to prevent useless function calls and to make the compiler
  * to optimize those out, debug.c will only have definitions if DEBUG 
  * is defined. So if DEBUG is NOT defined, we define empty functions here */

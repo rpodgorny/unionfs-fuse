@@ -115,7 +115,7 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 		if (len + 1 > max_len) {
 			usyslog (LOG_WARNING, "%s():%d Path too long \n", callfunc, line);
 			errno = ENAMETOOLONG;
-			return -errno;
+			RETURN(-errno);
 		}
 
 		strcat (path, str);
@@ -124,11 +124,11 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 	if (len == 0) {
 		usyslog(LOG_ERR, "from: %s():%d : No argument given?\n", callfunc, line);
 		errno = EIO;
-		return -errno;
+		RETURN(-errno);
 	}
 	
 	DBG("from: %s():%d path: %s\n", callfunc, line, str_ptr);
-	return 0;
+	RETURN(0);
 }
 
 /**

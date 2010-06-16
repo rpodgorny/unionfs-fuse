@@ -37,7 +37,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	struct stat buf;
 	int res = stat(dirp, &buf);
-	if (res != -1) return 0; // already exists
+	if (res != -1) RETURN(0); // already exists
 
 	if (nbranch_ro == nbranch_rw) {
 		// special case nbranch_ro = nbranch_rw, this is if we a create
@@ -48,22 +48,22 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 		char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
 		sprintf(o_dirp, "%s%s", uopt.branches[nbranch_ro].path, path);
 		res = stat(o_dirp, &buf);
-		if (res == -1) return 1; // lower level branch removed in the mean time?
+		if (res == -1) RETURN(1); // lower level branch removed in the mean time?
 	}
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
 		usyslog(LOG_DAEMON, "Creating %s failed: \n", dirp);
-		return 1;
+		RETURN(1);
 	}
 
-	if (nbranch_ro == nbranch_rw) return 0; // the special case again
+	if (nbranch_ro == nbranch_rw) RETURN(0); // the special case again
 
-	if (setfile(dirp, &buf))  return 1; // directory already removed by another process?
+	if (setfile(dirp, &buf))  RETURN(1); // directory already removed by another process?
 
 	// TODO: time, but its values are modified by the next dir/file creation steps?
 
-	return 0;
+	RETURN(0);
 }
 
 /**
@@ -73,15 +73,15 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	DBG("%s\n", path);
 
-	if (!uopt.cow_enabled) return 0;
+	if (!uopt.cow_enabled) RETURN(0);
 	
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[nbranch_rw].path, path)) return -ENAMETOOLONG;
+	if (BUILD_PATH(p, uopt.branches[nbranch_rw].path, path)) RETURN(-ENAMETOOLONG);
 
 	struct stat st;
 	if (!stat(p, &st)) {
 		// path does already exists, no need to create it
-		return 0;
+		RETURN(0);
 	}
 
 	char *walk = (char *)path;
@@ -96,13 +96,13 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 		// +1 due to \0, which gets added automatically
 		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
 		int res = do_create(p, nbranch_ro, nbranch_rw);
-		if (res) return res; // creating the directory failed
+		if (res) RETURN(res); // creating the directory failed
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
 		while (*walk != '\0' && *walk == '/') walk++;
 	} while (*walk != '\0');
 
-	return 0;
+	RETURN(0);
 }
 
 /**
@@ -114,11 +114,11 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	char *dname = u_dirname(path);
 	if (dname == NULL)
-		return -ENOMEM;
+		RETURN(-ENOMEM);
 	int ret = path_create(dname, nbranch_ro, nbranch_rw);
 	free(dname);
 
-	return ret;
+	RETURN(ret);
 }
 
 /**
@@ -132,9 +132,9 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
 	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path))
-		return -ENAMETOOLONG;
+		RETURN(-ENAMETOOLONG);
 	if (BUILD_PATH(to, uopt.branches[branch_rw].path, path))
-		return -ENAMETOOLONG;
+		RETURN(-ENAMETOOLONG);
 
 	setlocale(LC_ALL, "");
 
@@ -170,12 +170,12 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 			break;
 		case S_IFSOCK:
 			usyslog(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
-			return 1;
+			RETURN(1);
 		default:
 			res = copy_file(&cow);
 	}
 
-	return res;
+	RETURN(res);
 }
 
 /**
@@ -187,27 +187,27 @@ int copy_directory(const char *path, int branch_ro, int branch_rw) {
 	/* create the directory on the destination branch */
 	int res = path_create(path, branch_ro, branch_rw);
 	if (res != 0) {
-		return res;
+		RETURN(res);
 	}
 
 	/* determine path to source directory on read-only branch */
 	char from[PATHLEN_MAX];
-	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path)) return 1;
+	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path)) RETURN(1);
 
 	DIR *dp = opendir(from);
-	if (dp == NULL) return 1;
+	if (dp == NULL) RETURN(1);
 
 	struct dirent *de;
 	while ((de = readdir(dp)) != NULL) {
 		if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) continue;
 
 		char member[PATHLEN_MAX];
-		if (BUILD_PATH(member, path, de->d_name)) return 1;
+		if (BUILD_PATH(member, path, de->d_name)) RETURN(1);
 		res = cow_cp(member, branch_ro, branch_rw);
-		if (res != 0) return res;
+		if (res != 0) RETURN(res);
 	}
 
 	closedir(dp);
-	return 0;
+	RETURN(0);
 }
 

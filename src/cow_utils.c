@@ -104,10 +104,10 @@ int setfile(const char *path, struct stat *fs)
 				usyslog(LOG_WARNING,   "chflags: %s", path);
 				rval = 1;
 			}
-			return (rval);
+			RETURN((rval));
 		}
 #endif
-	return 0;
+	RETURN(0);
 }
 
 /**
@@ -120,10 +120,10 @@ static int setlink(const char *path, struct stat *fs)
 	if (lchown(path, fs->st_uid, fs->st_gid)) {
 		if (errno != EPERM) {
 			usyslog(LOG_WARNING,   "lchown: %s", path);
-			return (1);
+			RETURN((1));
 		}
 	}
-	return (0);
+	RETURN((0));
 }
 
 
@@ -144,7 +144,7 @@ int copy_file(struct cow *cow)
 
 	if ((from_fd = open(cow->from_path, O_RDONLY, 0)) == -1) {
 		usyslog(LOG_WARNING, "%s", cow->from_path);
-		return (1);
+		RETURN((1));
 	}
 
 	fs = cow->stat;
@@ -155,7 +155,7 @@ int copy_file(struct cow *cow)
 	if (to_fd == -1) {
 		usyslog(LOG_WARNING, "%s", cow->to_path);
 		(void)close(from_fd);
-		return (1);
+		RETURN((1));
 	}
 
 	/*
@@ -194,14 +194,14 @@ int copy_file(struct cow *cow)
 		}
 		if (rcount < 0) {
 			usyslog(LOG_WARNING,   "copy failed: %s", cow->from_path);
-			return 1;
+			RETURN(1);
 		}
 	}
 
 	if (rval == 1) {
 		(void)close(from_fd);
 		(void)close(to_fd);
-		return (1);
+		RETURN((1));
 	}
 
 	if (setfile(cow->to_path, cow->stat))
@@ -228,7 +228,7 @@ int copy_file(struct cow *cow)
 		rval = 1;
 	}
 	
-	return (rval);
+	RETURN((rval));
 }
 
 /**
@@ -243,17 +243,17 @@ int copy_link(struct cow *cow)
 
 	if ((len = readlink(cow->from_path, link, sizeof(link)-1)) == -1) {
 		usyslog(LOG_WARNING,   "readlink: %s", cow->from_path);
-		return (1);
+		RETURN((1));
 	}
 
 	link[len] = '\0';
 	
 	if (symlink(link, cow->to_path)) {
 		usyslog(LOG_WARNING,   "symlink: %s", link);
-		return (1);
+		RETURN((1));
 	}
 	
-	return setlink(cow->to_path, cow->stat);
+	RETURN(setlink(cow->to_path, cow->stat));
 }
 
 /**
@@ -266,9 +266,9 @@ int copy_fifo(struct cow *cow)
 
 	if (mkfifo(cow->to_path, cow->stat->st_mode)) {
 		usyslog(LOG_WARNING,   "mkfifo: %s", cow->to_path);
-		return (1);
+		RETURN((1));
 	}
-	return setfile(cow->to_path, cow->stat);
+	RETURN(setfile(cow->to_path, cow->stat));
 }
 
 /**
@@ -281,7 +281,7 @@ int copy_special(struct cow *cow)
 
 	if (mknod(cow->to_path, cow->stat->st_mode, cow->stat->st_rdev)) {
 		usyslog(LOG_WARNING,   "mknod: %s", cow->to_path);
-		return (1);
+		RETURN((1));
 	}
-	return setfile(cow->to_path, cow->stat);
+	RETURN(setfile(cow->to_path, cow->stat));
 }
