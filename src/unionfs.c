@@ -140,7 +140,7 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
  * which flush the data/metadata on close()
  */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
-	DBG("%"PRIx64"\n", fi->fh);
+	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
 
@@ -163,7 +163,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
  * Just a stub. This method is optional and can safely be left unimplemented
  */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
-	DBG("%"PRIx64"\n", fi->fh);
+	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
 
@@ -366,7 +366,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	DBG("%"PRIx64"\n", fi->fh);
+	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
 		char out[STATS_SIZE] = "";
@@ -411,7 +411,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
-	DBG("%s\n", path);
+	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
 
@@ -695,7 +695,7 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 static int unionfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	(void)path;
 
-	DBG("%"PRIx64"\n", fi->fh);
+	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int res = pwrite(fi->fh, buf, size, offset);
 	if (res == -1) RETURN(-errno);
