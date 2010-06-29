@@ -1,8 +1,32 @@
+unionfs-fuse (0.25~hg.20100602-2) unstable; urgency=low
+
+  * Set upload to unstable
+
+ -- Bernd Schubert <bernd.schubert@fastmail.fm>  Sun, 06 Jun 2010 16:49:24 +0200
+
+unionfs-fuse (0.25~hg.20100602-1) karmic; urgency=low
+
+  * Pull from my 0.25 branch http://podgorny.cz/~bernd/hg/hgwebdir.cgi/0.25
+  * Check the NEWS file for details
+  * Improve the fix for Debian bug 509516
+
+ -- Bernd Schubert <bernd.schubert@fastmail.fm>  Wed, 02 Jun 2010 00:25:51 +0200
+
 unionfs-fuse (0.25~hg.20100315-1) unstable; urgency=low
 
   * new hg version
 
  -- Bernd Schubert <bernd.schubert@fastmail.fm>  Sun, 16 May 2010 21:35:29 +0200
+
+unionfs-fuse (0.24-1) unstable; urgency=low
+
+  * New upstream release
+  * Add utimens.patch
+  * Also close 509516, although the solution is not perfect yet
+    (closes: #509516)
+  * Switch to dpkg-source 3.0 (quilt) format
+
+ -- Bernd Schubert <bernd.schubert@fastmail.fm>  Wed, 26 May 2010 16:42:13 +0200
 
 unionfs-fuse (0.23.hg.20100315-1) unstable; urgency=low
 
@@ -14,8 +38,8 @@ unionfs-fuse (0.23.hg.20100315-1) unstable; urgency=low
 unionfs-fuse (0.23.hg.20090831-1) unstable; urgency=low
 
   * another pull from my branch
-  * fix relative pathes (closes: 541614)
-  * inlcude patch from Goswin (closes: 533403)
+  * fix relative pathes (closes: #541614)
+  * inlcude patch from Goswin (closes: #533403)
 
  -- Bernd Schubert <bernd.schubert@fastmail.fm>  Mon, 31 Aug 2009 00:29:46 +0200
 
