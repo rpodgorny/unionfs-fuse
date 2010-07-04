@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 /*
 Credit for primes table: Aaron Krowne
@@ -23,6 +22,25 @@ static const unsigned int primes[] = {
 };
 const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
 const float max_load_factor = 0.65;
+
+#define TOL 1e-6 // float tolerance
+
+/**
+ * my_ceil - calculate ceil value
+ * Using C ceil() from math.h with -lm requires to link this library only for
+ * this simple function. As it is not performance relevent for the hash table 
+ * we use our own * implementation.
+ *
+ */
+static int my_ceil(float x)
+{
+        int y = (int) x;
+        if (y - x > TOL)
+                return y;
+        else
+                return y + 1;
+}
+
 
 /*****************************************************************************/
 struct hashtable *
@@ -48,7 +66,7 @@ create_hashtable(unsigned int minsize,
     h->entrycount   = 0;
     h->hashfn       = hashf;
     h->eqfn         = eqf;
-    h->loadlimit    = (unsigned int) ceil(size * max_load_factor);
+    h->loadlimit    = my_ceil(size * max_load_factor);
     return h;
 }
 
@@ -121,7 +139,7 @@ hashtable_expand(struct hashtable *h)
         }
     }
     h->tablelength = newsize;
-    h->loadlimit   = (unsigned int) ceil(newsize * max_load_factor);
+    h->loadlimit   = my_ceil(newsize * max_load_factor);
     return -1;
 }
 
