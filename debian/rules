@@ -9,10 +9,6 @@
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE=1
 
-QUILT_STAMPFN := patch-stamp
-include /usr/share/quilt/quilt.make
-
-
 CFLAGS = -pipe -W -Wall -g
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
@@ -36,7 +32,7 @@ configure-stamp:
 
 build: build-stamp
 
-build-stamp: $(QUILT_STAMPFN) configure-stamp 
+build-stamp: configure-stamp 
 	dh_testdir
 
 	# Add here commands to compile the package.
@@ -47,7 +43,7 @@ build-stamp: $(QUILT_STAMPFN) configure-stamp
 clean: unpatch
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp $(QUILT_STAMPFN)
+	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
 	rm -fr debian/build
