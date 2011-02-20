@@ -16,6 +16,7 @@
 #endif
 
 #include <fuse.h>
+#include <fuse/fuse_common.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -842,6 +843,15 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	unionfs_post_opts();
+
+#ifdef FUSE_CAP_BIG_WRITES
+	/* libfuse > 0.8 supports large IO, also for reads, to increase performance 
+	 * We support any IO sizes, so lets enable that option */
+	if (fuse_opt_add_arg(&args, "-obig_writes")) {
+		fprintf(stderr, "Failed to enable big writes!\n");
+		exit(1);
+	}
+#endif
 
 	umask(0);
 	int res = fuse_main(args.argc, args.argv, &unionfs_oper, NULL);
