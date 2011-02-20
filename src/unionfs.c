@@ -34,7 +34,7 @@
 	#include <sys/statvfs.h>
 #endif
 
-#ifdef HAVE_SETXATTR
+#ifdef HAVE_XATTR
 	#include <sys/xattr.h>
 #endif
 
@@ -707,7 +707,7 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 	RETURN(res);
 }
 
-#ifdef HAVE_SETXATTR
+#ifdef HAVE_XATTR
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
 	DBG("%s\n", path);
 
@@ -771,7 +771,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 
 	RETURN(res);
 }
-#endif // HAVE_SETXATTR
+#endif // HAVE_XATTR
 
 static struct fuse_operations unionfs_oper = {
 	.chmod	= unionfs_chmod,
@@ -797,7 +797,7 @@ static struct fuse_operations unionfs_oper = {
 	.unlink	= unionfs_unlink,
 	.utimens	= unionfs_utimens,
 	.write	= unionfs_write,
-#ifdef HAVE_SETXATTR
+#ifdef HAVE_XATTR
 	.getxattr		= unionfs_getxattr,
 	.listxattr		= unionfs_listxattr,
 	.removexattr	= unionfs_removexattr,
