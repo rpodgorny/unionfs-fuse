@@ -8,7 +8,6 @@
 #define GENERAL_H
 
 #include <stdbool.h>
-#include <syslog.h>
 
 enum  whiteout {
 	WHITEOUT_FILE,

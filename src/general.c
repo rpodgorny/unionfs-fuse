@@ -30,7 +30,7 @@
 #include "findbranch.h"
 #include "general.h"
 #include "debug.h"
-
+#include "usyslog.h"
 
 /**
  * Check if a file or directory with the hidden flag exists.
@@ -200,7 +200,7 @@ int set_owner(const char *path) {
 	if (ctx->uid != 0 && ctx->gid != 0) {
 		int res = lchown(path, ctx->uid, ctx->gid);
 		if (res) {
-			usyslog(LOG_WARNING,
+			USYSLOG(LOG_WARNING,
 			       ":%s: Setting the correct file owner failed: %s !\n", 
 			       __func__, strerror(errno));
 			RETURN(-errno);

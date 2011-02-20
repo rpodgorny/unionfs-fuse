@@ -50,6 +50,7 @@
 #include "readdir.h"
 #include "cow.h"
 #include "string.h"
+#include "usyslog.h"
 
 
 static struct fuse_opt unionfs_opts[] = {
@@ -194,7 +195,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 		stbuf->st_size = STATS_SIZE;
 		RETURN(0);
 	}
-
+	
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
 
@@ -229,7 +230,7 @@ static void * unionfs_init(struct fuse_conn_info *conn) {
 	if (uopt.chroot) {
 		int res = chroot(uopt.chroot);
 		if (res) {
-			usyslog("Chdir to %s failed: %s ! Aborting!\n",
+			USYSLOG(LOG_WARNING, "Chdir to %s failed: %s ! Aborting!\n",
 				 uopt.chroot, strerror(errno));
 			exit(1);
 		}
@@ -306,10 +307,10 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 		// since we now have the unionfs_create() method
 		// So can we remove it?
 
-		usyslog (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
+		USYSLOG (LOG_INFO, "deprecated mknod workaround, tell the unionfs-fuse authors if you see this!\n");
 
 		res = creat(p, 0);
-		if (res > 0 && close(res) == -1) usyslog(LOG_WARNING, "Warning, cannot close file\n");
+		if (res > 0 && close(res) == -1) USYSLOG(LOG_WARNING, "Warning, cannot close file\n");
 	} else {
 		res = mknod(p, file_type, rdev);
 	}
@@ -444,7 +445,7 @@ static int unionfs_rename(const char *from, const char *to) {
 	}
 
 	if (i != j) {
-		usyslog(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
+		USYSLOG(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
 		       "is not supported yet.\n", __func__, i, j);
 		RETURN(-EXDEV);
 	}
@@ -477,11 +478,11 @@ static int unionfs_rename(const char *from, const char *to) {
 		// if from was on a read-only branch we copied it, but now rename failed so we need to delete it
 		if (!uopt.branches[i].rw) {
 			if (unlink(f))
-				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
+				USYSLOG(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also unlink()  failed\n", __func__, from);
 
 			if (remove_hidden(from, i))
-				usyslog(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
+				USYSLOG(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
 				       "also removing the whiteout  failed\n", __func__, from);
 		}
 		RETURN(-err);
@@ -807,6 +808,7 @@ static struct fuse_operations unionfs_oper = {
 int main(int argc, char *argv[]) {
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
+	init_syslog();
 	uopt_init();
 
 	if (fuse_opt_parse(&args, NULL, unionfs_opts, unionfs_opt_proc) == -1) RETURN(1);

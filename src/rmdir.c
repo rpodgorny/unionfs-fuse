@@ -32,6 +32,7 @@
 #include "findbranch.h"
 #include "string.h"
 #include "readdir.h"
+#include "usyslog.h"
 
 /**
   * If the branch that has the directory to be removed is in read-write mode,
@@ -69,7 +70,7 @@ static int rmdir_ro(const char *path, int branch_ro) {
 		case (ENOTDIR):
 		case (ENOTEMPTY):
 			// catch errors not allowed for rmdir()
-			usyslog (LOG_ERR, "%s: Creating the whiteout failed: %s\n",
+			USYSLOG (LOG_ERR, "%s: Creating the whiteout failed: %s\n",
 				__func__, strerror(errno));
 			errno = EFAULT;
 		}

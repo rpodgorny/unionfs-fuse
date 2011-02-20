@@ -49,6 +49,7 @@
 #include "findbranch.h"
 #include "string.h"
 #include "debug.h"
+#include "usyslog.h"
 
 /**
  *  Find a branch that has "path". Return the branch number.
@@ -76,7 +77,7 @@ static int find_branch(const char *path, searchflag_t flag) {
 				if (uopt.branches[i].rw) RETURN(i);
 				break;
 			default:
-				usyslog(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
+				USYSLOG(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
 			}
 		}
 

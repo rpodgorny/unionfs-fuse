@@ -24,6 +24,7 @@
 #include "cow_utils.h"
 #include "string.h"
 #include "debug.h"
+#include "usyslog.h"
 
 
 /**
@@ -53,7 +54,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
-		usyslog(LOG_DAEMON, "Creating %s failed: \n", dirp);
+		USYSLOG(LOG_DAEMON, "Creating %s failed: \n", dirp);
 		RETURN(1);
 	}
 
@@ -169,7 +170,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 			res = copy_fifo(&cow);
 			break;
 		case S_IFSOCK:
-			usyslog(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
+			USYSLOG(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
 			RETURN(1);
 		default:
 			res = copy_file(&cow);

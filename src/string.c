@@ -23,7 +23,7 @@
 #include "opts.h"
 #include "debug.h"
 #include "general.h"
-
+#include "usyslog.h"
 
 /**
  * Check if the given fname suffixes the hide tag
@@ -113,7 +113,7 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 
 		// +1 for final \0 not counted by strlen
 		if (len + 1 > max_len) {
-			usyslog (LOG_WARNING, "%s():%d Path too long \n", callfunc, line);
+			USYSLOG (LOG_WARNING, "%s():%d Path too long \n", callfunc, line);
 			errno = ENAMETOOLONG;
 			RETURN(-errno);
 		}
@@ -122,7 +122,7 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 	}
 	
 	if (len == 0) {
-		usyslog(LOG_ERR, "from: %s():%d : No argument given?\n", callfunc, line);
+		USYSLOG(LOG_ERR, "from: %s():%d : No argument given?\n", callfunc, line);
 		errno = EIO;
 		RETURN(-errno);
 	}
@@ -141,7 +141,7 @@ char *u_dirname(const char *path) {
 
 	char *ret = strdup(path);
 	if (ret == NULL) {
-		usyslog(LOG_WARNING, "strdup failed, probably out of memory!\n");
+		USYSLOG(LOG_WARNING, "strdup failed, probably out of memory!\n");
 		return ret;
 	}
 
