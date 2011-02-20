@@ -12,6 +12,7 @@ unionfs-fuse (0.25~hg.20100602-1) karmic; urgency=low
 
  -- Bernd Schubert <bernd.schubert@fastmail.fm>  Wed, 02 Jun 2010 00:25:51 +0200
 
+
 unionfs-fuse (0.25~hg.20100315-1) unstable; urgency=low
 
   * new hg version
@@ -20,8 +21,8 @@ unionfs-fuse (0.25~hg.20100315-1) unstable; urgency=low
 
 unionfs-fuse (0.24-1) unstable; urgency=low
 
-  * New upstream release
-  * Add utimens.patch
+  * New upstream release 
+  * Add utimens.patch 
   * Also close 509516, although the solution is not perfect yet
     (closes: #509516)
   * Switch to dpkg-source 3.0 (quilt) format
@@ -38,8 +39,8 @@ unionfs-fuse (0.23.hg.20100315-1) unstable; urgency=low
 unionfs-fuse (0.23.hg.20090831-1) unstable; urgency=low
 
   * another pull from my branch
-  * fix relative pathes (closes: #541614)
-  * inlcude patch from Goswin (closes: #533403)
+  * fix relative pathes (closes: 541614)
+  * inlcude patch from Goswin (closes: 533403)
 
  -- Bernd Schubert <bernd.schubert@fastmail.fm>  Mon, 31 Aug 2009 00:29:46 +0200
 

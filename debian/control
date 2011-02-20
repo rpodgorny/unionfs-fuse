@@ -2,7 +2,7 @@ Source: unionfs-fuse
 Section: misc
 Priority: optional
 Maintainer: Bernd Schubert <bernd.schubert@fastmail.fm>
-Build-Depends: debhelper (>= 7.0.0), libfuse-dev, cmake
+Build-Depends: debhelper (>= 7.0.0), libfuse-dev, quilt (>= 0.40), cmake
 Standards-Version: 3.8.4
 
 Package: unionfs-fuse
