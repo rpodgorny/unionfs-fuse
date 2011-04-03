@@ -29,19 +29,13 @@ hashtable_iterator(struct hashtable *h);
  * - return the value of the (key,value) pair at the current position */
 
 extern inline void *
-hashtable_iterator_key(struct hashtable_itr *i)
-{
-    return i->e->k;
-}
+hashtable_iterator_key(struct hashtable_itr *i);
 
 /*****************************************************************************/
 /* value - return the value of the (key,value) pair at the current position */
 
 extern inline void *
-hashtable_iterator_value(struct hashtable_itr *i)
-{
-    return i->e->v;
-}
+hashtable_iterator_value(struct hashtable_itr *i);
 
 /*****************************************************************************/
 /* advance - advance the iterator to the next element
