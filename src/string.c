@@ -92,7 +92,7 @@ char *u_dirname(const char *path) {
 		return ret;
 	}
 
-	char *ri = rindex(ret, '/'); 
+	char *ri = strrchr(ret, '/'); 
 	if (ri != NULL) {
 		*ri = '\0'; // '/' found, so a full path
 	} else {
