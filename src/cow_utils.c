@@ -194,7 +194,7 @@ int copy_file(struct cow *cow)
 		}
 		if (rcount < 0) {
 			usyslog(LOG_WARNING,   "copy failed: %s", cow->from_path);
-			return 1;
+			rval = 1;
 		}
 	}
 
