@@ -11,8 +11,8 @@
 */
 
 #ifdef linux
-	// For pread()/pwrite()
-	#define _XOPEN_SOURCE 500
+	// For pread()/pwrite()/utimensat()
+	#define _XOPEN_SOURCE 700
 #endif
 
 #include <fuse.h>
@@ -22,6 +22,7 @@
 #include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -656,13 +657,7 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	char p[PATHLEN_MAX];
 	snprintf(p, PATHLEN_MAX, "%s%s", uopt.branches[i].path, path);
 
-	struct timeval tv[2];
-        tv[0].tv_sec  = ts[0].tv_sec;
-        tv[0].tv_usec = ts[0].tv_nsec / 1000;
-        tv[1].tv_sec  = ts[1].tv_sec;
-        tv[1].tv_usec = ts[1].tv_nsec / 1000;
-
-	int res = utimes(p, tv);
+	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
 
 	if (res == -1) return -errno;
 
