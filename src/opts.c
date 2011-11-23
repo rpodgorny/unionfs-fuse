@@ -151,7 +151,7 @@ static void add_branch(char *branch) {
 }
 
 /**
- * Options without any -X prefix, so these options define our branch paths.
+ * These options define our branch paths.
  * example arg string: "branch1=RW:branch2=RO:branch3=RO"
  */
 static int parse_branches(const char *arg) {
@@ -221,6 +221,8 @@ static void print_help(const char *progname) {
 	"    -V   --version         print version\n"
 	"\n"
 	"UnionFS options:\n"
+	"    -o dirs=branch[=RO/RW][:branch...]\n"
+	"                           alternate way to specify directories to merge\n"
 	"    -o cow                 enable copy-on-write\n"
 	"    -o stats               show statistics in the file 'stats' under the\n"
 	"                           mountpoint\n"
@@ -286,6 +288,12 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 	switch (key) {
 		case FUSE_OPT_KEY_NONOPT:
 			res = parse_branches(arg);
+			if (res > 0) return 0;
+			uopt.retval = 1;
+			return 1;
+		case KEY_DIRS:
+			// skip the "dirs="
+			res = parse_branches(arg+5);
 			if (res > 0) return 0;
 			uopt.retval = 1;
 			return 1;

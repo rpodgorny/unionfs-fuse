@@ -30,6 +30,7 @@ typedef struct {
 } uopt_t;
 
 enum {
+	KEY_DIRS,
 	KEY_STATS,
 	KEY_COW,
 	KEY_STATFS_OMIT_RO,
