@@ -1,7 +1,7 @@
 CFLAGS += -Wall
 CPPFLAGS += $(shell pkg-config --cflags fuse)
 CPPFLAGS += -DFUSE_USE_VERSION=26
-#CPPFLAGS += -DHAVE_SETXATTR
+CPPFLAGS += -DHAVE_SETXATTR
 
 LDFLAGS += 
 
