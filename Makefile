@@ -10,6 +10,7 @@ clean:
 
 install: build
 	install -d $(DESTDIR)$(PREFIX)$(BINDIR)
+	install -d $(DESTDIR)$(PREFIX)$(SBINDIR)
 	install -d $(DESTDIR)$(PREFIX)/share/man/man8
 	install -m 0755 src/unionfs $(DESTDIR)$(PREFIX)$(BINDIR)
 	install -m 0755 mount.unionfs $(DESTDIR)$(PREFIX)$(SBINDIR)
