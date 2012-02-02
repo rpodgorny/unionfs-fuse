@@ -1,3 +1,7 @@
+0.25
+- Alternate way to specify branches
+- Minor fixes
+
 0.24
 - Support for liveCDs / live USB sticks (-o chroot)
 - Build-in support to change the maximum number of open files
