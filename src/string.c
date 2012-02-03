@@ -23,13 +23,13 @@
 #include "opts.h"
 #include "debug.h"
 #include "general.h"
-
+#include "usyslog.h"
 
 /**
  * Check if the given fname suffixes the hide tag
  */
 char *whiteout_tag(const char *fname) {
-	DBG_IN();
+	DBG("%s\n", fname);
 
 	char *tag = strstr(fname, HIDETAG);
 
@@ -50,32 +50,85 @@ char *whiteout_tag(const char *fname) {
  * check if the sum of the strings is larger than PATHLEN_MAX
  *
  * This function requires a NULL as last argument!
+ * 
+ * path already MUST have been allocated!
  */
-int build_path(char *dest, int max_len, char *callfunc, ...) {
-	DBG_IN();
-
+int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 	va_list ap; // argument pointer
 	int len = 0;
+	char *str_ptr = path;
 
-	dest[0] = '\0';
+	(void)str_ptr; // please the compile to avoid warning in non-debug mode
+	(void)line;
+	(void)callfunc; 
 
-	va_start(ap, callfunc);
+	path[0] = '\0'; // that way can easily strcat even the first element
+
+	va_start(ap, line);
 	while (1) {
-		char *str = va_arg (ap, char *);
+		char *str = va_arg (ap, char *); // the next path element
 		if (!str) break;
 
-		len += strlen(str) + 1; // + 1 for '/' between the pathes
+		/* Prevent '//' in pathes, if len > 0 we are not in the first 
+		 * loop-run. This is rather ugly, but I don't see another way to 
+		 * make sure there really is a '/'. By simply cutting off
+		 * the initial '/' of the added string, we could run into a bug
+		 * and would not have a '/' between path elements at all
+		 * if somewhere else a directory slash has been forgotten... */
+		if (len > 0) {
+			// walk to the end of path
+			while (*path != '\0') path++;
+			
+			// we are on '\0', now go back to the last char
+			path--;
+			
+			if (*path == '/') {
+				int count = len;
+				
+				// count makes sure nobody tricked us and gave
+				// slashes as first path only...
+				while (*path == '/' && count > 1) {
+					// possibly there are several slashes...
+					// But we want only one slash
+					path--;
+					count--; 
+				}
+					
+				// now we are *before* '/', walk to slash again
+				path++;
+				
+				// eventually we walk over the slashes of the
+				// next string
+				while (*str == '/') str++;
+			} else if (*str != '/') {
+				// neither path ends with a slash, nor str
+				// starts with a slash, prevent a wrong path
+				strcat(path, "/");
+				len++;
+			}
+		}
+		va_end(ap);
 
-		if (len > max_len) {
-			usyslog (LOG_WARNING, "%s: Path too long \n", callfunc);
+		len += strlen(str);
+
+		// +1 for final \0 not counted by strlen
+		if (len + 1 > max_len) {
+			USYSLOG (LOG_WARNING, "%s():%d Path too long \n", callfunc, line);
 			errno = ENAMETOOLONG;
-			return -errno;
+			RETURN(-errno);
 		}
 
-		strcat (dest, str);
+		strcat (path, str);
 	}
-
-	return 0;
+	
+	if (len == 0) {
+		USYSLOG(LOG_ERR, "from: %s():%d : No argument given?\n", callfunc, line);
+		errno = EIO;
+		RETURN(-errno);
+	}
+	
+	DBG("from: %s():%d path: %s\n", callfunc, line, str_ptr);
+	RETURN(0);
 }
 
 /**
@@ -84,11 +137,11 @@ int build_path(char *dest, int max_len, char *callfunc, ...) {
  * implementation
  */
 char *u_dirname(const char *path) {
-	DBG_IN();
+	DBG("%s\n", path);
 
 	char *ret = strdup(path);
 	if (ret == NULL) {
-		usyslog("strdup failed, probably out of memory!\n");
+		USYSLOG(LOG_WARNING, "strdup failed, probably out of memory!\n");
 		return ret;
 	}
 
@@ -111,7 +164,7 @@ char *u_dirname(const char *path) {
  * str needs to NULL terminated
  */
 static unsigned int elfhash(const char *str) {
-	DBG_IN();
+	DBG("%s\n", str);
 
 	unsigned int hash = 0;
 

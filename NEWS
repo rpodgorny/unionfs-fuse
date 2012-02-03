@@ -1,3 +1,19 @@
+?.?
+- use BUILD_PATH instead of snprintf, which will 
+  return -ENAMETOOLONG if the path is too long instead of simply 
+  using a wrong path
+- new options "-o relaxed_permissions" and "-o hide_meta_dir"
+- included the debian directory
+- Properly check on rmdir() if sub-branches are also empty
+- Always compile with debug code, but only enable debugging on request
+- New option -o debug_file
+- Lots of bugs fixed in BUILD_PATH()
+- Improved search of white-out files
+- Properly fix Debian Bug#509516.
+- More debug output.
+- Add syslog support without the risk of possible dead locks
+- Use fuse big-writes (and reads) if available
+
 0.25
 - Alternate way to specify branches
 - Minor fixes
@@ -6,6 +22,7 @@
 - Support for liveCDs / live USB sticks (-o chroot)
 - Build-in support to change the maximum number of open files
 - Added recursive directory COW.
+- relative paths: Critical bug fix, had been completely broken in 0.23
 
 0.23
 - remove to_user() and to_root() calls for autorization and use fuse build-in

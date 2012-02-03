@@ -1,6 +1,7 @@
 project(unionfs-fuse)
 
 cmake_minimum_required(VERSION 2.0)
+INCLUDE (CheckIncludeFiles)
 
 # Set a default build type for single-configuration
 # CMake generators if no build type is set.
@@ -16,10 +17,17 @@ SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -DDEBUG")
 
 add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26)
 
-option(WITH_XATTR "Enable support for extended attributes")
-if(WITH_XATTR)
-	add_definitions(-DHAVE_SETXATTR)
-endif(WITH_XATTR)
+option(WITH_XATTR "Enable support for extended attributes" OFF)
+
+# .h include files
+if (WITH_XATTR)
+	CHECK_INCLUDE_FILES("sys/xattr.h" HAVE_XATTR)
+	IF (HAVE_XATTR)
+		add_definitions(-DHAVE_XATTR)
+	ENDIF(HAVE_XATTR)
+ENDIF (WITH_XATTR)
+
+
 
 add_subdirectory(src)
 add_subdirectory(man)

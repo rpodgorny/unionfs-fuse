@@ -1,0 +1,102 @@
+This package was debianized by Bernd Schubert <bs@q-leap.de> on
+Wed, 12 Sep 2007 19:22:07 +0200.
+
+It was downloaded from http://podgorny.cz/moin/UnionFsFuse
+
+The brief summary of the copyright information for the files in this
+package is given below. The summary is followed by the detailed
+license texts.
+
+Files: *
+Copyright: Copyright 2008, Radek Podgorny, Bernd Schubert
+License: other
+ The complete text of this license can be found at the end of this file
+ in the paragraph "Modified BSD 3-Clause"
+
+Files: debian/*
+Copyright: Copyright 2008, Bernd Schubert <bs@q-leap.de>
+License: other
+ The complete text of this license can be found at the end of this file
+ in the paragraph "Modified BSD 3-Clause"
+
+Files: hashtable*.[ch]
+Copyright: Copyright 2002, 2004, Christopher Clark
+License: other
+ The complete text of this license can be found at the end of this file
+ in the paragraph "Modified BSD 3-Clause"
+
+Files: cow_utils.[ch]
+Copyright: Copyright 1991, 1993, 1994,  The Regents of the University of California.
+License: BSD-3
+ The complete text of this license can be found at the end of this file
+ in the paragraph "Original BSD 3-Clause License:"
+ 
+
+
+The detailed License Texts
+==========================
+
+Modified BSD 3-Clause:
+----------------------
+(taken from LICENSE file in source package)
+
+Copyright <author_names specific to each file as detailed above>
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+	* Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+	* Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+
+	* Neither the name of the original author; nor the names of any contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Original BSD 3-Clause License:
+------------------------------
+
+Copyright (c) The Regents of the University of California.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of the University nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.

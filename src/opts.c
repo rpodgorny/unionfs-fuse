@@ -174,6 +174,9 @@ static int parse_branches(const char *arg) {
 }
 
 /**
+  * get_opt_str - get the parameter string
+  * @arg	- option argument
+  * @opt_name	- option name, used for error messages
   * fuse passes arguments with the argument prefix, e.g.
   * "-o chroot=/path/to/chroot/" will give us "chroot=/path/to/chroot/"
   * and we need to cut off the "chroot=" part
@@ -181,17 +184,19 @@ static int parse_branches(const char *arg) {
   *       to the chroot, it is absolutely required
   *       -o chroot=path is provided before specifying the braches!
   */
-char * get_chroot(const char *arg)
+static char * get_opt_str(const char *arg, char *opt_name)
 {
 	char *str = index(arg, '=');
 
 	if (!str) {
-		fprintf(stderr, "-o chroot parameter not properly specified, aborting!\n");
+		fprintf(stderr, "-o %s parameter not properly specified, aborting!\n",
+		        opt_name);
 		exit(1); // still early phase, we can abort
 	}
 
 	if (strlen(str) < 3) {
-		fprintf(stderr, "Chroot path has not sufficient characters, aborting!\n");
+		fprintf(stderr, "%s path has not sufficient characters, aborting!\n",
+		        opt_name);
 		exit(1);
 	}
 
@@ -216,20 +221,27 @@ static void print_help(const char *progname) {
 	"The first argument is a colon separated list of directories to merge\n"
 	"\n"
 	"general options:\n"
+	"    -d                     Enable debug output\n"
 	"    -o opt,[opt...]        mount options\n"
 	"    -h   --help            print help\n"
 	"    -V   --version         print version\n"
 	"\n"
 	"UnionFS options:\n"
-	"    -o dirs=branch[=RO/RW][:branch...]\n"
-	"                           alternate way to specify directories to merge\n"
-	"    -o cow                 enable copy-on-write\n"
-	"    -o stats               show statistics in the file 'stats' under the\n"
-	"                           mountpoint\n"
-	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
 	"    -o chroot=path         chroot into this path. Use this if you \n"
         "                           want to have a union of \"/\" \n"
+	"    -o cow                 enable copy-on-write\n"
+	"                           mountpoint\n"
+	"    -o debug_file          file to write debug information into\n"
+	"    -o dirs=branch[=RO/RW][:branch...]\n"
+	"                           alternate way to specify directories to merge\n"
+	"    -o hide_meta_files     \".unionfs\" is a secret directory not\n"
+	"                           visible by readdir(), and so are\n" 
+        "                           .fuse_hidden* files\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
+	"    -o relaxed_permissions Disable permissions checks, but only if\n"
+	"                           running neither as UID=0 or GID=0\n"
+	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
+	"    -o stats               show statistics in the file 'stats' under the\n"
 	"\n",
 	progname);
 }
@@ -277,6 +289,7 @@ void unionfs_post_opts(void) {
 			exit(1);
 		}
 		uopt.branches[i].fd = fd;
+		uopt.branches[i].path_len = strlen(path);
 	}
 }
 
@@ -297,32 +310,46 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			if (res > 0) return 0;
 			uopt.retval = 1;
 			return 1;
-		case KEY_STATS:
-			uopt.stats_enabled = 1;
+		case KEY_CHROOT:
+			uopt.chroot = get_opt_str(arg, "chroot");
 			return 0;
 		case KEY_COW:
 			uopt.cow_enabled = true;
 			return 0;
-		case KEY_STATFS_OMIT_RO:
-			uopt.statfs_omit_ro = true;
-			return 0;
-		case KEY_NOINITGROUPS:
-			// option only for compatibility with older versions
-			return 0;
-		case KEY_CHROOT:
-			uopt.chroot = get_chroot(arg);
-			return 0;
-		case KEY_MAX_FILES:
-			set_max_open_files(arg);
+		case KEY_DEBUG:
+			uopt.debug = true;
+			return 1;
+		case KEY_DEBUG_FILE:
+			uopt.dbgpath = get_opt_str(arg, "debug_file");
+			uopt.debug = true;
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
 			fuse_opt_add_arg(outargs, "-ho");
 			uopt.doexit = 1;
 			return 0;
+		case KEY_HIDE_META_FILES:
+		case KEY_HIDE_METADIR:
+			uopt.hide_meta_files = true;
+			return 0;
+		case KEY_MAX_FILES:
+			set_max_open_files(arg);
+			return 0;
+		case KEY_NOINITGROUPS:
+			// option only for compatibility with older versions
+			return 0;
+		case KEY_STATFS_OMIT_RO:
+			uopt.statfs_omit_ro = true;
+			return 0;
+		case KEY_RELAXED_PERMISSIONS:
+			uopt.relaxed_permissions = true;
+			return 0;
+		case KEY_STATS:
+			uopt.stats_enabled = 1;
+			return 0;
 		case KEY_VERSION:
 			printf("unionfs-fuse version: "VERSION"\n");
-#ifdef HAVE_SETXATTR
+#ifdef HAVE_XATTR
 			printf("(compiled with xattr support)\n");
 #endif
 			uopt.doexit = 1;
