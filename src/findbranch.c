@@ -102,7 +102,8 @@ static int find_branch(const char *path, searchflag_t flag) {
  */
 int find_rorw_branch(const char *path) {
 	DBG("%s\n", path);
-	RETURN(find_branch(path, RWRO));
+	int res = find_branch(path, RWRO);
+	RETURN(res);
 }
 
 /**
@@ -174,7 +175,8 @@ out:
  */
 int find_rw_branch_cutlast(const char *path) {
 	int rw_hint = -1; // autodetect rw_branch
-	RETURN(__find_rw_branch_cutlast(path, rw_hint));
+	int res = __find_rw_branch_cutlast(path, rw_hint);
+	RETURN(res);
 }
 
 /**

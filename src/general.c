@@ -46,7 +46,7 @@ static int filedir_hidden(const char *path) {
 
 	struct stat stbuf;
 	int res = lstat(p, &stbuf);
-	if (res == 0) RETURN(true);
+	if (res == 0) RETURN(1);
 
 	RETURN(0);
 }
@@ -156,6 +156,8 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 		res = close(res);
 	} else {
 		res = mkdir(p, S_IRWXU);
+		if (res)
+			USYSLOG(LOG_ERR, "Creating %s failed: %s\n", p, strerror(errno));
 	}
 
 	RETURN(res);
@@ -166,7 +168,8 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
  */
 int hide_file(const char *path, int branch_rw) {
 	DBG("%s\n", path);
-	RETURN(do_create_whiteout(path, branch_rw, WHITEOUT_FILE));
+	int res = do_create_whiteout(path, branch_rw, WHITEOUT_FILE);
+	RETURN(res);
 }
 
 /**
@@ -174,7 +177,8 @@ int hide_file(const char *path, int branch_rw) {
  */
 int hide_dir(const char *path, int branch_rw) {
 	DBG("%s\n", path);
-	RETURN(do_create_whiteout(path, branch_rw, WHITEOUT_DIR));
+	int res = do_create_whiteout(path, branch_rw, WHITEOUT_DIR);
+	RETURN(res);
 }
 
 /**
@@ -186,7 +190,8 @@ int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 
 	// we are not interested in the branch itself, only if it exists at all
 	if (find_rorw_branch(path) != -1) {
-		RETURN(do_create_whiteout(path, branch_rw, mode));
+		int res = do_create_whiteout(path, branch_rw, mode);
+		RETURN(res);
 	}
 
 	RETURN(0);
