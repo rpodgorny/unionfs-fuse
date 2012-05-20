@@ -64,6 +64,8 @@ static int rmdir_ro(const char *path, int branch_ro) {
 
 	if (branch_rw < 0) return -EACCES;
 
+	
+	DBG("Calling hide_dir\n");
 	if (hide_dir(path, branch_rw) == -1) {
 		switch (errno) {
 		case (EEXIST):
