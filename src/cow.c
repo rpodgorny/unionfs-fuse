@@ -203,7 +203,7 @@ int copy_directory(const char *path, int branch_ro, int branch_rw) {
 		if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) continue;
 
 		char member[PATHLEN_MAX];
-		if (BUILD_PATH(member, path, de->d_name)) {
+		if (BUILD_PATH(member, path, "/", de->d_name)) {
 			res = 1;
 			break;
 		}

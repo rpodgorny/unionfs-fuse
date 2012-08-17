@@ -64,7 +64,7 @@ int setfile(const char *path, struct stat *fs)
 	int rval;
 
 	rval = 0;
-	fs->st_mode &= S_ISUID | S_ISGID | S_IRWXU | S_IRWXG | S_IRWXO;
+	fs->st_mode &= S_ISUID | S_ISGID | S_ISTXT | S_IRWXU | S_IRWXG | S_IRWXO;
 
 	ut.actime  = fs->st_atime;
 	ut.modtime = fs->st_mtime;
