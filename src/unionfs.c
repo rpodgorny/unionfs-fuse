@@ -53,7 +53,6 @@
 #include "string.h"
 #include "usyslog.h"
 
-
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
 	FUSE_OPT_KEY("cow", KEY_COW),
@@ -534,7 +533,6 @@ static int statvfs_local(const char *path, struct statvfs *stbuf) {
 	stbuf->f_files = stfs.f_files;
 	stbuf->f_ffree = stfs.f_ffree;
 	stbuf->f_favail = stfs.f_ffree; /* nobody knows */
-	stbuf->f_fsid = stfs.f_fsid.__val[0];
 
 	/* We don't worry about flags, exactly because this would
 	 * require reading /proc/mounts, and avoiding that and the
@@ -554,9 +552,8 @@ static int statvfs_local(const char *path, struct statvfs *stbuf) {
 
 /**
  * statvs implementation
- * TODO: fsid: It would be optimal, if we would store a once generated random
- *	       fsid. But what if the same branch with the fsid used for different 
- *	       unions? Is the present way ok for most cases?
+ *
+ * Note: We do not set the fsid, as fuse ignores it anyway.
  */
 static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	(void)path;
@@ -615,10 +612,6 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 			if (!(stb.f_flag & ST_NOSUID)) stbuf->f_flag &= ~ST_NOSUID;
 
 			if (stb.f_namemax < stbuf->f_namemax) stbuf->f_namemax = stb.f_namemax;
-
-			// we don't care about overflows, the fsid just should be different
-			// from other fsids
-			stbuf->f_fsid += stb.f_fsid;
 		}
 	}
 
