@@ -13,6 +13,9 @@
 #ifdef linux
 	// For pread()/pwrite()/utimensat()
 	#define _XOPEN_SOURCE 700
+	
+	// For chroot
+	#define _BSD_SOURCE
 #endif
 
 #include <fuse.h>
