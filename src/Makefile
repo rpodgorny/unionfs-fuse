@@ -5,7 +5,7 @@ CPPFLAGS += -DHAVE_XATTR
 
 LDFLAGS += 
 
-LIB = $(shell pkg-config --libs fuse)
+LIB = $(shell pkg-config --libs fuse) -lpthread
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o \
