@@ -219,6 +219,7 @@ static void print_help(const char *progname) {
 	"\n"
 	"Usage: %s [options] branch[=RO/RW][:branch...] mountpoint\n"
 	"The first argument is a colon separated list of directories to merge\n"
+	"When neither RO nor RW is specified, selection defaults to RO.\n"
 	"\n"
 	"general options:\n"
 	"    -d                     Enable debug output\n"
