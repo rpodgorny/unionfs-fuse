@@ -1,4 +1,4 @@
-project(unionfs-fuse)
+project(unionfs-fuse C)
 
 cmake_minimum_required(VERSION 2.0)
 INCLUDE (CheckIncludeFiles)
