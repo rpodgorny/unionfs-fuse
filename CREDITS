@@ -19,6 +19,7 @@ Nicolas Dely <nanouck@gmail.com>
 Julian Andres Klode <jak@debian.org>
 Mike Kazantsev <mk.fraggod@gmail.com>
 B Howe <bhowe@wetafx.co.nz>
+Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
 
 Hashtable routines taken from:
 Christopher Clark <christopher.clark@cl.cam.ac.uk>
