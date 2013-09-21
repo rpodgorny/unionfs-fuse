@@ -193,7 +193,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	DBG("%s\n", path);
 
 	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		memset(stbuf, 0, sizeof(stbuf));
+		memset(stbuf, 0, sizeof(*stbuf));
 		stbuf->st_mode = S_IFREG | 0444;
 		stbuf->st_nlink = 1;
 		stbuf->st_size = STATS_SIZE;
