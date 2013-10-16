@@ -55,6 +55,7 @@
 #include "cow.h"
 #include "string.h"
 #include "usyslog.h"
+#include "conf.h"
 
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
@@ -674,7 +675,7 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-#ifndef __FreeBSD__
+#ifdef UNIONFS_HAVE_AT
 	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
 #else
     struct timeval tv[2];
