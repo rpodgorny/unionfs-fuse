@@ -9,12 +9,24 @@
 
 #ifdef _XOPEN_SOURCE
 
+// *at support, such as openat, utimensat, etc (see man 2 openat)
+#include <fcntl.h>
+#include <sys/stat.h>
 #if !defined (DISABLE_AT) && (_XOPEN_SOURCE >= 700 && _POSIX_C_SOURCE >= 200809L) \
 	&& defined (AT_SYMLINK_NOFOLLOW)
-#define UNIONFS_HAVE_AT
+	#define UNIONFS_HAVE_AT
 #endif
 
 #endif // _XOPEN_SOURCE
+
+// xattr support
+#if !defined (DISABLE_XATTR)
+#include <attr/xattr.h>
+	#if defined (XATTR_CREATE) && defined (XATTR_REPLACE)
+		#define HAVE_XATTR
+	#endif
+#endif
+
 
 #endif // CONF_H_
 

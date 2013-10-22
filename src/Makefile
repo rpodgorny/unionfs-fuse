@@ -1,7 +1,9 @@
 CFLAGS += -Wall
 CPPFLAGS += $(shell pkg-config --cflags fuse)
 CPPFLAGS += -DFUSE_USE_VERSION=26
-# CPPFLAGS += -DHAVE_XATTR
+
+# CPPFLAGS += -DDISABLE_XATTR # disable xattr support
+# CPPFLAGS += -DDISABLE_AT    # disable *at function support
 
 LDFLAGS += 
 
