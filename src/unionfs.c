@@ -19,7 +19,11 @@
 #endif
 
 #include <fuse.h>
+#if __APPLE__
+#include <fuse_common.h>
+#else
 #include <fuse/fuse_common.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -705,7 +709,12 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 }
 
 #ifdef HAVE_XATTR
+
+#if __APPLE__
+static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size, uint32_t position) {
+#else
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
+#endif
 	DBG("%s\n", path);
 
 	int i = find_rorw_branch(path);
@@ -714,7 +723,11 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
+#if __APPLE__
+        int res = getxattr(p, name, value, size, position, XATTR_NOFOLLOW);
+#else
 	int res = lgetxattr(p, name, value, size);
+#endif
 
 	if (res == -1) RETURN(-errno);
 
@@ -730,7 +743,11 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
+#if __APPLE__
+        int res = listxattr(p, list, size, XATTR_NOFOLLOW);
+#else
 	int res = llistxattr(p, list, size);
+#endif
 
 	if (res == -1) RETURN(-errno);
 
@@ -746,14 +763,22 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
+#if __APPLE__
+        int res = removexattr(p, name, XATTR_NOFOLLOW);
+#else
 	int res = lremovexattr(p, name);
+#endif
 
 	if (res == -1) RETURN(-errno);
 
 	RETURN(res);
 }
 
+#if __APPLE__
+static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags, uint32_t position) {
+#else
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
+#endif
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -762,7 +787,11 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
+#if __APPLE__
+        int res = setxattr(p, name, value, size, position, flags | XATTR_NOFOLLOW);
+#else
 	int res = lsetxattr(p, name, value, size, flags);
+#endif
 
 	if (res == -1) RETURN(-errno);
 
