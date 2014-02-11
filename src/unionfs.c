@@ -63,6 +63,7 @@
 #include "string.h"
 #include "usyslog.h"
 #include "conf.h"
+#include "uioctl.h"
 
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
@@ -272,6 +273,45 @@ static int unionfs_link(const char *from, const char *to) {
 
 	remove_hidden(to, i); // remove hide file (if any)
 	RETURN(0);
+}
+
+static int unionfs_ioctl(const char *path, int cmd, void *arg,
+			 struct fuse_file_info *fi, unsigned int flags, void *data)
+{
+	(void) path;
+	(void) arg; // avoid compiler warning
+	(void) fi;  // avoid compiler warning
+
+
+	fprintf(stderr, "Got ioctl: %d\n", cmd);
+
+	if (flags & FUSE_IOCTL_COMPAT)
+		return -ENOSYS;
+
+	switch (cmd) {
+	case UNIONFS_ONOFF_DEBUG: {
+		int on_off = *((int *) data);
+		// unionfs-ctl gives the opposite value, so !!
+		bool setRes = set_debug_onoff(!!on_off);
+		if (!setRes)
+			return -EINVAL;
+                return 0;
+	}
+	case UNIONFS_SET_DEBUG_FILE: {
+		char *debug_path = (char *) data;
+
+		set_debug_path(debug_path, _IOC_SIZE(cmd));
+
+		debug_init();
+		return 0;
+	}
+	default:
+		USYSLOG(LOG_ERR, "Unknown ioctl: %d", cmd);
+		return -EINVAL;
+		break;
+        }
+
+	return 0;
 }
 
 /**
@@ -825,6 +865,7 @@ static struct fuse_operations unionfs_oper = {
 	.fsync	= unionfs_fsync,
 	.getattr	= unionfs_getattr,
 	.init		= unionfs_init,
+	.ioctl		= unionfs_ioctl,
 	.link		= unionfs_link,
 	.mkdir	= unionfs_mkdir,
 	.mknod	= unionfs_mknod,

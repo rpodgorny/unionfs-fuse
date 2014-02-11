@@ -15,12 +15,65 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <pthread.h>
 
 #include "conf.h"
 #include "opts.h"
 #include "stats.h"
 #include "version.h"
 #include "string.h"
+
+
+/**
+ * Set debug path
+ */
+void set_debug_path(char *new_path, int strlen)
+{
+	pthread_rwlock_wrlock(&uopt.dbgpath_lock); // LOCK path
+
+	if (uopt.dbgpath) free(uopt.dbgpath);
+
+	uopt.dbgpath = strndup(new_path, strlen);
+
+	pthread_rwlock_unlock(&uopt.dbgpath_lock); // UNLOCK path
+}
+
+
+/**
+ * Check if a debug path is set
+ */
+static bool get_has_debug_path(void)
+{
+	pthread_rwlock_rdlock(&uopt.dbgpath_lock); // LOCK path
+
+	bool has_debug_path = (uopt.dbgpath) ? true : false;
+
+	pthread_rwlock_unlock(&uopt.dbgpath_lock); // UNLOCK path
+
+	return has_debug_path;
+}
+
+/**
+ * Enable or disable internal debugging
+ */
+bool set_debug_onoff(int value)
+{
+	bool res = false;
+
+	if (value) {
+		bool has_debug_path = get_has_debug_path();
+		if (has_debug_path) {
+			uopt.debug = 1;
+			res = true;
+		}
+	} else {
+		uopt.debug = 0;
+		res = true;
+	}
+
+	return res;
+}
+
 
 /**
  * Set the maximum number of open files
@@ -51,7 +104,7 @@ uopt_t uopt;
 void uopt_init() {
 	memset(&uopt, 0, sizeof(uopt_t)); // initialize options with zeros first
 
-	// so far nothing more required, so far initializing with zeros sufficient
+	pthread_rwlock_init(&uopt.dbgpath_lock, NULL);
 }
 
 /**

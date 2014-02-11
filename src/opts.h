@@ -28,6 +28,7 @@ typedef struct {
 	char *chroot; 		// chroot we might go into
 	bool debug;		// enable debugging
 	char *dbgpath;		// debug file we write debug information into
+	pthread_rwlock_t dbgpath_lock; // locks dbgpath
 	bool hide_meta_files;
 	bool relaxed_permissions;
 
@@ -53,9 +54,11 @@ enum {
 
 extern uopt_t uopt;
 
-
+void set_debug_path(char *new_path, int strlen);
+bool set_debug_onoff(int value);
 void uopt_init();
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs);
 void unionfs_post_opts();
+
 
 #endif

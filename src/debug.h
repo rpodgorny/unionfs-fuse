@@ -9,19 +9,21 @@
 
 #include "opts.h"
 
-extern FILE* dbgfile;
-
 #define DBG_IN() DBG("\n");
 
 #define DBG(format, ...) 						\
 	do {								\
 		if (!uopt.debug) break;					\
+									\
+		FILE* dbgfile = get_dbgfile();				\
+									\
 		fprintf(stderr, "%s(): %d: ", __func__, __LINE__);	\
 		fprintf(dbgfile, "%s(): %d: ", __func__, __LINE__);	\
 		fprintf(stderr, format, ##__VA_ARGS__);			\
 		fprintf(dbgfile, format, ##__VA_ARGS__);		\
 		fflush(stderr);						\
 		fflush(stdout);						\
+		put_dbgfile();						\
 	} while (0)
 
 #define RETURN(returncode) 						\
@@ -37,6 +39,8 @@ extern FILE* dbgfile;
 int debug_init();
 void dbg_in(const char *function);
 
+FILE* get_dbgfile(void);
+void put_dbgfile(void);
 
 #endif // DEBUG_H
 
