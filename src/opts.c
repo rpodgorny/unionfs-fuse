@@ -169,6 +169,7 @@ static int parse_branches(const char *arg) {
 		add_branch(branch);
 	}
 
+	free(branch);
 	free(buf);
 
 	return uopt.nbranches;
