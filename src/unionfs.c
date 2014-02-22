@@ -686,6 +686,13 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 		{ts[1].tv_sec, ts[1].tv_nsec / 1000},
 	};
 	int res = utimes(p, tv);
+#elif __FreeBSD__
+	struct timeval tv[2];
+	tv[0].tv_sec = ts[0].tv_sec;
+	tv[0].tv_usec = ts[0].tv_nsec * 1000;
+	tv[1].tv_sec = ts[1].tv_sec;
+	tv[1].tv_usec = ts[1].tv_nsec * 1000;
+	int res = utimes(p, tv);
 #else
 	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
 #endif
