@@ -61,9 +61,8 @@ int setfile(const char *path, struct stat *fs)
 	DBG("%s\n", path);
 
 	struct utimbuf ut;
-	int rval;
+	int rval = 0;
 
-	rval = 0;
 	fs->st_mode &= S_ISUID | S_ISGID | S_ISTXT | S_IRWXU | S_IRWXG | S_IRWXO;
 
 	ut.actime  = fs->st_atime;
@@ -108,7 +107,7 @@ int setfile(const char *path, struct stat *fs)
 			RETURN(rval);
 		}
 #endif
-	RETURN(0);
+	RETURN(rval);
 }
 
 /**
