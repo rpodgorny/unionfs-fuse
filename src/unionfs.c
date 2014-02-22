@@ -681,21 +681,15 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-#if __APPLE__ 
-	struct timeval tv[2] = {
-		{ts[0].tv_sec, ts[0].tv_nsec / 1000},
-		{ts[1].tv_sec, ts[1].tv_nsec / 1000},
-	};
-	int res = utimes(p, tv);
-#elif UNIONFS_HAVE_AT
+#ifdef UNIONFS_HAVE_AT
+	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
+#else
 	struct timeval tv[2];
 	tv[0].tv_sec = ts[0].tv_sec;
 	tv[0].tv_usec = ts[0].tv_nsec * 1000;
 	tv[1].tv_sec = ts[1].tv_sec;
 	tv[1].tv_usec = ts[1].tv_nsec * 1000;
 	int res = utimes(p, tv);
-#else
-	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
 #endif
 
 	if (res == -1) RETURN(-errno);
@@ -731,7 +725,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-#if __APPLE__ 
+#if __APPLE__
 	int res = getxattr(p, name, value, size, position, XATTR_NOFOLLOW);
 #else
 	int res = lgetxattr(p, name, value, size);
@@ -751,7 +745,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-#if __APPLE__ 
+#if __APPLE__
 	int res = listxattr(p, list, size, XATTR_NOFOLLOW);
 #else
 	int res = llistxattr(p, list, size);
@@ -771,7 +765,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-#if __APPLE__ 
+#if __APPLE__
 	int res = removexattr(p, name, XATTR_NOFOLLOW);
 #else
 	int res = lremovexattr(p, name);
@@ -795,7 +789,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-#if __APPLE__ 
+#if __APPLE__
 	int res = setxattr(p, name, value, size, position, flags | XATTR_NOFOLLOW);
 #else
 	int res = lsetxattr(p, name, value, size, flags);
