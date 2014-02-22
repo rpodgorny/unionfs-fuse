@@ -20,11 +20,21 @@ add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26)
 option(WITH_XATTR "Enable support for extended attributes" OFF)
 
 # .h include files
-if (WITH_XATTR)
-	CHECK_INCLUDE_FILES("sys/xattr.h" HAVE_XATTR)
-	IF (HAVE_XATTR)
-		add_definitions(-DHAVE_XATTR)
-	ENDIF(HAVE_XATTR)
+IF (WITH_XATTR)
+	CHECK_INCLUDE_FILES("sys/xattr.h" HAVE_LIBC_XATTR)
+	CHECK_INCLUDE_FILES("attr/xattr.h" HAVE_LIBATTR_XATTR)
+
+	IF (HAVE_LIBC_XATTR)
+		add_definitions(-DLIBC_XATTR)
+	ELSEIF(HAVE_LIBATTR_XATTR)
+		add_definitions(-DLIBATTR_XATTR)
+	ENDIF()
+
+	IF (NOT HAVE_LIBC_XATTR AND NOT HAVE_LIBATTR_XATTR)
+		add_definitions(-DDISABLE_XATTR)
+	ENDIF()
+ELSE (WITH_XATTR)
+	add_definitions(-DDISABLE_XATTR)
 ENDIF (WITH_XATTR)
 
 
