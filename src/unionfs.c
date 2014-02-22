@@ -573,15 +573,23 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 
 	dev_t devno[uopt.nbranches];
 
+	int retVal = 0;
+
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
 		struct statvfs stb;
 		int res = statvfs_local(uopt.branches[i].path, &stb);
-		if (res == -1) continue;
+		if (res == -1) {
+			retVal = -errno;
+			break;
+		}
 
 		struct stat st;
 		res = stat(uopt.branches[i].path, &st);
-		if (res == -1) continue;
+		if (res == -1) {
+			retVal = -errno;
+			break;
+		}
 		devno[i] = st.st_dev;
 
 		if (first) {
@@ -624,7 +632,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 		}
 	}
 
-	RETURN(0);
+	RETURN(retVal);
 }
 
 static int unionfs_symlink(const char *from, const char *to) {
