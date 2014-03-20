@@ -719,6 +719,10 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 #endif
 	DBG("%s\n", path);
 
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
+
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
 
@@ -739,6 +743,10 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	DBG("%s\n", path);
 
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
+
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
 
@@ -758,6 +766,10 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 
 static int unionfs_removexattr(const char *path, const char *name) {
 	DBG("%s\n", path);
+
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
 
 	int i = find_rw_branch_cow(path);
 	if (i == -1) RETURN(-errno);
@@ -782,6 +794,10 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
 #endif
 	DBG("%s\n", path);
+
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
 
 	int i = find_rw_branch_cow(path);
 	if (i == -1) RETURN(-errno);
