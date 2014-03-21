@@ -1,5 +1,5 @@
 ??
-- better aplle support
+- better apple support
 
 0.26
 - use BUILD_PATH instead of snprintf, which will 
