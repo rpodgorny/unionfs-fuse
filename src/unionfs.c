@@ -19,11 +19,13 @@
 #endif
 
 #include <fuse.h>
+
 #if __APPLE__
 #include <fuse_common.h>
 #else
 #include <fuse/fuse_common.h>
 #endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +38,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <inttypes.h>
+
 #ifdef linux
 	#include <sys/vfs.h>
 #else
@@ -80,7 +83,6 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("-V", KEY_VERSION),
 	FUSE_OPT_END
 };
-
 
 static int unionfs_chmod(const char *path, mode_t mode) {
 	DBG("%s\n", path);
@@ -682,12 +684,12 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 #ifdef UNIONFS_HAVE_AT
 	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
 #else
-    struct timeval tv[2];
-    tv[0].tv_sec = ts[0].tv_sec;
-    tv[0].tv_usec = ts[0].tv_nsec*1000;
-    tv[1].tv_sec = ts[1].tv_sec;
-    tv[1].tv_usec = ts[1].tv_nsec*1000;
-    int res= utimes(p,tv);
+	struct timeval tv[2];
+	tv[0].tv_sec = ts[0].tv_sec;
+	tv[0].tv_usec = ts[0].tv_nsec * 1000;
+	tv[1].tv_sec = ts[1].tv_sec;
+	tv[1].tv_usec = ts[1].tv_nsec * 1000;
+	int res = utimes(p, tv);
 #endif
 
 	if (res == -1) RETURN(-errno);
@@ -717,6 +719,10 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 #endif
 	DBG("%s\n", path);
 
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
+
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
 
@@ -724,7 +730,7 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #if __APPLE__
-        int res = getxattr(p, name, value, size, position, XATTR_NOFOLLOW);
+	int res = getxattr(p, name, value, size, position, XATTR_NOFOLLOW);
 #else
 	int res = lgetxattr(p, name, value, size);
 #endif
@@ -737,6 +743,10 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	DBG("%s\n", path);
 
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
+
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
 
@@ -744,7 +754,7 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #if __APPLE__
-        int res = listxattr(p, list, size, XATTR_NOFOLLOW);
+	int res = listxattr(p, list, size, XATTR_NOFOLLOW);
 #else
 	int res = llistxattr(p, list, size);
 #endif
@@ -757,6 +767,10 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 static int unionfs_removexattr(const char *path, const char *name) {
 	DBG("%s\n", path);
 
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
+
 	int i = find_rw_branch_cow(path);
 	if (i == -1) RETURN(-errno);
 
@@ -764,7 +778,7 @@ static int unionfs_removexattr(const char *path, const char *name) {
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #if __APPLE__
-        int res = removexattr(p, name, XATTR_NOFOLLOW);
+	int res = removexattr(p, name, XATTR_NOFOLLOW);
 #else
 	int res = lremovexattr(p, name);
 #endif
@@ -781,6 +795,10 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 #endif
 	DBG("%s\n", path);
 
+	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
+		RETURN(-ENOTSUP);
+	}
+
 	int i = find_rw_branch_cow(path);
 	if (i == -1) RETURN(-errno);
 
@@ -788,7 +806,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #if __APPLE__
-        int res = setxattr(p, name, value, size, position, flags | XATTR_NOFOLLOW);
+	int res = setxattr(p, name, value, size, position, flags | XATTR_NOFOLLOW);
 #else
 	int res = lsetxattr(p, name, value, size, flags);
 #endif

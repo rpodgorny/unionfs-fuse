@@ -9,7 +9,7 @@ echo v1 > original/file
 echo v1 > original/play-with-me
 echo v1 > original/delete-me
 
-src/unionfs -d -o cow working-copy=rw:original=ro union >unionfs.log 2>&1 &
+src/unionfs -d -o cow,stats working-copy=rw:original=ro union >unionfs.log 2>&1 &
 trap 'if [ "$(ls union)" ]; then fusermount -u union; fi; rm -rf union original working-copy' EXIT
 sleep 1
 
@@ -79,6 +79,15 @@ else
 fi
 set -e
 
+
+set +e
+set +v
+getfattr union/stats
+if [ $? -eq 0 ]; then
+	echo "getfattr did not fail for stats, that's weird"
+	rc=$?
+fi
+set -e
 
 
 fusermount -u union

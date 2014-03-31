@@ -21,7 +21,14 @@
 
 // xattr support
 #if !defined (DISABLE_XATTR)
-#include <attr/xattr.h>
+	#if defined (LIBC_XATTR)
+		#include <sys/xattr.h>
+	#elif defined (LIBATTR_XATTR)
+		#include <attr/xattr.h>
+	#else
+		#error // neither libc attr nor libattr xattr defined
+	#endif
+
 	#if defined (XATTR_CREATE) && defined (XATTR_REPLACE)
 		#define HAVE_XATTR
 	#endif

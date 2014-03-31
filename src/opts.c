@@ -16,6 +16,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include "conf.h"
 #include "opts.h"
 #include "stats.h"
 #include "version.h"
