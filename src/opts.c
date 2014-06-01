@@ -372,9 +372,6 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 		case KEY_COW:
 			uopt.cow_enabled = true;
 			return 0;
-		case KEY_DEBUG:
-			uopt.debug = true;
-			return 1;
 		case KEY_DEBUG_FILE:
 			uopt.dbgpath = get_opt_str(arg, "debug_file");
 			uopt.debug = true;

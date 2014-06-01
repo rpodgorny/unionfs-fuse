@@ -37,7 +37,6 @@ typedef struct {
 enum {
 	KEY_CHROOT,
 	KEY_COW,
-	KEY_DEBUG,
 	KEY_DEBUG_FILE,
 	KEY_DIRS,
 	KEY_HELP,

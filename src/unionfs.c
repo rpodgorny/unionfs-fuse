@@ -68,7 +68,6 @@
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
 	FUSE_OPT_KEY("cow", KEY_COW),
-	FUSE_OPT_KEY("-d", KEY_DEBUG),
 	FUSE_OPT_KEY("debug_file=%s", KEY_DEBUG_FILE),
 	FUSE_OPT_KEY("dirs=%s", KEY_DIRS),
 	FUSE_OPT_KEY("--help", KEY_HELP),
