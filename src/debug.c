@@ -41,6 +41,8 @@ int debug_init(void) {
 	} else if (old_dbgfile)
 		fclose(old_dbgfile);
 
+	setlinebuf(dbgfile); // line buffering
+
 	pthread_rwlock_unlock(&uopt.dbgpath_lock); // UNLOCK string
 	pthread_rwlock_unlock(&file_lock);         // UNLOCK file
 	
