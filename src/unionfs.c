@@ -246,6 +246,12 @@ static void * unionfs_init(struct fuse_conn_info *conn) {
 			exit(1);
 		}
 	}
+
+#ifdef FUSE_CAP_IOCTL_DIR
+	if (conn->capable & FUSE_CAP_IOCTL_DIR)
+		conn->want |= FUSE_CAP_IOCTL_DIR; 
+#endif
+
 	return NULL;
 }
 

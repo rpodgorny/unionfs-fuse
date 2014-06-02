@@ -9,11 +9,6 @@
 
 #include "uioctl.h"
 
-#ifndef O_PATH
-# define O_PATH     010000000
-#endif
-
-
 static void print_help(char* progname)
 {
 	fprintf(stderr, "Usage:\n");
@@ -25,9 +20,8 @@ static void print_help(char* progname)
 	fprintf(stderr, "          Enable or disable debugging.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Example: ");
-	fprintf(stderr, " %s -p /tmp/unionfs.debug -d on /mnt/unionfs/union/testfile\n", progname);
+	fprintf(stderr, " %s -p /tmp/unionfs.debug -d on /mnt/unionfs/union\n", progname);
 	fprintf(stderr, "\n");
-	fprintf(stderr, "Note: Currently only commands (ioctls) on a file are supported!\n");
 	fprintf(stderr, "\n");
 	
 }
@@ -43,7 +37,7 @@ int main(int argc, char **argv)
 
 	// file_name is the last argument
 	const char *file_name = argv[argc - 1];
-	const int fd = open(file_name, O_RDWR );
+	const int fd = open(file_name, O_RDONLY );
 	if (fd == -1) {
 		fprintf(stderr, "Failed to open file: %s: %s\n\n", 
 			file_name, strerror(errno) );
