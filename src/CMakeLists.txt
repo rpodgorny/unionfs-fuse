@@ -4,7 +4,11 @@ set(UNIONFS_SRCS unionfs.c stats.c opts.c debug.c findbranch.c readdir.c
 set(UNIONFS_CTL_SRCS unionfs-fuse-ctl.c)
 
 add_executable(unionfs ${UNIONFS_SRCS} ${HASHTABLE_SRCS})
-target_link_libraries(unionfs fuse pthread rt)
+target_link_libraries(unionfs fuse pthread)
+
+if (UNIX AND NOT APPLE)
+  target_link_libraries(rt)
+endif()
 
 add_executable(unionfs-ctl ${UNIONFS_CTL_SRCS})
 
