@@ -11,11 +11,27 @@ def call(cmd):
 #enddef
 
 
+def write_to_file(fn, data):
+	with open(fn, 'w') as f:
+		f.write(data)
+	#endwith
+#enddef
+
+
+def read_from_file(fn):
+	with open(fn, 'r') as f:
+		return f.read()
+	#endwith
+#enddef
+
+
 class UnionFS_RO_RO_TestCase(unittest.TestCase):
 	def setUp(self):
 		os.mkdir('ro1')
 		os.mkdir('ro2')
 		os.mkdir('union')
+
+		write_to_file('ro1/ro1_file', 'ro1_file')
 
 		call('src/unionfs -o cow ro1=ro:ro2=ro union')
 	#enddef
@@ -29,21 +45,12 @@ class UnionFS_RO_RO_TestCase(unittest.TestCase):
 	#endef
 
 	def test_write(self):
-		with open('ro1/ro1_file', 'w') as f:
-			f.write('ro1_file')
-		#endwith
-
 		with self.assertRaises(PermissionError):
-			f = open('union/ro1_file', 'w')
-			f.close()
+			write_to_file('union/ro1_file', 'something')
 		#endwith
 	#enddef
 
 	def test_delete(self):
-		with open('ro1/ro1_file', 'w') as f:
-			f.write('ro1_file')
-		#endwith
-
 		with self.assertRaises(PermissionError):
 			os.remove('union/ro1_file')
 		#endwith
@@ -51,11 +58,14 @@ class UnionFS_RO_RO_TestCase(unittest.TestCase):
 #endclass
 
 
-class UnionFS_RW_RO_TestCase(unittest.TestCase):
+class UnionFS_RW_RO_COW_TestCase(unittest.TestCase):
 	def setUp(self):
 		os.mkdir('ro')
 		os.mkdir('rw')
 		os.mkdir('union')
+
+		write_to_file('ro/ro_file', 'ro_file')
+		write_to_file('rw/rw_file', 'rw_file')
 
 		call('src/unionfs -o cow rw=rw:ro=ro union')
 	#enddef
@@ -69,28 +79,10 @@ class UnionFS_RW_RO_TestCase(unittest.TestCase):
 	#endef
 
 	def test_listing(self):
-		with open('ro/ro_file', 'w') as f:
-			f.write('ro_file')
-		#endwith
-
-		with open('rw/rw_file', 'w') as f:
-			f.write('rw_file')
-		#endwith
-
 		self.assertEqual(set(['ro_file', 'rw_file']), set(os.listdir('union')))
 	#enddef
 
 	def test_whiteout(self):
-		with open('ro/ro_file', 'w') as f:
-			f.write('ro_file')
-		#endwith
-
-		with open('rw/rw_file', 'w') as f:
-			f.write('rw_file')
-		#endwith
-
-		self.assertIn('ro_file', os.listdir('union'), 'ro_file')
-
 		os.remove('union/ro_file')
 
 		self.assertNotIn('ro_file', os.listdir('union'))
@@ -98,29 +90,11 @@ class UnionFS_RW_RO_TestCase(unittest.TestCase):
 	#enddef
 
 	def test_cow(self):
-		with open('ro/ro_file', 'w') as f:
-			f.write('ro_file')
-		#endwith
+		write_to_file('union/ro_file', 'something')
 
-		with open('rw/rw_file', 'w') as f:
-			f.write('rw_file')
-		#endwith
-
-		with open('union/ro_file', 'w') as f:
-			f.write('something')
-		#endwith
-
-		with open('union/ro_file', 'r') as f:
-			self.assertEqual(f.read(), 'something')
-		#endwith
-
-		with open('ro/ro_file', 'r') as f:
-			self.assertEqual(f.read(), 'ro_file')
-		#endwith
-
-		with open('rw/ro_file', 'r') as f:
-			self.assertEqual(f.read(), 'something')
-		#endwith
+		self.assertEqual(read_from_file('union/ro_file'), 'something')
+		self.assertEqual(read_from_file('ro/ro_file'), 'ro_file')
+		self.assertEqual(read_from_file('rw/ro_file'), 'something')
 	#enddef
 #endclass
 
