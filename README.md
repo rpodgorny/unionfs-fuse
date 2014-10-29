@@ -6,7 +6,7 @@ flexible than the current in-kernel unionfs solution.
 
 I'm open to patches, suggestions, whatever...
 
-The preferred way is the mailing list at unionfs-fuse (at) googlegroups (dot) com
+The preferred way is the mailing list at unionfs-fuse@googlegroups.com
 or see http://groups.google.com/group/unionfs-fuse.
 
 Why choose this stuff
