@@ -10,12 +10,12 @@
 *            Bernd Schubert <bernd-schubert@gmx.de>
 */
 
-#ifdef linux
+#if defined __linux__
 	// For pread()/pwrite()/utimensat()
 	#define _XOPEN_SOURCE 700
-	
+
 	// For chroot
-	#define _BSD_SOURCE
+	#define _DEFAULT_SOURCE 1
 #endif
 
 #include <fuse.h>
