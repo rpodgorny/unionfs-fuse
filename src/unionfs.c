@@ -280,9 +280,7 @@ static int unionfs_link(const char *from, const char *to) {
 	RETURN(0);
 }
 
-static int unionfs_ioctl(const char *path, int cmd, void *arg,
-			 struct fuse_file_info *fi, unsigned int flags, void *data)
-{
+static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
 	(void) path;
 	(void) arg; // avoid compiler warning
 	(void) fi;  // avoid compiler warning
@@ -338,8 +336,8 @@ static int unionfs_mkdir(const char *path, mode_t mode) {
 	if (res == -1) RETURN(-errno);
 
 	set_owner(p); // no error check, since creating the file succeeded
-        // NOW, that the file has the proper owner we may set the requested mode
-        chmod(p, mode);
+	// NOW, that the file has the proper owner we may set the requested mode
+	chmod(p, mode);
 
 	RETURN(0);
 }
@@ -578,10 +576,11 @@ static int statvfs_local(const char *path, struct statvfs *stbuf) {
 
 	memset(stbuf, 0, sizeof(*stbuf));
 	stbuf->f_bsize = stfs.f_bsize;
-	if (stfs.f_frsize)
+	if (stfs.f_frsize) {
 		stbuf->f_frsize = stfs.f_frsize;
-	else
+	} else {
 		stbuf->f_frsize = stfs.f_bsize;
+	}
 	stbuf->f_blocks = stfs.f_blocks;
 	stbuf->f_bfree = stfs.f_bfree;
 	stbuf->f_bavail = stfs.f_bavail;
@@ -602,8 +601,6 @@ static int statvfs_local(const char *path, struct statvfs *stbuf) {
 	RETURN(statvfs(path, stbuf));
 #endif
 }
-
-
 
 /**
  * statvs implementation
@@ -863,35 +860,35 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 #endif // HAVE_XATTR
 
 static struct fuse_operations unionfs_oper = {
-	.chmod	= unionfs_chmod,
-	.chown	= unionfs_chown,
-	.create 	= unionfs_create,
-	.flush	= unionfs_flush,
-	.fsync	= unionfs_fsync,
-	.getattr	= unionfs_getattr,
-	.init		= unionfs_init,
-	.ioctl		= unionfs_ioctl,
-	.link		= unionfs_link,
-	.mkdir	= unionfs_mkdir,
-	.mknod	= unionfs_mknod,
-	.open	= unionfs_open,
-	.read	= unionfs_read,
-	.readlink	= unionfs_readlink,
-	.readdir	= unionfs_readdir,
-	.release	= unionfs_release,
-	.rename	= unionfs_rename,
-	.rmdir	= unionfs_rmdir,
-	.statfs	= unionfs_statfs,
-	.symlink	= unionfs_symlink,
-	.truncate	= unionfs_truncate,
-	.unlink	= unionfs_unlink,
-	.utimens	= unionfs_utimens,
-	.write	= unionfs_write,
+	.chmod = unionfs_chmod,
+	.chown = unionfs_chown,
+	.create = unionfs_create,
+	.flush = unionfs_flush,
+	.fsync = unionfs_fsync,
+	.getattr = unionfs_getattr,
+	.init = unionfs_init,
+	.ioctl = unionfs_ioctl,
+	.link = unionfs_link,
+	.mkdir = unionfs_mkdir,
+	.mknod = unionfs_mknod,
+	.open = unionfs_open,
+	.read = unionfs_read,
+	.readlink = unionfs_readlink,
+	.readdir = unionfs_readdir,
+	.release = unionfs_release,
+	.rename = unionfs_rename,
+	.rmdir = unionfs_rmdir,
+	.statfs = unionfs_statfs,
+	.symlink = unionfs_symlink,
+	.truncate = unionfs_truncate,
+	.unlink = unionfs_unlink,
+	.utimens = unionfs_utimens,
+	.write = unionfs_write,
 #ifdef HAVE_XATTR
-	.getxattr		= unionfs_getxattr,
-	.listxattr		= unionfs_listxattr,
-	.removexattr	= unionfs_removexattr,
-	.setxattr		= unionfs_setxattr,
+	.getxattr = unionfs_getxattr,
+	.listxattr = unionfs_listxattr,
+	.removexattr = unionfs_removexattr,
+	.setxattr = unionfs_setxattr,
 #endif
 };
 
