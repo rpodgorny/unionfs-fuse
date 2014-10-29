@@ -32,6 +32,9 @@ class UnionFS_RO_RO_TestCase(unittest.TestCase):
 		os.mkdir('union')
 
 		write_to_file('ro1/ro1_file', 'ro1_file')
+		write_to_file('ro2/ro2_file', 'ro2_file')
+		write_to_file('ro1/common_file', 'ro1')
+		write_to_file('ro2/common_file', 'ro2')
 
 		call('src/unionfs -o cow ro1=ro:ro2=ro union')
 	#enddef
@@ -44,15 +47,39 @@ class UnionFS_RO_RO_TestCase(unittest.TestCase):
 		shutil.rmtree('ro2')
 	#endef
 
+	def test_listing(self):
+		self.assertEqual(set(['ro1_file', 'ro2_file', 'common_file']), set(os.listdir('union')))
+	#enddef
+
+	def test_overlay_order(self):
+		self.assertEqual(read_from_file('union/common_file'), 'ro1')
+	#enddef
+
 	def test_write(self):
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro1_file', 'something')
+		#endwith
+
+		with self.assertRaises(PermissionError):
+			write_to_file('union/ro2_file', 'something')
+		#endwith
+
+		with self.assertRaises(PermissionError):
+			write_to_file('union/common_file', 'something')
 		#endwith
 	#enddef
 
 	def test_delete(self):
 		with self.assertRaises(PermissionError):
 			os.remove('union/ro1_file')
+		#endwith
+
+		with self.assertRaises(PermissionError):
+			os.remove('union/ro2_file')
+		#endwith
+
+		with self.assertRaises(PermissionError):
+			os.remove('union/common_file')
 		#endwith
 	#enddef
 #endclass
