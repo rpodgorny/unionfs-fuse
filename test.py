@@ -7,7 +7,7 @@ import shutil
 
 
 def call(cmd):
-	return subprocess.call(cmd, shell=True)
+	return subprocess.check_call(cmd, shell=True)
 #enddef
 
 
@@ -227,6 +227,33 @@ class StatsTestCase(Common, unittest.TestCase):
 
 	def test_stats_file_exists(self):
 		self.assertIn('stats', os.listdir('union'))
+	#enddef
+#endclass
+
+
+class IOCTL_TestCase(Common, unittest.TestCase):
+	def setUp(self):
+		super().setUp()
+		call('src/unionfs rw1=rw:ro1=ro union')
+	#enddef
+
+	def test_debug(self):
+		# TODO: this is not safe, use some temporary filename or something
+		if os.path.exists('/tmp/test_debug.log'):
+			os.remove('/tmp/test_debug.log')
+		#endif
+
+		call('src/unionfs-fuse-ctl -p /tmp/test_debug.log -d on union')
+
+		self.assertTrue(os.path.isfile('/tmp/test_debug.log'))
+		os.remove('/tmp/test_debug.log')
+	#enddef
+
+	def test_wrong_args(self):
+		# TODO: also check the return code?
+		with self.assertRaises(subprocess.CalledProcessError):
+			call('src/unionfs-fuse-ctl -xxxx')
+		#endwith
 	#enddef
 #endclass
 
