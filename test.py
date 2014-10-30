@@ -122,8 +122,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 
 	def test_delete(self):
 		# TODO: shouldn't this be PermissionError?
-		# TODO: if not, check the errno (see elswhere)
-		with self.assertRaises(OSError):
+		with self.assertRaisesRegex(OSError, '[Errno 30]'):
 			os.remove('union/ro1_file')
 		#endwith
 	#enddef
@@ -187,8 +186,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 
 	def test_delete(self):
 		# TODO: shouldn't this be a PermissionError?
-		# TODO: if not, check the errno to make sure it's: [Errno 30] Read-only file system
-		with self.assertRaises(OSError):
+		with self.assertRaisesRegex(OSError, '[Errno 30]'):
 			os.remove('union/ro1_file')
 		#endwith
 	#enddef
