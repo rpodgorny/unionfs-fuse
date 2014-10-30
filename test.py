@@ -162,6 +162,15 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		self.assertEqual(read_from_file('ro1/ro1_file'), 'ro1')
 		self.assertEqual(read_from_file('rw1/ro1_file'), 'something')
 	#enddef
+
+	def test_cow_and_whiteout(self):
+		write_to_file('union/ro1_file', 'something')
+		os.remove('union/ro1_file')
+
+		self.assertFalse(os.path.isfile('union/ro_file'))
+		self.assertFalse(os.path.isfile('rw1/ro_file'))
+		self.assertEqual(read_from_file('ro1/ro1_file'), 'ro1')
+	#enddef
 #endclass
 
 
