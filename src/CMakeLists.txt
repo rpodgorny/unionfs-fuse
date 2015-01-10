@@ -11,7 +11,7 @@ else()
     target_link_libraries(unionfs fuse pthread)
 endif()
 
-add_executable(unionfs-ctl ${UNIONFS_CTL_SRCS})
+add_executable(unionfs-fuse-ctl ${UNIONFS_CTL_SRCS})
 
 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/unionfs DESTINATION bin)
 INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/unionfs-ctl DESTINATION bin)
