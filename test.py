@@ -44,7 +44,7 @@ class Common:
 	#enddef
 
 	def tearDown(self):
-		call('fusermount -u union')
+		call('sleep 0.7s; fusermount -u union')
 
 		for d in self._dirs:
 			shutil.rmtree(d)
