@@ -259,7 +259,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 	def test_wrong_args(self):
 		# TODO: also check the return code?
 		with self.assertRaises(subprocess.CalledProcessError):
-			call('src/unionfs-fuse-ctl -xxxx')
+			call('src/unionfs-fuse-ctl -xxxx 2>/dev/null')
 		#endwith
 	#enddef
 #endclass
