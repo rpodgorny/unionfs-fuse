@@ -16,7 +16,7 @@ static void print_help(char* progname)
 	fprintf(stderr, "\n");
 	fprintf(stderr, "     List of parameters\n");
 	fprintf(stderr, "       -p </path/to/debug/file>\n");
-	fprintf(stderr, "       -d <on/off\n");
+	fprintf(stderr, "       -d <on/off>\n");
 	fprintf(stderr, "          Enable or disable debugging.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Example: ");
