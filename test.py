@@ -4,6 +4,7 @@ import unittest
 import subprocess
 import os
 import shutil
+import time
 
 
 def call(cmd):
@@ -44,7 +45,11 @@ class Common:
 	#enddef
 
 	def tearDown(self):
-		call('sleep 0.7s; fusermount -u union')
+		# the sleep seems to be needed for some users or else the umount fails
+		# TODO: investigate why
+		time.sleep(1)
+
+		call('fusermount -u union')
 
 		for d in self._dirs:
 			shutil.rmtree(d)
