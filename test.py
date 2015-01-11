@@ -44,7 +44,7 @@ class Common:
 	#enddef
 
 	def tearDown(self):
-		call('fusermount -u union')
+		call('sleep 0.7s; fusermount -u union')
 
 		for d in self._dirs:
 			shutil.rmtree(d)
@@ -259,7 +259,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 	def test_wrong_args(self):
 		# TODO: also check the return code?
 		with self.assertRaises(subprocess.CalledProcessError):
-			call('src/unionfs-fuse-ctl -xxxx')
+			call('src/unionfs-fuse-ctl -xxxx 2>/dev/null')
 		#endwith
 	#enddef
 #endclass
