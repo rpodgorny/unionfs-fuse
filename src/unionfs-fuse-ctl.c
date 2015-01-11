@@ -99,7 +99,6 @@ int main(int argc, char **argv)
 				exit(1);
 			}
 			break;
-				
 		default:
 			fprintf(stderr, "Unhandled option %c given.\n", opt);
 			break;

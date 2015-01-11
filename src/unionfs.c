@@ -51,7 +51,6 @@
 
 #include "unionfs.h"
 #include "opts.h"
-#include "stats.h"
 #include "debug.h"
 #include "findbranch.h"
 #include "general.h"
@@ -78,7 +77,6 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
 	FUSE_OPT_KEY("relaxed_permissions", KEY_RELAXED_PERMISSIONS),
 	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
-	FUSE_OPT_KEY("stats", KEY_STATS),
 	FUSE_OPT_KEY("--version", KEY_VERSION),
 	FUSE_OPT_KEY("-V", KEY_VERSION),
 	FUSE_OPT_END
@@ -155,8 +153,6 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
-
 	int fd = dup(fi->fh);
 
 	if (fd == -1) {
@@ -178,8 +174,6 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
-
 	int res;
 	if (isdatasync) {
 #if _POSIX_SYNCHRONIZED_IO + 0 > 0
@@ -199,14 +193,6 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	DBG("%s\n", path);
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		memset(stbuf, 0, sizeof(*stbuf));
-		stbuf->st_mode = S_IFREG | 0444;
-		stbuf->st_nlink = 1;
-		stbuf->st_size = STATS_SIZE;
-		RETURN(0);
-	}
-	
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
 
@@ -312,7 +298,7 @@ static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_
 		USYSLOG(LOG_ERR, "Unknown ioctl: %d", cmd);
 		return -EINVAL;
 		break;
-        }
+	}
 
 	return 0;
 }
@@ -383,15 +369,6 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	DBG("%s\n", path);
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		if ((fi->flags & 3) == O_RDONLY) {
-			// This makes exec() fail
-			//fi->direct_io = 1;
-			RETURN(0);
-		}
-		RETURN(-EACCES);
-	}
-
 	int i;
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
 		i = find_rw_branch_cutlast(path);
@@ -424,26 +401,9 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		char out[STATS_SIZE] = "";
-		stats_sprint(&stats, out);
-
-		off_t s = size;
-		if (offset < (off_t) strlen(out)) {
-			if (s > (off_t) strlen(out) - offset) s = strlen(out)-offset;
-			memcpy(buf, out+offset, s);
-		} else {
-			s = 0;
-		}
-
-		return s;
-	}
-
 	int res = pread(fi->fh, buf, size, offset);
 
 	if (res == -1) RETURN(-errno);
-
-	if (uopt.stats_enabled) stats_add_read(&stats, size);
 
 	RETURN(res);
 }
@@ -468,8 +428,6 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 	DBG("fd = %"PRIx64"\n", fi->fh);
-
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
 
 	int res = close(fi->fh);
 	if (res == -1) RETURN(-errno);
@@ -715,8 +673,6 @@ static int unionfs_truncate(const char *path, off_t size) {
 static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	DBG("%s\n", path);
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) RETURN(0);
-
 	int i = find_rw_branch_cow(path);
 	if (i == -1) RETURN(-errno);
 
@@ -747,8 +703,6 @@ static int unionfs_write(const char *path, const char *buf, size_t size, off_t o
 	int res = pwrite(fi->fh, buf, size, offset);
 	if (res == -1) RETURN(-errno);
 
-	if (uopt.stats_enabled) stats_add_written(&stats, size);
-
 	RETURN(res);
 }
 
@@ -760,10 +714,6 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 static int unionfs_getxattr(const char *path, const char *name, char *value, size_t size) {
 #endif
 	DBG("%s\n", path);
-
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		RETURN(-ENOTSUP);
-	}
 
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
@@ -785,10 +735,6 @@ static int unionfs_getxattr(const char *path, const char *name, char *value, siz
 static int unionfs_listxattr(const char *path, char *list, size_t size) {
 	DBG("%s\n", path);
 
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		RETURN(-ENOTSUP);
-	}
-
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(-errno);
 
@@ -808,10 +754,6 @@ static int unionfs_listxattr(const char *path, char *list, size_t size) {
 
 static int unionfs_removexattr(const char *path, const char *name) {
 	DBG("%s\n", path);
-
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		RETURN(-ENOTSUP);
-	}
 
 	int i = find_rw_branch_cow(path);
 	if (i == -1) RETURN(-errno);
@@ -836,10 +778,6 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 static int unionfs_setxattr(const char *path, const char *name, const char *value, size_t size, int flags) {
 #endif
 	DBG("%s\n", path);
-
-	if (uopt.stats_enabled && strcmp(path, STATS_FILENAME) == 0) {
-		RETURN(-ENOTSUP);
-	}
 
 	int i = find_rw_branch_cow(path);
 	if (i == -1) RETURN(-errno);
@@ -907,8 +845,6 @@ int main(int argc, char *argv[]) {
 			printf("You need to specify at least one branch!\n");
 			RETURN(1);
 		}
-
-		if (uopt.stats_enabled) stats_init(&stats);
 	}
 
 	// enable fuse permission checks, we need to set this, even we we are

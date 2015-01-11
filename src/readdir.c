@@ -25,7 +25,6 @@
 
 #include "unionfs.h"
 #include "opts.h"
-#include "stats.h"
 #include "debug.h"
 #include "hashtable.h"
 #include "general.h"
@@ -182,10 +181,6 @@ out:
 	hashtable_destroy(files, 1);
 
 	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 1);
-
-	if (uopt.stats_enabled && strcmp(path, "/") == 0) {
-		filler(buf, "stats", NULL, 0);
-	}
 
 	RETURN(rc);
 }

@@ -20,7 +20,6 @@ typedef struct {
 	int nbranches;
 	branch_entry_t *branches;
 
-	bool stats_enabled;
 	bool cow_enabled;
 	bool statfs_omit_ro;
 	int doexit;
@@ -46,7 +45,6 @@ enum {
 	KEY_NOINITGROUPS,
 	KEY_RELAXED_PERMISSIONS,
 	KEY_STATFS_OMIT_RO,
-	KEY_STATS,
 	KEY_VERSION
 };
 

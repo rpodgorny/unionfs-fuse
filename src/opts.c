@@ -19,7 +19,6 @@
 
 #include "conf.h"
 #include "opts.h"
-#include "stats.h"
 #include "version.h"
 #include "string.h"
 
@@ -297,7 +296,6 @@ static void print_help(const char *progname) {
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
-	"    -o stats               show statistics in the file 'stats' under the\n"
 	"\n",
 	progname);
 }
@@ -396,9 +394,6 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_RELAXED_PERMISSIONS:
 			uopt.relaxed_permissions = true;
-			return 0;
-		case KEY_STATS:
-			uopt.stats_enabled = 1;
 			return 0;
 		case KEY_VERSION:
 			printf("unionfs-fuse version: "VERSION"\n");

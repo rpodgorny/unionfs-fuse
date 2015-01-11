@@ -13,7 +13,7 @@ LDFLAGS +=
 LIB = $(shell pkg-config --libs fuse) -lpthread
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
-UNIONFS_OBJ = unionfs.o stats.o opts.o debug.o findbranch.o readdir.o \
+UNIONFS_OBJ = unionfs.o opts.o debug.o findbranch.o readdir.o \
 		general.o unlink.o rmdir.o cow.o cow_utils.o string.o \
 		usyslog.o
 UNIONFS_FUSE_CTL_OBJ = unionfs-fuse-ctl.o

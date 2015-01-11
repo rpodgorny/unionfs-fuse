@@ -8,7 +8,7 @@ import time
 
 
 def call(cmd):
-	return subprocess.check_call(cmd, shell=True)
+	return subprocess.check_output(cmd, shell=True)
 #enddef
 
 
@@ -226,18 +226,6 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro1_file', 'something')
 		#endwith
-	#enddef
-#endclass
-
-
-class StatsTestCase(Common, unittest.TestCase):
-	def setUp(self):
-		super().setUp()
-		call('src/unionfs -o stats rw1=rw:ro1=ro union')
-	#enddef
-
-	def test_stats_file_exists(self):
-		self.assertIn('stats', os.listdir('union'))
 	#enddef
 #endclass
 
