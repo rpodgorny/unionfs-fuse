@@ -298,7 +298,7 @@ static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_
 		bool setRes = set_debug_onoff(!!on_off);
 		if (!setRes)
 			return -EINVAL;
-                return 0;
+		return 0;
 	}
 	case UNIONFS_SET_DEBUG_FILE: {
 		char *debug_path = (char *) data;
