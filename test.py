@@ -116,7 +116,6 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-
 		call('src/unionfs rw1=rw:ro1=ro union')
 	#enddef
 
