@@ -21,10 +21,10 @@ UNIONFS_FUSE_CTL_OBJ = unionfs-fuse-ctl.o
 
 all: unionfs unionfs-fuse-ctl
 
-unionfs: $(UNIONFS_OBJ) $(HASHTABLE_OBJ) version.h
+unionfs: $(UNIONFS_OBJ) $(HASHTABLE_OBJ) uioctl.h version.h
 	$(CC) $(LDFLAGS) -o $@ $(UNIONFS_OBJ) $(HASHTABLE_OBJ) $(LIB)
 
-unionfs-fuse-ctl: $(UNIONFS_FUSE_CTL_OBJ) version.h
+unionfs-fuse-ctl: $(UNIONFS_FUSE_CTL_OBJ) uioctl.h version.h
 	$(CC) $(LDFLAGS) -o $@ $(UNIONFS_FUSE_CTL_OBJ)
 
 clean:
