@@ -45,9 +45,11 @@ class Common:
 	#enddef
 
 	def tearDown(self):
+		# TODO: investigate the following
 		# the sleep seems to be needed for some users or else the umount fails
-		# TODO: investigate why
-		time.sleep(1)
+		# anyway, everything works fine on my system, so why wait? ;-)
+		# if it fails for someone, let's find the race and fix it!
+		#time.sleep(1)
 
 		call('fusermount -u union')
 
