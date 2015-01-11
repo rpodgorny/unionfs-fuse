@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-
 #include "uioctl.h"
+
 
 static void print_help(char* progname)
 {
@@ -72,8 +72,6 @@ int main(int argc, char **argv)
 				exit(1);
 			}
 			break;
-				
-
 		case 'd':
 			argument_param = optarg;
 			if (strlen(argument_param) < 1) {
