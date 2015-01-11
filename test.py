@@ -65,7 +65,7 @@ class Common:
 class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs -o cow ro1=ro:ro2=ro union')
+		call('src/unionfs-fuse -o cow ro1=ro:ro2=ro union')
 	#enddef
 
 	def test_listing(self):
@@ -118,7 +118,7 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs rw1=rw:ro1=ro union')
+		call('src/unionfs-fuse rw1=rw:ro1=ro union')
 	#enddef
 
 	def test_listing(self):
@@ -145,7 +145,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs -o cow rw1=rw:ro1=ro union')
+		call('src/unionfs-fuse -o cow rw1=rw:ro1=ro union')
 	#enddef
 
 	def test_listing(self):
@@ -182,7 +182,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs ro1=ro:rw1=rw union')
+		call('src/unionfs-fuse ro1=ro:rw1=rw union')
 	#enddef
 
 	def test_listing(self):
@@ -209,7 +209,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs -o cow ro1=ro:rw1=rw union')
+		call('src/unionfs-fuse -o cow ro1=ro:rw1=rw union')
 	#enddef
 
 	def test_listing(self):
@@ -235,7 +235,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs rw1=rw:ro1=ro union')
+		call('src/unionfs-fuse rw1=rw:ro1=ro union')
 	#enddef
 
 	def test_debug(self):

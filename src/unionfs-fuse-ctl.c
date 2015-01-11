@@ -20,7 +20,7 @@ static void print_help(char* progname)
 	fprintf(stderr, "          Enable or disable debugging.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Example: ");
-	fprintf(stderr, " %s -p /tmp/unionfs.debug -d on /mnt/unionfs/union\n", progname);
+	fprintf(stderr, " %s -p /tmp/unionfs-fuse.log -d on /mnt/unionfs/union\n", progname);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "\n");
 	
