@@ -41,7 +41,5 @@ ELSE (WITH_XATTR)
 	add_definitions(-DDISABLE_XATTR)
 ENDIF (WITH_XATTR)
 
-
-
 add_subdirectory(src)
 add_subdirectory(man)
