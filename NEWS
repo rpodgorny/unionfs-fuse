@@ -1,5 +1,10 @@
-??
+1.0
+- renamed binary to unionfs-fuse
+- add uniofs-fuse-ctl utility to control unionfs-fuse over ioctl
 - better apple support
+- dropped stats
+- better test suite
+- probably lots of other things, it's been a while since last release ;-)
 
 0.26
 - use BUILD_PATH instead of snprintf, which will 
