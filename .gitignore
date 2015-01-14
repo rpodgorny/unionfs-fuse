@@ -1,7 +1,7 @@
 # unionfs specific
-unionfs-fuse.log
-unionfs-fuse
-unionfs-fuse-ctl
+unionfs.log
+unionfs
+unionfsctl
 
 # build directory
 build/*
