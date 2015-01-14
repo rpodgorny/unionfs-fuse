@@ -15,6 +15,7 @@
 	#define _XOPEN_SOURCE 700
 
 	// For chroot
+	#define _BSD_SOURCE // this is deprecated since glibc 2.20 but let's keep it for a while
 	#define _DEFAULT_SOURCE 1
 #endif
 
