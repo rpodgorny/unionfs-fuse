@@ -1,1 +1,1 @@
-INSTALL(FILES unionfs-fuse.8 DESTINATION share/man/man8/)
+INSTALL(FILES unionfs.8 DESTINATION share/man/man8/)

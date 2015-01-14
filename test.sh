@@ -9,7 +9,7 @@ echo v1 > original/file
 echo v1 > original/play-with-me
 echo v1 > original/delete-me
 
-src/unionfs-fuse -d -o cow working-copy=rw:original=ro union >unionfs-fuse.log 2>&1 &
+src/unionfs -d -o cow working-copy=rw:original=ro union >unionfs.log 2>&1 &
 trap 'if [ "$(ls union)" ]; then fusermount -u union; fi; rm -rf union original working-copy' EXIT
 sleep 1
 

@@ -7,7 +7,7 @@
 .ft R
 .fi
 ..
-.TH "unionfs-fuse" "8" "2015" "unionfs-fuse 1.0" ""
+.TH "unionfs" "8" "2015" "unionfs-fuse 1.0" ""
 .SH "NAME"
 unionfs\-fuse \- A userspace unionfs implementation
 .SH "SYNOPSIS"
@@ -16,7 +16,7 @@ unionfs\-fuse \- A userspace unionfs implementation
              \fBtop_branch:lower_branch:...:lowest_branch \fR
              \fBmount_point\fR
 .SH "DESCRIPTION"
-\fBunionfs\-fuse\fR overlays several directory into one single mount point.
+\fBunionfs\fR overlays several directory into one single mount point.
 .PP 
 It first tries to access the file on the top branch and if the file does not exist
 there, it continues on lower level branches.
@@ -24,15 +24,15 @@ If the user tries to modify a file on a lower level read\-only branch
 the file is copied to to a higher level read\-write branch if the 
 \fBcopy\-on\-write (cow) \fR mode was enabled.
 .SH "OPTIONS"
-Below is a summary of unionfs\-fuse options
+Below is a summary of unionfs options
 .TP 
 \fB\-o chroot=path
-Path to chroot into. By using this option unionfs-fuse
+Path to chroot into. By using this option unionfs
 may be used for live CDs or live USB sticks, etc. So it can serve
 "/" as filesystem. If you do not specify this option and try to use
 it for "/" it will deadlock on calling 'pivot_root'. 
 If you do set this option, you also need to specify the branches relativly
-to the given chroot directory. See examples/S01a-unionfs-fuse-live-cd.sh
+to the given chroot directory. See examples/S01a-unionfs-live-cd.sh
 for an example.
 .TP
 \fB\-o cow
@@ -58,10 +58,10 @@ Write unionfs debug information into that file.
 .TP
 \fB\-o max_files=number
 Maximum number of open files. Most system have a default of 1024 open
-files per process. For example if unionfs-fuse servs "/" applications like
-KDE or GNOME might have much more open files, which will make the unionfs-fuse 
+files per process. For example if unionfs serves "/" applications like
+KDE or GNOME might have much more open files, which will make the unionfs
 process to exceed this limit. Suggested for "/" is >16000 or even >32000 files.
-If this limit exceeds unionfs-fuse will not be able to open further files.
+If this limit exceeds unionfs will not be able to open further files.
 .TP 
 \fB\-o noinitgroups
 Since version 0.23 without any effect, just left over for compatibility.
@@ -82,17 +82,17 @@ for the summary of blocks. This may sound weird but it actually fixes
 .TP
 .SH "Options to libfuse"
 There are several further options available, which don't directly apply to
-unionfs, but to libfuse. Please run "unionfs-fuse --help" to see these.
+unionfs, but to libfuse. Please run "unionfs --help" to see these.
 We already set the "-o default-permissions" options on our own.
 .SH "EXAMPLES"
 .Vb 5
-\& unionfs\-fuse \-o cow,max_files=32768 \e
+\& unionfs \-o cow,max_files=32768 \e
 \&              -o allow_other,use_ino,suid,dev,nonempty \e
 \&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
 \&              /u/union/etc
 .Ve
 .SH "Meta data"
-Like other filesystems unionfs-fuse also needs to store meta data. 
+Like other filesystems unionfs also needs to store meta data. 
 Well, presently only information about deleted files and directories need
 to be stored, but in future releases more information might be required, e.g.
 inode-numbers for persistent inode information.
@@ -101,7 +101,7 @@ directories of each branch-root. So in the example above, these are
 /u/host/etc/.unionfs, /u/group/etc/.unionfs and /u/common/etc/.unionfs.
 Within these directories a complete directory structure may be found.
 Example: If the admin decides to delete the file /etc/test/testfile, which
-only exists in /u/unionfs/etc/test/testfile, unionfs-fuse can't delete this 
+only exists in /u/unionfs/etc/test/testfile, unionfs can't delete this 
 file, since it is on a read-only branch. So instead the whiteout file 
 /u/host/etc/.unionfs/test/testfile_HIDDEN~ will be created. So on accessing
 the union filesystem, test/testfile will not be visible.

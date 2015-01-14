@@ -13,21 +13,21 @@ LDFLAGS +=
 LIB = $(shell pkg-config --libs fuse) -lpthread
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
-UNIONFS_FUSE_OBJ = unionfs.o opts.o debug.o findbranch.o readdir.o \
+UNIONFS_OBJ = unionfs.o opts.o debug.o findbranch.o readdir.o \
 		general.o unlink.o rmdir.o cow.o cow_utils.o string.o \
 		usyslog.o
-UNIONFS_FUSE_CTL_OBJ = unionfs-fuse-ctl.o
+UNIONFSCTL_OBJ = unionfsctl.o
 
 
-all: unionfs-fuse unionfs-fuse-ctl
+all: unionfs unionfsctl
 
-unionfs-fuse: $(UNIONFS_FUSE_OBJ) $(HASHTABLE_OBJ) uioctl.h version.h
-	$(CC) $(LDFLAGS) -o $@ $(UNIONFS_FUSE_OBJ) $(HASHTABLE_OBJ) $(LIB)
+unionfs: $(UNIONFS_OBJ) $(HASHTABLE_OBJ) uioctl.h version.h
+	$(CC) $(LDFLAGS) -o $@ $(UNIONFS_OBJ) $(HASHTABLE_OBJ) $(LIB)
 
-unionfs-fuse-ctl: $(UNIONFS_FUSE_CTL_OBJ) uioctl.h version.h
-	$(CC) $(LDFLAGS) -o $@ $(UNIONFS_FUSE_CTL_OBJ)
+unionfsctl: $(UNIONFSCTL_OBJ) uioctl.h version.h
+	$(CC) $(LDFLAGS) -o $@ $(UNIONFSCTL_OBJ)
 
 clean:
-	rm -f unionfs-fuse
-	rm -f unionfs-fuse-ctl
+	rm -f unionfs
+	rm -f unionfsctl
 	rm -f *.o

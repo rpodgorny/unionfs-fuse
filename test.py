@@ -65,7 +65,7 @@ class Common:
 class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs-fuse -o cow ro1=ro:ro2=ro union')
+		call('src/unionfs -o cow ro1=ro:ro2=ro union')
 	#enddef
 
 	def test_listing(self):
@@ -118,7 +118,7 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs-fuse rw1=rw:ro1=ro union')
+		call('src/unionfs rw1=rw:ro1=ro union')
 	#enddef
 
 	def test_listing(self):
@@ -145,7 +145,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs-fuse -o cow rw1=rw:ro1=ro union')
+		call('src/unionfs -o cow rw1=rw:ro1=ro union')
 	#enddef
 
 	def test_listing(self):
@@ -182,7 +182,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs-fuse ro1=ro:rw1=rw union')
+		call('src/unionfs ro1=ro:rw1=rw union')
 	#enddef
 
 	def test_listing(self):
@@ -209,7 +209,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs-fuse -o cow ro1=ro:rw1=rw union')
+		call('src/unionfs -o cow ro1=ro:rw1=rw union')
 	#enddef
 
 	def test_listing(self):
@@ -235,7 +235,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs-fuse rw1=rw:ro1=ro union')
+		call('src/unionfs rw1=rw:ro1=ro union')
 	#enddef
 
 	def test_debug(self):
@@ -244,7 +244,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 			os.remove('/tmp/test_debug.log')
 		#endif
 
-		call('src/unionfs-fuse-ctl -p /tmp/test_debug.log -d on union')
+		call('src/unionfsctl -p /tmp/test_debug.log -d on union')
 
 		self.assertTrue(os.path.isfile('/tmp/test_debug.log'))
 		os.remove('/tmp/test_debug.log')
@@ -253,7 +253,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 	def test_wrong_args(self):
 		# TODO: also check the return code?
 		with self.assertRaises(subprocess.CalledProcessError):
-			call('src/unionfs-fuse-ctl -xxxx 2>/dev/null')
+			call('src/unionfsctl -xxxx 2>/dev/null')
 		#endwith
 	#enddef
 #endclass
