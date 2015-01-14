@@ -59,7 +59,7 @@ static int unlink_ro(const char *path, int branch_ro) {
   */
 static int unlink_rw(const char *path, int branch_rw) {
 	DBG("%s\n", path);
-	
+
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch_rw].path, path)) RETURN(ENAMETOOLONG);
 
@@ -74,7 +74,7 @@ static int unlink_rw(const char *path, int branch_rw) {
   */
 int unionfs_unlink(const char *path) {
 	DBG("%s\n", path);
-	
+
 	int i = find_rorw_branch(path);
 	if (i == -1) RETURN(errno);
 
