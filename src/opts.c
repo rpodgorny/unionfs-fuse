@@ -26,13 +26,13 @@
 /**
  * Set debug path
  */
-void set_debug_path(char *new_path, int strlen)
+void set_debug_path(char *new_path, int len)
 {
 	pthread_rwlock_wrlock(&uopt.dbgpath_lock); // LOCK path
 
 	if (uopt.dbgpath) free(uopt.dbgpath);
 
-	uopt.dbgpath = strndup(new_path, strlen);
+	uopt.dbgpath = strndup(new_path, len);
 
 	pthread_rwlock_unlock(&uopt.dbgpath_lock); // UNLOCK path
 }
