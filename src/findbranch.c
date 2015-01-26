@@ -17,7 +17,7 @@
 *	in lower level branches. If neither path nor the corresponding whiteout
 *	have been found, we do the test the next branch and so on.
 *	If a file was found, but it is on a read-only branch and a read-write 
-*	branch was requested we return EACCESS. On the other hand we ignore
+*	branch was requested we return EACCES. On the other hand we ignore
 *	directories on read-only branches, since the directory in the higher
 *	level branch doesn't prevent the user can later on see the file on the
 *	lower level branch - so no problem to create path in the lower level 
