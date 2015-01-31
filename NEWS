@@ -1,6 +1,8 @@
+1.1
+- fixed NEWS file ;-)
+
 1.0
-- renamed binary to unionfs-fuse
-- add uniofs-fuse-ctl utility to control unionfs-fuse over ioctl
+- add unionfsctl utility to control unionfs-fuse over ioctl
 - better apple support
 - dropped stats
 - better test suite
