@@ -1,3 +1,5 @@
+# TODO: this is broken as travis does not support fuse
+
 language: c
 before_install:
   - sudo apt-get update -qq
