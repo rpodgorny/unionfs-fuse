@@ -1,7 +1,9 @@
 language: c
-install:
+before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq fuse fuse-utils libfuse-dev python3 user-mode-linux
+install:
+  - sudo apt-get install -qq fuse fuse-utils libfuse-dev
+  - sudo apt-get install -qq python3.4 user-mode-linux
   - sudo mknod /dev/fuse c 10 229
   - sudo chmod 666 /dev/fuse
   - cmake .
