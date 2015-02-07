@@ -1,2 +1,6 @@
 language: c
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq fuse fuse-utils libfuse-dev
+  - sudo modprobe fuse
 script: cmake . && make
