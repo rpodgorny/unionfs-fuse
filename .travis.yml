@@ -1,5 +1,9 @@
 language: c
-before_install:
+install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq fuse fuse-utils libfuse-dev python3
-script: cmake . && make && python3 test.py
+  - sudo apt-get install -qq fuse fuse-utils libfuse-dev python3 user-mode-linux
+  - sudo mknod /dev/fuse c 10 229
+  - sudo chmod 666 /dev/fuse
+  - cmake .
+  - make
+script: ./umltest.sh
