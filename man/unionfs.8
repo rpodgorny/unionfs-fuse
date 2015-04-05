@@ -17,20 +17,20 @@ unionfs\-fuse \- A userspace unionfs implementation
              \fBmount_point\fR
 .SH "DESCRIPTION"
 \fBunionfs\fR overlays several directory into one single mount point.
-.PP 
+.PP
 It first tries to access the file on the top branch and if the file does not exist
 there, it continues on lower level branches.
 If the user tries to modify a file on a lower level read\-only branch
-the file is copied to to a higher level read\-write branch if the 
+the file is copied to a higher level read\-write branch if the
 \fBcopy\-on\-write (cow) \fR mode was enabled.
 .SH "OPTIONS"
 Below is a summary of unionfs options
-.TP 
+.TP
 \fB\-o chroot=path
 Path to chroot into. By using this option unionfs
 may be used for live CDs or live USB sticks, etc. So it can serve
 "/" as filesystem. If you do not specify this option and try to use
-it for "/" it will deadlock on calling 'pivot_root'. 
+it for "/" it will deadlock on calling 'pivot_root'.
 If you do set this option, you also need to specify the branches relativly
 to the given chroot directory. See examples/S01a-unionfs-live-cd.sh
 for an example.
@@ -40,12 +40,12 @@ Enable copy\-on\-write
 .TP
 \fB\-o hide_meta_files
 In our unionfs root path we have a .unionfs directory that includes
-metadata, such as hidden (deleted) files. This options make this 
-directory invisible from readdir(), so for example "ls -la /union_root/" 
+metadata, such as hidden (deleted) files. This options make this
+directory invisible from readdir(), so for example "ls -la /union_root/"
 will not show it. However, this directory is still there and "cd .unionfs"
-or "ls -l .unionfs" still work. Also, libfuse will create .fuse_hidden* 
+or "ls -l .unionfs" still work. Also, libfuse will create .fuse_hidden*
 files, if a file is open, but will be deleted. Those fuse meta files also
-will be invisble. This option is especially usufull for 
+will be invisble. This option is especially usufull for
 package builders.
 .TP
 \fB\-d
@@ -54,7 +54,7 @@ if the code does not behave as expected. Debug information will be written
 to stderr and a debug file (./unionfs_debug.log by default).
 .TP
 \fB\-o debug_file=file
-Write unionfs debug information into that file. 
+Write unionfs debug information into that file.
 .TP
 \fB\-o max_files=number
 Maximum number of open files. Most system have a default of 1024 open
@@ -62,7 +62,7 @@ files per process. For example if unionfs serves "/" applications like
 KDE or GNOME might have much more open files, which will make the unionfs
 process to exceed this limit. Suggested for "/" is >16000 or even >32000 files.
 If this limit exceeds unionfs will not be able to open further files.
-.TP 
+.TP
 \fB\-o noinitgroups
 Since version 0.23 without any effect, just left over for compatibility.
 Might be removed in future versions.
@@ -71,11 +71,11 @@ Might be removed in future versions.
 Usually we automatically add the libfuse option "-odefault_permissions"
 so that libfuse takes over permission checks. However, if running not
 as root (so as uid =! 0  and gid != 0), permissions of the underlying
-filesystem are already sufficient. In order to prevent from severe 
+filesystem are already sufficient. In order to prevent from severe
 security issues, this option is not allowed if running as root.
 .TP
 \fB\-o statfs_omit_ro
-By default blocks of all branches are counted in statfs() calls 
+By default blocks of all branches are counted in statfs() calls
 (e.g. by 'df'). On setting this option read-only branches will be omitted
 for the summary of blocks. This may sound weird but it actually fixes
 "wrong" percentage of free space.
@@ -92,7 +92,7 @@ We already set the "-o default-permissions" options on our own.
 \&              /u/union/etc
 .Ve
 .SH "Meta data"
-Like other filesystems unionfs also needs to store meta data. 
+Like other filesystems unionfs also needs to store meta data.
 Well, presently only information about deleted files and directories need
 to be stored, but in future releases more information might be required, e.g.
 inode-numbers for persistent inode information.
@@ -101,23 +101,23 @@ directories of each branch-root. So in the example above, these are
 /u/host/etc/.unionfs, /u/group/etc/.unionfs and /u/common/etc/.unionfs.
 Within these directories a complete directory structure may be found.
 Example: If the admin decides to delete the file /etc/test/testfile, which
-only exists in /u/unionfs/etc/test/testfile, unionfs can't delete this 
-file, since it is on a read-only branch. So instead the whiteout file 
+only exists in /u/unionfs/etc/test/testfile, unionfs can't delete this
+file, since it is on a read-only branch. So instead the whiteout file
 /u/host/etc/.unionfs/test/testfile_HIDDEN~ will be created. So on accessing
 the union filesystem, test/testfile will not be visible.
-Please also note that whiteout files/directories will only hide the files 
-in lower level branches. So for example whiteouts in the group directory 
-(/u/group/etc/.unionfs of the example above) will only hide file of the 
+Please also note that whiteout files/directories will only hide the files
+in lower level branches. So for example whiteouts in the group directory
+(/u/group/etc/.unionfs of the example above) will only hide file of the
 common branch (/u/common/etc), but not these of the group and host branches.
 Especially for diskless-booted environments it is rather useful for the admin
 to create whiteout files him/her-self. For example one should blacklist
-network re-initializations, /etc/mtab, /etc/nologin of the server and several 
+network re-initializations, /etc/mtab, /etc/nologin of the server and several
 cron-scripts. This can be easily achieved by creating whiteout files for
 these scripts in the group meta directory.
 .SH "KNOWN ISSUES"
 .Vb 5
 \&1) Another issue is that presently there is no support for read-only branches
-when copy-on-write is disabled, thus, -ocow is NOT specified! Support for 
+when copy-on-write is disabled, thus, -ocow is NOT specified! Support for
 that might be added in later releases.
 .Ve
 .SH "AUTHORS"
