@@ -139,6 +139,9 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro1_file', 'something')
 		#endwith
+	#enddef
+
+	def test_write_new(self):
 		write_to_file('union/new_file', 'something')
 		self.assertEqual(read_from_file('union/new_file'), 'something')
 		self.assertEqual(read_from_file('rw1/new_file'), 'something')
@@ -180,13 +183,12 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		self.assertFalse(os.path.isfile('union/ro_file'))
 		self.assertFalse(os.path.isfile('rw1/ro_file'))
 		self.assertEqual(read_from_file('ro1/ro1_file'), 'ro1')
-		self.assertNotIn('new_file', os.listdir('ro1'))
 	#enddef
-	def test_write(self):
+
+	def test_write_new(self):
 		write_to_file('union/new_file', 'something')
 		self.assertEqual(read_from_file('union/new_file'), 'something')
 		self.assertEqual(read_from_file('rw1/new_file'), 'something')
-		self.assertEqual(read_from_file('ro1/ro1_file'), 'ro1')
 		self.assertNotIn('new_file', os.listdir('ro1'))
 	#enddef
 #endclass
@@ -215,8 +217,12 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro1_file', 'something')
 		#endwith
+	#enddef
+
+	def test_write_new(self):
 		with self.assertRaises(PermissionError):
 		    write_to_file('union/new_file', 'something')
+		#endwith
 		self.assertNotIn('new_file', os.listdir('ro1'))
 		self.assertNotIn('new_file', os.listdir('rw1'))
 	#enddef
@@ -245,6 +251,9 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro1_file', 'something')
 		#endwith
+	#enddef
+
+	def test_write_new(self):
 		write_to_file('union/new_file', 'something')
 		self.assertIn('new_file', os.listdir('rw1'))
 		self.assertEqual(read_from_file('rw1/new_file'), 'something')
@@ -275,6 +284,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 		self.assertEqual(ex.returncode, 1)
 		self.assertEqual(ex.output, b'')
 	#enddef
+
 	def tearDown(self):
 		super().tearDown()
 		shutil.rmtree(self._temp_dir)
