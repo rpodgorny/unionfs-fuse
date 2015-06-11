@@ -255,7 +255,6 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 
 	def test_write_new(self):
 		write_to_file('union/new_file', 'something')
-		self.assertIn('new_file', os.listdir('rw1'))
 		self.assertEqual(read_from_file('rw1/new_file'), 'something')
 		self.assertNotIn('new_file', os.listdir('ro1'))
 	#enddef
@@ -271,7 +270,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 
 	def test_debug(self):
 		temp_file = os.path.join(self._temp_dir, 'debug.log')
-		call("src/unionfsctl -p %r -d on union" %temp_file)
+		call('src/unionfsctl -p %r -d on union' % temp_file)
 		self.assertTrue(os.path.isfile(temp_file))
 		self.assertEqual(read_from_file(temp_file), '')
 	#enddef
