@@ -251,10 +251,12 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 	#enddef
 
 	def test_wrong_args(self):
-		# TODO: also check the return code?
-		with self.assertRaises(subprocess.CalledProcessError):
+		with self.assertRaises(subprocess.CalledProcessError) as contextmanager:
 			call('src/unionfsctl -xxxx 2>/dev/null')
 		#endwith
+		ex = contextmanager.exception
+		self.assertEqual(ex.returncode, 1)
+		self.assertEqual(ex.output, b'')
 	#enddef
 #endclass
 
