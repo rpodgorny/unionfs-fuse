@@ -5,6 +5,7 @@ import subprocess
 import os
 import shutil
 import time
+import tempfile
 
 
 def call(cmd):
@@ -256,25 +257,27 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
 		call('src/unionfs rw1=rw:ro1=ro union')
+		self._temp_dir = tempfile.mkdtemp()
 	#enddef
 
 	def test_debug(self):
-		# TODO: this is not safe, use some temporary filename or something
-		if os.path.exists('/tmp/test_debug.log'):
-			os.remove('/tmp/test_debug.log')
-		#endif
-
-		call('src/unionfsctl -p /tmp/test_debug.log -d on union')
-
-		self.assertTrue(os.path.isfile('/tmp/test_debug.log'))
-		os.remove('/tmp/test_debug.log')
+		temp_file = os.path.join(self._temp_dir, 'debug.log')
+		call("src/unionfsctl -p %r -d on union" %temp_file)
+		self.assertTrue(os.path.isfile(temp_file))
+		self.assertEqual(read_from_file(temp_file), '')
 	#enddef
 
 	def test_wrong_args(self):
-		# TODO: also check the return code?
-		with self.assertRaises(subprocess.CalledProcessError):
+		with self.assertRaises(subprocess.CalledProcessError) as contextmanager:
 			call('src/unionfsctl -xxxx 2>/dev/null')
 		#endwith
+		ex = contextmanager.exception
+		self.assertEqual(ex.returncode, 1)
+		self.assertEqual(ex.output, b'')
+	#enddef
+	def tearDown(self):
+		super().tearDown()
+		shutil.rmtree(self._temp_dir)
 	#enddef
 #endclass
 
