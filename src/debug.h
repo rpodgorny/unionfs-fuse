@@ -34,7 +34,7 @@
 
 
 /* In order to prevent useless function calls and to make the compiler
- * to optimize those out, debug.c will only have definitions if DEBUG 
+ * to optimize those out, debug.c will only have definitions if DEBUG
  * is defined. So if DEBUG is NOT defined, we define empty functions here */
 int debug_init();
 void dbg_in(const char *function);

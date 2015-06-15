@@ -1,6 +1,6 @@
 /*
 * License: BSD-style license
-* Copyright: Radek Podgorny <radek@podgorny.cz>, 
+* Copyright: Radek Podgorny <radek@podgorny.cz>,
 *            Bernd Schubert <bernd.schubert@fastmail.fm>
 */
 #include <stdio.h>
@@ -32,7 +32,7 @@ int debug_init(void) {
 
 	int res = 0;
 	if (!dbgfile) {
-		printf("Failed to open %s for writing: %s.\nAborting!\n", 
+		printf("Failed to open %s for writing: %s.\nAborting!\n",
 		       dbgpath, strerror(errno));
 
 		dbgfile = old_dbgfile; // we can re-use the old file
@@ -45,7 +45,7 @@ int debug_init(void) {
 
 	pthread_rwlock_unlock(&uopt.dbgpath_lock); // UNLOCK string
 	pthread_rwlock_unlock(&file_lock);         // UNLOCK file
-	
+
 	return res;
 }
 
