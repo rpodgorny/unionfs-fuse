@@ -9,8 +9,7 @@
 #include "uioctl.h"
 
 
-static void print_help(char* progname)
-{
+static void print_help(char* progname) {
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr, "     %s <parameter1> [<parameter2>] [file-path] \n", progname);
 	fprintf(stderr, "\n");
@@ -23,11 +22,9 @@ static void print_help(char* progname)
 	fprintf(stderr, " %s -p /tmp/unionfs-fuse.log -d on /mnt/unionfs/union\n", progname);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "\n");
-	
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	char *progname = basename(argv[0]);
 
 	if (argc < 3) {
@@ -39,7 +36,7 @@ int main(int argc, char **argv)
 	const char *file_name = argv[argc - 1];
 	const int fd = open(file_name, O_RDONLY );
 	if (fd == -1) {
-		fprintf(stderr, "Failed to open file: %s: %s\n\n", 
+		fprintf(stderr, "Failed to open file: %s: %s\n\n",
 			file_name, strerror(errno) );
 		exit(1);
 	}
@@ -51,10 +48,10 @@ int main(int argc, char **argv)
 	int ioctl_res;
 	while ((opt = getopt(argc, argv, "d:p:")) != -1) {
 		switch (opt) {
-		case 'p': 
+		case 'p':
 			argument_param = optarg;
 			if (strlen(argument_param) < 1) {
-				fprintf(stderr, 
+				fprintf(stderr,
 					"Not a valid debug path given!\n");
 				print_help(progname);
 				exit(1);
@@ -103,7 +100,6 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Unhandled option %c given.\n", opt);
 			break;
 		}
-
 	}
 
 	return 0;
