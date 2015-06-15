@@ -51,7 +51,7 @@ enum {
 
 extern uopt_t uopt;
 
-void set_debug_path(char *new_path, int strlen);
+void set_debug_path(char *new_path, int len);
 bool set_debug_onoff(int value);
 void uopt_init();
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs);
