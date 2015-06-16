@@ -8,7 +8,7 @@ CPPFLAGS += -DLIBC_XATTR # glibc nowadays includes xattr
 # CPPFLAGS += -DDISABLE_XATTR # disable xattr support
 # CPPFLAGS += -DDISABLE_AT    # disable *at function support
 
-LDFLAGS += 
+LDFLAGS +=
 
 LIB = $(shell pkg-config --libs fuse) -lpthread
 
