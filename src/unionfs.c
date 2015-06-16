@@ -20,13 +20,6 @@
 #endif
 
 #include <fuse.h>
-
-#if __APPLE__
-#include <fuse_common.h>
-#else
-#include <fuse/fuse_common.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
