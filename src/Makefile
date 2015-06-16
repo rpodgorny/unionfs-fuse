@@ -1,6 +1,6 @@
 CFLAGS += -Wall
 CPPFLAGS += $(shell pkg-config --cflags fuse)
-CPPFLAGS += -DFUSE_USE_VERSION=28
+CPPFLAGS += -DFUSE_USE_VERSION=29
 
 CPPFLAGS += -DLIBC_XATTR # glibc nowadays includes xattr
 # CPPFLAGS += -DLIBATTR_XATTR # define this to libattr xattr include
