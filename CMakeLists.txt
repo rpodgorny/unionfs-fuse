@@ -46,5 +46,7 @@ ELSE (WITH_XATTR)
 	add_definitions(-DDISABLE_XATTR)
 ENDIF (WITH_XATTR)
 
+INSTALL(PROGRAMS mount.unionfs DESTINATION sbin)
+
 add_subdirectory(src)
 add_subdirectory(man)
