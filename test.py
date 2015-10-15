@@ -272,7 +272,15 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 		temp_file = os.path.join(self._temp_dir, 'debug.log')
 		call('src/unionfsctl -p %r -d on union' % temp_file)
 		self.assertTrue(os.path.isfile(temp_file))
-		self.assertEqual(read_from_file(temp_file), '')
+		self.assertTrue(os.stat(temp_file).st_size == 0)
+		# operations on 'union' results in debug output
+		write_to_file('union/rw_common_file', 'hello')
+		self.assertRegex(read_from_file(temp_file), 'unionfs_write')
+		read_from_file('union/rw_common_file')
+		self.assertRegex(read_from_file(temp_file),'unionfs_read')
+		os.remove('union/rw_common_file')
+		self.assertRegex(read_from_file(temp_file),'unionfs_unlink')
+		self.assertTrue(os.stat(temp_file).st_size > 0)
 	#enddef
 
 	def test_wrong_args(self):
