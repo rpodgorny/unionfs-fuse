@@ -9,8 +9,14 @@ echo v1 > original/file
 echo v1 > original/play-with-me
 echo v1 > original/delete-me
 
+cleanup() {
+    if [ -e "union" ]; then fusermount -u -q union; fi
+    rm -rf union original working-copy
+}
+trap cleanup EXIT
+
 src/unionfs -d -o cow working-copy=rw:original=ro union >unionfs.log 2>&1 &
-trap 'if [ "$(ls union)" ]; then fusermount -u union; fi; rm -rf union original working-copy' EXIT
+
 sleep 1
 
 [ "$(cat union/file)" = "v1" ]
