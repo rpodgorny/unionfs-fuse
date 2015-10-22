@@ -113,6 +113,14 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 			os.remove('union/common_file')
 		#endwith
 	#enddef
+
+	def test_rename(self):
+		for d in ['ro1', 'ro2', 'ro_common', 'common']:
+			with self.assertRaises(PermissionError):
+				os.rename('union/%s_file' % d, 'union/%s_file_renamed' % d)
+			#endwith
+		#endfor
+	#enddef
 #endclass
 
 
@@ -146,6 +154,22 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		self.assertEqual(read_from_file('union/new_file'), 'something')
 		self.assertEqual(read_from_file('rw1/new_file'), 'something')
 		self.assertNotIn('new_file', os.listdir('ro1'))
+	#enddef
+
+	def test_rename(self):
+		# TODO: how should the common file behave?
+		#for fn in ['ro1_file', 'ro_common_file', 'common_file']:
+		for fn in ['ro1_file', 'ro_common_file']:
+			with self.assertRaises(PermissionError):
+				os.rename('union/%s' % fn, 'union/%s_renamed' % fn)
+			#endwith
+		#endfor
+
+		os.rename('union/rw1_file', 'union/rw1_file_renamed')
+		self.assertEqual(read_from_file('union/rw1_file_renamed'), 'rw1')
+		# TODO: how should the common file behave?
+		#os.rename('union/common_file', 'union/common_file_renamed')
+		#self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
 	#enddef
 #endclass
 
