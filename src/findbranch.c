@@ -179,6 +179,10 @@ int find_rw_branch_cutlast(const char *path) {
 	RETURN(res);
 }
 
+int find_rw_branch_cow(const char *path) {
+	return find_rw_branch_cow_common(path, false);
+}
+
 /**
  * copy-on-write
  * Find path in a union branch and if this branch is read-only, 
@@ -187,7 +191,7 @@ int find_rw_branch_cutlast(const char *path) {
  *       It will definitely fail, when a ro-branch is on top of a rw-branch
  *       and a directory is to be copied from ro- to rw-branch.
  */
-int find_rw_branch_cow(const char *path) {
+int find_rw_branch_cow_common(const char *path, bool copy_dir) {
 	DBG("%s\n", path);
 
 	int branch_rorw = find_rorw_branch(path);
@@ -211,7 +215,7 @@ int find_rw_branch_cow(const char *path) {
 		RETURN(-1);
 	}
 
-	if (cow_cp(path, branch_rorw, branch_rw)) RETURN(-1);
+	if (cow_cp(path, branch_rorw, branch_rw, copy_dir)) RETURN(-1);
 
 	// remove a file that might hide the copied file
 	remove_hidden(path, branch_rw);
