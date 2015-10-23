@@ -450,7 +450,7 @@ static int unionfs_rename(const char *from, const char *to) {
 	if (i == -1) RETURN(-errno);
 
 	if (!uopt.branches[i].rw) {
-		i = find_rw_branch_cow(from);
+		i = find_rw_branch_cow_common(from, true);
 		if (i == -1) RETURN(-errno);
 	}
 
