@@ -1,11 +1,13 @@
-# TODO: this is broken as travis does not support fuse
-
-language: c
+language: python
+python:
+  - "3.5"
 before_install:
   - sudo apt-get update -qq
 install:
+  - sudo apt-get install realpath
+  - sudo apt-get install cmake make gcc
   - sudo apt-get install -qq fuse fuse-utils libfuse-dev
-  - sudo apt-get install -qq python3 user-mode-linux
+  - sudo apt-get install -qq user-mode-linux
   - sudo mknod /dev/fuse c 10 229
   - sudo chmod 666 /dev/fuse
   - cmake .

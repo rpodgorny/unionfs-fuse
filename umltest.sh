@@ -1,15 +1,21 @@
 #!/bin/bash
 
-CURDIR="`pwd`"
+CURDIR="$(pwd)"
+VIRTUALENV_PATH="$(realpath ~/virtualenv)"
+echo "VIRTUALENV_PATH: ${VIRTUALENV_PATH}"
 
 cat > umltest.inner.sh <<EOF
 #!/bin/sh
 (
 	set -e
 	set -x
+        # source python3.5, test.py depends on python >= 3.3 (PermissionError)
+	. "${VIRTUALENV_PATH}"/python3.5/bin/activate
 	insmod /usr/lib/uml/modules/\`uname -r\`/kernel/fs/fuse/fuse.ko
 	cd "$CURDIR"
-	python3 test.py
+	python3 --version
+        # sleep if it fails to allow writing stuff
+	RUNNING_ON_TRAVIS_CI= python3 test.py
 	echo Success
 )
 echo "\$?" > "$CURDIR"/umltest.status
@@ -18,6 +24,8 @@ EOF
 
 chmod +x umltest.inner.sh
 
-/usr/bin/linux.uml init=`pwd`/umltest.inner.sh rootfstype=hostfs rw
+/usr/bin/linux.uml init="${CURDIR}"/umltest.inner.sh rootfstype=hostfs rw
 
-exit $(<umltest.status)
+RESULT=$(<"${CURDIR}"/umltest.status)
+
+exit $RESULT

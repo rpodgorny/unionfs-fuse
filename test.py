@@ -52,7 +52,13 @@ class Common:
 		# if it fails for someone, let's find the race and fix it!
 		#time.sleep(1)
 
-		call('fusermount -u union')
+		# When running the testsuite within usermodelinux, /dev/mtab might not
+		# exist. In that case, fusermount -u will fail. We thus fall back to
+		# umount.
+		if os.path.isfile('/dev/mtab'):
+			call('fusermount -u union')
+		else:
+			call('umount union')
 
 		for d in self._dirs:
 			shutil.rmtree(d)
@@ -325,6 +331,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 #endclass
 
 
+@unittest.skipIf(not os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
