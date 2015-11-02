@@ -14,7 +14,7 @@ clean:
 
 test_coverage: clean build_coverage coverage
 	./test.py
-	(cd src && gcovr -r . --html -o ../coverage/coverage.html --html-details)
+	(cd src && gcovr -r . --print-summary --html -o ../coverage/coverage.html --html-details)
 
 coverage:
 	mkdir $@
