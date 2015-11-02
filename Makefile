@@ -9,12 +9,18 @@ build_coverage:
 	CFLAGS="-g -O0 -fprofile-arcs -ftest-coverage" \
 	       LDFLAGS="-lgcov -coverage" $(MAKE) -C src/
 
-clean:
+clean: clean_coverage
 	$(MAKE) -C src/ clean
 
 test_coverage: clean build_coverage coverage
 	./test.py
-	(cd src && gcovr -r . --print-summary --html -o ../coverage/coverage.html --html-details)
+	(cd src && gcovr -r . --html -o ../coverage/index.html --html-details)
+	(cd src && gcovr -r .)
+
+clean_coverage:
+	rm -rf coverage
+	rm -rf src/*.gcda
+	rm -rf src/*.gcno
 
 coverage:
 	mkdir $@
