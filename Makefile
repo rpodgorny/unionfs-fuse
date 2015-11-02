@@ -5,8 +5,19 @@ SBINDIR=/sbin
 build:
 	$(MAKE) -C src/
 
+build_coverage:
+	CFLAGS="-g -O0 -fprofile-arcs -ftest-coverage" \
+	       LDFLAGS="-lgcov -coverage" $(MAKE) -C src/
+
 clean:
 	$(MAKE) -C src/ clean
+
+test_coverage: clean build_coverage coverage
+	./test.py
+	(cd src && gcovr -r . --print-summary --html -o ../coverage/coverage.html --html-details)
+
+coverage:
+	mkdir $@
 
 install: build
 	install -d $(DESTDIR)$(PREFIX)$(BINDIR)
