@@ -6,6 +6,13 @@ echo "VIRTUALENV_PATH: ${VIRTUALENV_PATH}"
 
 cat > umltest.inner.sh <<EOF
 #!/bin/sh
+
+# Ensure that we really start on a clean state. The following commands are allowed to
+# fail
+umount union
+rm -r ro1 ro2 rw1 rw2 union
+
+# Perform the actual test setup and run the tests
 (
 	set -e
 	set -x
