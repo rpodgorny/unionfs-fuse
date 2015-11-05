@@ -50,6 +50,7 @@ class Common:
 		# the sleep seems to be needed for some users or else the umount fails
 		# anyway, everything works fine on my system, so why wait? ;-)
 		# if it fails for someone, let's find the race and fix it!
+		# actually had to re-enable it because travis-ci is one of the bad cases
 		time.sleep(1)
 
 		# When running the testsuite within usermodelinux, /dev/mtab might not

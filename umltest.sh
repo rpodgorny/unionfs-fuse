@@ -14,8 +14,7 @@ rm -r ro1 ro2 rw1 rw2 union
 
 # Perform the actual test setup and run the tests
 (
-	set -e
-	set -x
+	set -e -x
         # source python3.5, test.py depends on python >= 3.3 (PermissionError)
 	. "${VIRTUALENV_PATH}"/python3.5/bin/activate
 	insmod /usr/lib/uml/modules/\`uname -r\`/kernel/fs/fuse/fuse.ko
