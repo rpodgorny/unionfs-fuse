@@ -7,7 +7,6 @@ import shutil
 import time
 import tempfile
 
-
 def call(cmd):
 	return subprocess.check_output(cmd, shell=True)
 #enddef
@@ -53,13 +52,13 @@ class Common:
 		# actually had to re-enable it because travis-ci is one of the bad cases
 		time.sleep(1)
 
-		# When running the testsuite within usermodelinux, /dev/mtab might not
-		# exist. In that case, fusermount -u will fail. We thus fall back to
-		# umount.
-		if os.path.isfile('/dev/mtab'):
-			call('fusermount -u union')
-		else:
+		# In User Mode Linux, fusermount -u union fails with a permission error
+		# when trying to lock the fuse lock file.
+
+		if os.environ.get('RUNNING_ON_TRAVIS_CI'):
 			call('umount union')
+		else:
+			call('fusermount -u union')
 
 		for d in self._dirs:
 			shutil.rmtree(d)
@@ -332,7 +331,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 #endclass
 
 
-@unittest.skipIf(not os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
+@unittest.skipIf(os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
