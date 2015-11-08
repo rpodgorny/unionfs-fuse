@@ -53,6 +53,9 @@ class Common:
 	#enddef
 
 	def tearDown(self):
+		# In User Mode Linux, fusermount -u union fails with a permission error
+		# when trying to lock the fuse lock file.
+
 		if os.environ.get('RUNNING_ON_TRAVIS_CI'):
 			# TODO: investigate the following
 			# the sleep seems to be needed for some users or else the umount fails

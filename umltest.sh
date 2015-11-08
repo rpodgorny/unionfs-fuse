@@ -21,7 +21,7 @@ rm -r ro1 ro2 rw1 rw2 union
 	cd "$CURDIR"
 	python3 --version
         # sleep if it fails to allow writing stuff
-	RUNNING_ON_TRAVIS_CI= python3 test.py
+	RUNNING_ON_TRAVIS_CI=1 python3 test.py
 	echo Success
 )
 echo "\$?" > "$CURDIR"/umltest.status
