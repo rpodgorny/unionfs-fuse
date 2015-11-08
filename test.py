@@ -349,7 +349,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 		debug_fn = '%s/debug.log' % self.tmpdir
 		call('%s -p %r -d on union' % (self.unionfsctl_path, debug_fn))
 		self.assertTrue(os.path.isfile(debug_fn))
-		self.assertTrue(os.stat(temp_file).st_size == 0)
+		self.assertTrue(os.stat(debug_fn).st_size == 0)
 		# operations on 'union' results in debug output
 		write_to_file('union/rw_common_file', 'hello')
 		self.assertRegex(read_from_file(debug_fn), 'unionfs_write')
