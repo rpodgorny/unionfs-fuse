@@ -29,6 +29,13 @@ def read_from_file(fn):
 
 class Common:
 	def setUp(self):
+		self.unionfs_path = os.path.abspath('src/unionfs')
+		self.unionfsctl_path = os.path.abspath('src/unionfsctl')
+
+		self.tmpdir = tempfile.mkdtemp()
+		self.original_cwd = os.getcwd()
+		os.chdir(self.tmpdir)
+
 		self._dirs = ['ro1', 'ro2', 'rw1', 'rw2']
 
 		for d in self._dirs:
@@ -46,26 +53,22 @@ class Common:
 	#enddef
 
 	def tearDown(self):
-		# TODO: investigate the following
-		# the sleep seems to be needed for some users or else the umount fails
-		# anyway, everything works fine on my system, so why wait? ;-)
-		# if it fails for someone, let's find the race and fix it!
-		# actually had to re-enable it because travis-ci is one of the bad cases
-		time.sleep(1)
+		if os.environ.get('RUNNING_ON_TRAVIS_CI'):
+			# TODO: investigate the following
+			# the sleep seems to be needed for some users or else the umount fails
+			# anyway, everything works fine on my system, so why wait? ;-)
+			# if it fails for someone, let's find the race and fix it!
+			# actually had to re-enable it because travis-ci is one of the bad cases
+			time.sleep(1)
 
-		# When running the testsuite within usermodelinux, /dev/mtab might not
-		# exist. In that case, fusermount -u will fail. We thus fall back to
-		# umount.
-		if os.path.isfile('/dev/mtab'):
-			call('fusermount -u union')
-		else:
 			call('umount union')
+		else:
+			call('fusermount -u union')
+		#endif
 
-		for d in self._dirs:
-			shutil.rmtree(d)
-		#endfor
+		os.chdir(self.original_cwd)
 
-		shutil.rmtree('union')
+		shutil.rmtree(self.tmpdir)
 	#endef
 #endclass
 
@@ -73,7 +76,7 @@ class Common:
 class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs -o cow ro1=ro:ro2=ro union')
+		call('%s -o cow ro1=ro:ro2=ro union' % self.unionfs_path)
 	#enddef
 
 	def test_listing(self):
@@ -134,7 +137,7 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs rw1=rw:ro1=ro union')
+		call('%s rw1=rw:ro1=ro union' % self.unionfs_path)
 	#enddef
 
 	def test_listing(self):
@@ -185,7 +188,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs -o cow rw1=rw:ro1=ro union')
+		call('%s -o cow rw1=rw:ro1=ro union' % self.unionfs_path)
 	#enddef
 
 	def test_listing(self):
@@ -241,7 +244,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs ro1=ro:rw1=rw union')
+		call('%s ro1=ro:rw1=rw union' % self.unionfs_path)
 	#enddef
 
 	def test_listing(self):
@@ -290,7 +293,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs -o cow ro1=ro:rw1=rw union')
+		call('%s -o cow ro1=ro:rw1=rw union' % self.unionfs_path)
 	#enddef
 
 	def test_listing(self):
@@ -336,37 +339,31 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('src/unionfs rw1=rw:ro1=ro union')
-		self._temp_dir = tempfile.mkdtemp()
+		call('%s rw1=rw:ro1=ro union' % self.unionfs_path)
 	#enddef
 
 	def test_debug(self):
-		temp_file = os.path.join(self._temp_dir, 'debug.log')
-		call('src/unionfsctl -p %r -d on union' % temp_file)
-		self.assertTrue(os.path.isfile(temp_file))
+		debug_fn = '%s/debug.log' % self.tmpdir
+		call('%s -p %r -d on union' % (self.unionfsctl_path, debug_fn))
+		self.assertTrue(os.path.isfile(debug_fn))
 		self.assertTrue(os.stat(temp_file).st_size == 0)
 		# operations on 'union' results in debug output
 		write_to_file('union/rw_common_file', 'hello')
-		self.assertRegex(read_from_file(temp_file), 'unionfs_write')
+		self.assertRegex(read_from_file(debug_fn), 'unionfs_write')
 		read_from_file('union/rw_common_file')
-		self.assertRegex(read_from_file(temp_file),'unionfs_read')
+		self.assertRegex(read_from_file(debug_fn),'unionfs_read')
 		os.remove('union/rw_common_file')
-		self.assertRegex(read_from_file(temp_file),'unionfs_unlink')
-		self.assertTrue(os.stat(temp_file).st_size > 0)
+		self.assertRegex(read_from_file(debug_fn),'unionfs_unlink')
+		self.assertTrue(os.stat(debug_fn).st_size > 0)
 	#enddef
 
 	def test_wrong_args(self):
 		with self.assertRaises(subprocess.CalledProcessError) as contextmanager:
-			call('src/unionfsctl -xxxx 2>/dev/null')
+			call('%s -xxxx 2>/dev/null' % self.unionfsctl_path)
 		#endwith
 		ex = contextmanager.exception
 		self.assertEqual(ex.returncode, 1)
 		self.assertEqual(ex.output, b'')
-	#enddef
-
-	def tearDown(self):
-		super().tearDown()
-		shutil.rmtree(self._temp_dir)
 	#enddef
 #endclass
 
