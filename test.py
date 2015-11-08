@@ -338,7 +338,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 #endclass
 
 
-@unittest.skipIf(not os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
+@unittest.skipIf(os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
