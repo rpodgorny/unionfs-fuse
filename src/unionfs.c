@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <inttypes.h>
+#include <asm/ioctl.h>
 
 #ifdef linux
 	#include <sys/vfs.h>
