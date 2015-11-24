@@ -1,4 +1,5 @@
 #!/bin/bash
+# this is a legacy version (will be removed in the future). please use test.py.
 
 set -v
 set -e
