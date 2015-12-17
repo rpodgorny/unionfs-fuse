@@ -1,5 +1,6 @@
-1.1
+2.0
 - fixed NEWS file ;-)
+- reverted meta directory name back to .unionfs (from .unionfs-fuse) - this was never meant to be changed
 
 1.0
 - add unionfsctl utility to control unionfs-fuse over ioctl
