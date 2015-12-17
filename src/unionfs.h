@@ -10,7 +10,7 @@
 #define PATHLEN_MAX 1024
 #define HIDETAG "_HIDDEN~"
 
-#define METANAME ".unionfs-fuse"
+#define METANAME ".unionfs"
 #define METADIR (METANAME  "/") // string concetanation!
 
 // fuse meta files, we might want to hide those
