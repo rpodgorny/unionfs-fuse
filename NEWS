@@ -1,6 +1,7 @@
 2.0
 - fixed NEWS file ;-)
-- reverted meta directory name back to .unionfs (from .unionfs-fuse) - this was never meant to be changed
+- reverted meta directory name back to .unionfs (from .unionfs-fuse)
+  this was never meant to be changed and slipped in in 1.0 release
 
 1.0
 - add unionfsctl utility to control unionfs-fuse over ioctl
@@ -10,8 +11,8 @@
 - probably lots of other things, it's been a while since last release ;-)
 
 0.26
-- use BUILD_PATH instead of snprintf, which will 
-  return -ENAMETOOLONG if the path is too long instead of simply 
+- use BUILD_PATH instead of snprintf, which will
+  return -ENAMETOOLONG if the path is too long instead of simply
   using a wrong path
 - new options "-o relaxed_permissions" and "-o hide_meta_dir"
 - included the debian directory
@@ -41,7 +42,7 @@
 - bugfix: rename created wrong whiteout type
 
 0.22
-- Fix a bug reported by Jens Hoelldampf <jens@hoelldampf.net>, in 0.21 cow 
+- Fix a bug reported by Jens Hoelldampf <jens@hoelldampf.net>, in 0.21 cow
   didn't work for pathes.
 
 0.21
