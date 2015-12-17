@@ -8,8 +8,6 @@ install:
   - sudo apt-get install cmake make gcc
   - sudo apt-get install -qq fuse fuse-utils libfuse-dev
   - sudo apt-get install -qq user-mode-linux
-  - sudo mknod /dev/fuse c 10 229
-  - sudo chmod 666 /dev/fuse
   - cmake .
   - make
 script: ./umltest.sh
