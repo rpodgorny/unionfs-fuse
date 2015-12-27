@@ -185,6 +185,10 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		#os.rename('union/common_file', 'union/common_file_renamed')
 		#self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
 	#enddef
+
+	def test_copystat(self):
+		shutil.copystat('union/ro1_file', 'union/rw1_file')
+	#enddef
 #endclass
 
 
@@ -240,6 +244,10 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		# TODO: how should the common file behave?
 		#os.rename('union/common_file', 'union/common_file_renamed')
 		#self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
+	#enddef
+
+	def test_copystat(self):
+		shutil.copystat('union/ro1_file', 'union/rw1_file')
 	#enddef
 #endclass
 
