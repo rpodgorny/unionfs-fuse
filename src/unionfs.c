@@ -59,6 +59,14 @@
 #include "conf.h"
 #include "uioctl.h"
 
+#ifndef _IOC_SIZE
+#ifdef IOCPARM_LEN
+#define _IOC_SIZE(x) IOCPARM_LEN(x)
+#else
+#error "No mechanism for determining ioctl length found."
+#endif
+#endif
+
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
 	FUSE_OPT_KEY("cow", KEY_COW),
@@ -230,7 +238,7 @@ static void * unionfs_init(struct fuse_conn_info *conn) {
 
 #ifdef FUSE_CAP_IOCTL_DIR
 	if (conn->capable & FUSE_CAP_IOCTL_DIR)
-		conn->want |= FUSE_CAP_IOCTL_DIR; 
+		conn->want |= FUSE_CAP_IOCTL_DIR;
 #endif
 
 	return NULL;
@@ -619,7 +627,7 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 				stbuf->f_favail += stb.f_favail;
 			} else if (!uopt.statfs_omit_ro) {
 				// omitting the RO branches is not correct regarding
-				// the block counts but it actually fixes the 
+				// the block counts but it actually fixes the
 				// percentage of free space. so, let the user decide.
 				stbuf->f_blocks += stb.f_blocks * ratio;
 				stbuf->f_files  += stb.f_files;
@@ -853,7 +861,7 @@ int main(int argc, char *argv[]) {
 	int uid = getuid();
 	int gid = getgid();
 	bool default_permissions = true;
-	
+
 	if (uid != 0 && gid != 0 && uopt.relaxed_permissions) {
 		default_permissions = false;
 	} else if (uopt.relaxed_permissions) {
@@ -861,7 +869,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Relaxed permissions disallowed for root!\n");
 		exit(1);
 	}
-	
+
 	if (default_permissions) {
 		if (fuse_opt_add_arg(&args, "-odefault_permissions")) {
 			fprintf(stderr, "Severe failure, can't enable permssion checks, aborting!\n");
@@ -871,7 +879,7 @@ int main(int argc, char *argv[]) {
 	unionfs_post_opts();
 
 #ifdef FUSE_CAP_BIG_WRITES
-	/* libfuse > 0.8 supports large IO, also for reads, to increase performance 
+	/* libfuse > 0.8 supports large IO, also for reads, to increase performance
 	 * We support any IO sizes, so lets enable that option */
 	if (fuse_opt_add_arg(&args, "-obig_writes")) {
 		fprintf(stderr, "Failed to enable big writes!\n");
