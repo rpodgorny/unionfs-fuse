@@ -26,6 +26,9 @@ def read_from_file(fn):
 	#endwith
 #enddef
 
+def get_dir_contents(directory):
+	return [ dirs for (_,dirs,_) in os.walk(directory) ]
+#enddef
 
 class Common:
 	def setUp(self):
@@ -241,6 +244,34 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		os.rename('union/ro1_file', 'union/ro1_file_renamed')
 		self.assertEqual(read_from_file('union/ro1_file_renamed'), 'ro1')
 
+		# See https://github.com/rpodgorny/unionfs-fuse/issues/25
+		ro_dirs = 'ro1/recursive/dirs/1/2/3'
+		os.makedirs(ro_dirs)
+		ro_link = 'ro1/symlink'
+		os.symlink('recursive', ro_link)
+		self.assertTrue(os.path.islink(ro_link))
+
+		original = 'union/recursive'
+		renamed = 'union/recursive_cow'
+		cow_path = 'rw1/recursive_cow'
+		new_link = 'union/newsymlink'
+
+		os.rename(original, renamed)
+		os.rename('union/symlink', new_link)
+
+		self.assertFalse(os.path.isdir(original))
+		self.assertTrue(os.path.isdir(ro_dirs))
+
+		# the files in the subdirectories should match after renaming
+		self.assertEqual(
+			get_dir_contents('ro1/recursive'),
+			get_dir_contents(renamed))
+		self.assertEqual(
+			get_dir_contents(renamed),
+			get_dir_contents(cow_path))
+
+		self.assertTrue(os.path.islink(new_link))
+
 		# TODO: how should the common file behave?
 		#os.rename('union/common_file', 'union/common_file_renamed')
 		#self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
@@ -248,6 +279,61 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 
 	def test_copystat(self):
 		shutil.copystat('union/ro1_file', 'union/rw1_file')
+
+	def test_rename_fifo(self):
+		ro_fifo = 'ro1/fifo'
+		os.mkfifo(ro_fifo)
+		self.assertTrue(os.path.lexists(ro_fifo))
+
+		old_fifo = 'union/fifo'
+		new_fifo = 'union/newfifo'
+
+		os.rename(old_fifo, new_fifo)
+		self.assertTrue(os.path.lexists(new_fifo))
+		self.assertFalse(os.path.lexists(old_fifo))
+		self.assertTrue(os.path.lexists(ro_fifo))
+
+		# TODO test that ro1/fifo is still functional
+	#enddef
+
+	def test_rename_long_name(self):
+		# renaming with pathlen > PATHLEN_MAX should fail
+		new_name = 1000 * 'a'
+		with self.assertRaisesRegex(OSError, '[Errno 36]'):
+			os.rename('union/ro1_file', 'union/ro1_file_%s' %new_name)
+		with self.assertRaisesRegex(OSError, '[Errno 36]'):
+			os.rename('union/ro1_file%s' %new_name, 'union/ro1_file')
+	#enddef
+
+	def test_posix_operations(self):
+		# See https://github.com/rpodgorny/unionfs-fuse/issues/25
+		# POSIX operations such as chmod, chown, etc. shall not create
+		# copies of files.
+		ro_dirs = 'ro1/recursive/dirs/1/2/3'
+		os.makedirs(ro_dirs)
+		union = 'union/recursive'
+		cow_path = 'rw1/recursive'
+
+		operations = [
+			lambda path:
+				os.access(path, os.F_OK),
+			lambda path:
+				os.chmod(path, 0o644),
+			# TODO does not work on travis
+			# lambda path:
+			# 	#  no-op chown to avoid permission errors
+			# 	os.chown(path, os.getuid(), os.getgid()),
+			# lambda path:
+			# 	os.lchown(path, os.getuid(), os.getgid()),
+			lambda path:
+				os.stat(path)
+			]
+
+		for op in operations:
+			op(union)
+			self.assertNotEqual(
+				get_dir_contents(union),
+				get_dir_contents(cow_path))
 	#enddef
 #endclass
 
