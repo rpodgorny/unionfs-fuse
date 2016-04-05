@@ -22,7 +22,7 @@ def read_from_file(fn):
 		return f.read()
 
 def get_dir_contents(directory):
-	return [ dirs for (_,dirs,_) in os.walk(directory) ]
+	return [dirs for (_, dirs, _) in os.walk(directory)]
 
 
 class Common:
@@ -218,12 +218,8 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		self.assertTrue(os.path.isdir(ro_dirs))
 
 		# the files in the subdirectories should match after renaming
-		self.assertEqual(
-			get_dir_contents('ro1/recursive'),
-			get_dir_contents(renamed))
-		self.assertEqual(
-			get_dir_contents(renamed),
-			get_dir_contents(cow_path))
+		self.assertEqual(get_dir_contents('ro1/recursive'), get_dir_contents(renamed))
+		self.assertEqual(get_dir_contents(renamed), get_dir_contents(cow_path))
 
 		self.assertTrue(os.path.islink(new_link))
 
@@ -282,9 +278,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 
 		for op in operations:
 			op(union)
-			self.assertNotEqual(
-				get_dir_contents(union),
-				get_dir_contents(cow_path))
+			self.assertNotEqual(get_dir_contents(union), get_dir_contents(cow_path))
 
 
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
