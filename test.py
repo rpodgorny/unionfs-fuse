@@ -256,8 +256,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 
 	def test_posix_operations(self):
 		# See https://github.com/rpodgorny/unionfs-fuse/issues/25
-		# POSIX operations such as chmod, chown, etc. shall not create
-		# copies of files.
+		# POSIX operations such as chmod, chown, etc. shall not create copies of files.
 		ro_dirs = 'ro1/recursive/dirs/1/2/3'
 		os.makedirs(ro_dirs)
 		union = 'union/recursive'
@@ -275,7 +274,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 				os.lchown(path, os.getuid(), os.getgid()),
 			lambda path:
 				os.stat(path)
-			]
+		]
 
 		for op in operations:
 			op(union)
