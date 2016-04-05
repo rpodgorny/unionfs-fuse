@@ -125,7 +125,7 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
 /**
  * initiate the cow-copy action
  */
-int cow_cp(const char *path, int branch_ro, int branch_rw) {
+int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 	DBG("%s\n", path);
 
 	// create the path to the file
@@ -160,7 +160,11 @@ int cow_cp(const char *path, int branch_ro, int branch_rw) {
 			res = copy_link(&cow);
 			break;
 		case S_IFDIR:
-			res = copy_directory(path, branch_ro, branch_rw);
+			if (copy_dir) {
+				res = copy_directory(path, branch_ro, branch_rw);
+			} else {
+				res = path_create(path, branch_ro, branch_rw);
+			}
 			break;
 		case S_IFBLK:
 		case S_IFCHR:
@@ -207,7 +211,7 @@ int copy_directory(const char *path, int branch_ro, int branch_rw) {
 			res = 1;
 			break;
 		}
-		res = cow_cp(member, branch_ro, branch_rw);
+		res = cow_cp(member, branch_ro, branch_rw, true);
 		if (res != 0) break;
 	}
 
