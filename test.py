@@ -21,6 +21,7 @@ def read_from_file(fn):
 	with open(fn, 'r') as f:
 		return f.read()
 
+
 def get_dir_contents(directory):
 	return [dirs for (_, dirs, _) in os.walk(directory)]
 
@@ -249,9 +250,9 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		# renaming with pathlen > PATHLEN_MAX should fail
 		new_name = 1000 * 'a'
 		with self.assertRaisesRegex(OSError, '[Errno 36]'):
-			os.rename('union/ro1_file', 'union/ro1_file_%s' %new_name)
+			os.rename('union/ro1_file', 'union/ro1_file_%s' % new_name)
 		with self.assertRaisesRegex(OSError, '[Errno 36]'):
-			os.rename('union/ro1_file%s' %new_name, 'union/ro1_file')
+			os.rename('union/ro1_file%s' % new_name, 'union/ro1_file')
 
 	def test_posix_operations(self):
 		# See https://github.com/rpodgorny/unionfs-fuse/issues/25
@@ -302,7 +303,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 
 	def test_write_new(self):
 		with self.assertRaises(PermissionError):
-		    write_to_file('union/new_file', 'something')
+			write_to_file('union/new_file', 'something')
 		self.assertNotIn('new_file', os.listdir('ro1'))
 		self.assertNotIn('new_file', os.listdir('rw1'))
 
@@ -369,9 +370,9 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 		write_to_file('union/rw_common_file', 'hello')
 		self.assertRegex(read_from_file(debug_fn), 'unionfs_write')
 		read_from_file('union/rw_common_file')
-		self.assertRegex(read_from_file(debug_fn),'unionfs_read')
+		self.assertRegex(read_from_file(debug_fn), 'unionfs_read')
 		os.remove('union/rw_common_file')
-		self.assertRegex(read_from_file(debug_fn),'unionfs_unlink')
+		self.assertRegex(read_from_file(debug_fn), 'unionfs_unlink')
 		self.assertTrue(os.stat(debug_fn).st_size > 0)
 
 	def test_wrong_args(self):
