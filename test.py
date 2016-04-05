@@ -263,17 +263,11 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		cow_path = 'rw1/recursive'
 
 		operations = [
-			lambda path:
-				os.access(path, os.F_OK),
-			lambda path:
-				os.chmod(path, 0o644),
-			lambda path:
-				#  no-op chown to avoid permission errors
-				os.chown(path, os.getuid(), os.getgid()),
-			lambda path:
-				os.lchown(path, os.getuid(), os.getgid()),
-			lambda path:
-				os.stat(path)
+			lambda path: os.access(path, os.F_OK),
+			lambda path: os.chmod(path, 0o644),
+			lambda path: os.chown(path, os.getuid(), os.getgid()),  # no-op chown to avoid permission errors
+			lambda path: os.lchown(path, os.getuid(), os.getgid()),
+			lambda path: os.stat(path),
 		]
 
 		for op in operations:
