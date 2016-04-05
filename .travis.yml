@@ -16,4 +16,4 @@ install:
   - sudo apt-get install -qq user-mode-linux
   - cmake .
   - make
-script: ./umltest.sh
+script: python3 test.py
