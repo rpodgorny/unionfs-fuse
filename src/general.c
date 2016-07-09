@@ -66,7 +66,7 @@ int path_hidden(const char *path, int branch) {
 	char *walk = whiteoutpath + uopt.branches[branch].path_len + strlen(METADIR) - 1;
 
 	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
-	while (*walk != '\0' && *walk == '/') walk++;
+	while (*walk == '/') walk++;
 
 	do {
 		// walk over the directory name, walk will now be /dir2
@@ -80,7 +80,7 @@ int path_hidden(const char *path, int branch) {
 		if (res) RETURN(res); // path is hidden or error
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
-		while (*walk != '\0' && *walk == '/') walk++;
+		while (*walk == '/') walk++;
 	} while (*walk != '\0');
 
 	RETURN(0);

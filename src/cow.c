@@ -88,7 +88,7 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	char *walk = (char *)path;
 
 	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
-	while (*walk != '\0' && *walk == '/') walk++;
+	while (*walk == '/') walk++;
 
 	do {
 		// walk over the directory name, walk will now be /dir2
@@ -100,7 +100,7 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 		if (res) RETURN(res); // creating the directory failed
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
-		while (*walk != '\0' && *walk == '/') walk++;
+		while (*walk == '/') walk++;
 	} while (*walk != '\0');
 
 	RETURN(0);
