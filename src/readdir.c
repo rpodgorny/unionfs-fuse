@@ -76,7 +76,8 @@ static bool is_hiding(struct hashtable *hides, char *fname) {
 
 		// add to hides (only if not there already)
 		if (!hashtable_search(hides, fname)) {
-			hashtable_insert(hides, strdup(fname), malloc(1));
+			char *key = strdup(fname);
+			hashtable_insert(hides, key, key);
 		}
 
 		RETURN(true);
@@ -163,7 +164,8 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 			if (hide_meta_files(i, p, de) == true) continue;
 
 			// fill with something dummy, we're interested in key existence only
-			hashtable_insert(files, strdup(de->d_name), malloc(1));
+			char *key = strdup(de->d_name);
+			hashtable_insert(files, key, key);
 
 			struct stat st;
 			memset(&st, 0, sizeof(st));
@@ -178,9 +180,9 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	}
 
 out:
-	hashtable_destroy(files, 1);
+	hashtable_destroy(files, 0);
 
-	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 1);
+	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 0);
 
 	RETURN(rc);
 }
@@ -256,7 +258,7 @@ int dir_not_empty(const char *path) {
 	}
 
 out:
-	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 1);
+	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 0);
 
 	if (rc) RETURN(rc);
 	
