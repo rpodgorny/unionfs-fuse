@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <sys/vfs.h> 
 
 #include "unionfs.h"
 #include "opts.h"
@@ -137,9 +138,10 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 
 	// Reminder rw_hint == -1 -> autodetect, we do not care which branch it is
 	if (uopt.branches[branch].rw 
+        && uopt.lbwrite == false
 	&& (rw_hint == -1 || branch == rw_hint)) goto out;
 
-	if (!uopt.cow_enabled) {
+	if (!uopt.cow_enabled && !uopt.lbwrite) {
 		// So path exists, but is not writable.
 		branch = -1;
 		errno = EACCES;
@@ -149,7 +151,12 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	int branch_rw;
 	// since it is a directory, any rw-branch is fine
 	if (rw_hint == -1)
-		branch_rw = find_lowest_rw_branch(uopt.nbranches);
+	        if (uopt.lbwrite == true){
+			branch_rw = find_loadlowest_rw_branch(uopt.nbranches);
+		}
+		else{
+			branch_rw = find_lowest_rw_branch(uopt.nbranches);
+		}
 	else
 		branch_rw = rw_hint;
 
@@ -234,5 +241,33 @@ int find_lowest_rw_branch(int branch_ro) {
 		if (uopt.branches[i].rw) RETURN(i); // found it it.
 	}
 
+	RETURN(-1);
+}
+
+/**
+ * Find load lowest possible writable branch but only lower than branch_ro.
+ */
+int find_loadlowest_rw_branch(int branch_ro) {
+	DBG_IN();
+        struct statfs stb;
+        int res, retVal = -1;
+	unsigned long long free_space,max_free_space = 0; 
+
+	int i = 0;
+	for (i = 0; i < branch_ro; i++) {
+                res = statfs(uopt.branches[i].path, &stb);
+                if (res == -1) {
+                        retVal = -errno;
+                        break;
+                } 
+		free_space=stb.f_bsize*stb.f_bfree;
+	        DBG("branch %s free space %llu\n",uopt.branches[i].path,free_space);
+		if ( free_space > max_free_space ){
+			retVal = i;
+			max_free_space = free_space;
+		}
+	}
+
+	if (retVal >= 0) RETURN(retVal); // found it it.
 	RETURN(-1);
 }

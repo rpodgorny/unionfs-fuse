@@ -30,10 +30,12 @@ typedef struct {
 	pthread_rwlock_t dbgpath_lock; // locks dbgpath
 	bool hide_meta_files;
 	bool relaxed_permissions;
+	bool lbwrite;
 
 } uopt_t;
 
 enum {
+        KEY_LBWRITE,
 	KEY_CHROOT,
 	KEY_COW,
 	KEY_DEBUG_FILE,

@@ -68,6 +68,7 @@
 #endif
 
 static struct fuse_opt unionfs_opts[] = {
+	FUSE_OPT_KEY("lbwrite", KEY_LBWRITE),
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
 	FUSE_OPT_KEY("cow", KEY_COW),
 	FUSE_OPT_KEY("debug_file=%s", KEY_DEBUG_FILE),

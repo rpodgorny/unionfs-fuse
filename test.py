@@ -25,7 +25,6 @@ def read_from_file(fn):
 def get_dir_contents(directory):
 	return [dirs for (_, dirs, _) in os.walk(directory)]
 
-
 class Common:
 	def setUp(self):
 		self.unionfs_path = os.path.abspath('src/unionfs')
@@ -66,6 +65,57 @@ class Common:
 			call('fusermount -u union')
 
 		os.chdir(self.original_cwd)
+
+		shutil.rmtree(self.tmpdir)
+
+class CommonWithImg:
+	def setUp(self):
+		self.unionfs_path = os.path.abspath('src/unionfs')
+		self.unionfsctl_path = os.path.abspath('src/unionfsctl')
+
+		self.tmpdir = tempfile.mkdtemp()
+		#self.tmpdir = "/tmp/123"
+		self.original_cwd = os.getcwd()
+		os.chdir(self.tmpdir)
+
+		self._dirs = ['ro1', 'ro2', 'rw1', 'rw2']
+
+		for d in self._dirs:
+			#call("dd if=/dev/zero of=%s/%s.img bs=4M count=25" % self.tmpdir,d)
+			call('dd if=/dev/zero of=%s/%s.img bs=4M count=5 2>/dev/null' % (str(self.tmpdir),d))
+			call('mkfs.ext4 %s/%s.img 2>/dev/null' % (self.tmpdir,d))
+			os.mkdir(d)
+			call('mount -o loop %s/%s.img %s/%s' % (self.tmpdir,d, self.tmpdir,d))
+			call('rm -rf %s/%s/*' % (self.tmpdir,d))
+			write_to_file('%s/%s_file' % (d, d), d)
+			write_to_file('%s/common_file' % d, d)
+
+		write_to_file('ro1/ro_common_file', 'ro1')
+		write_to_file('ro2/ro_common_file', 'ro2')
+		write_to_file('rw1/rw_common_file', 'rw1')
+		write_to_file('rw2/rw_common_file', 'rw2')
+
+		os.mkdir('union')
+
+	def tearDown(self):
+		# In User Mode Linux, fusermount -u union fails with a permission error
+		# when trying to lock the fuse lock file.
+
+		if os.environ.get('RUNNING_ON_TRAVIS_CI'):
+			# TODO: investigate the following
+			# the sleep seems to be needed for some users or else the umount fails
+			# anyway, everything works fine on my system, so why wait? ;-)
+			# if it fails for someone, let's find the race and fix it!
+			# actually had to re-enable it because travis-ci is one of the bad cases
+			time.sleep(1)
+
+			call('umount union')
+		else:
+			call('fusermount -u union')
+
+		os.chdir(self.original_cwd)
+		for d in self._dirs:
+			call("umount %s/%s" % (self.tmpdir,d))
 
 		shutil.rmtree(self.tmpdir)
 
@@ -273,6 +323,44 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		for op in operations:
 			op(union)
 			self.assertNotEqual(get_dir_contents(union), get_dir_contents(cow_path))
+
+class UnionFS_LBWRITE_TestCase(CommonWithImg, unittest.TestCase):
+	def setUp(self):
+		super().setUp()
+		call('%s -o lbwrite rw1=rw:rw2=rw union' % self.unionfs_path)
+
+	def test_listing(self):
+		lst = ['rw1_file', 'rw2_file', 'rw_common_file', 'common_file']
+		self.assertEqual(set(lst), set(os.listdir('union')))
+
+	def test_delete(self):
+		os.remove('union/rw1_file')
+
+		self.assertNotIn('rw1_file', os.listdir('union'))
+		self.assertNotIn('rw1_file', os.listdir('rw1'))
+
+	def test_write(self):
+		write_to_file('union/rw1_file', 'something')
+
+		self.assertEqual(read_from_file('union/rw1_file'), 'something')
+		self.assertEqual(read_from_file('rw1/rw1_file'), 'something')
+
+	def test_write_new(self):
+		write_to_file('union/new_file1', 'something1')
+		write_to_file('union/new_file2', 'something2')
+		self.assertEqual(read_from_file('union/new_file1'), 'something1')
+		self.assertEqual(read_from_file('union/new_file2'), 'something2')
+		self.assertEqual(read_from_file('rw1/new_file1'), 'something1')
+		self.assertEqual(read_from_file('rw2/new_file2'), 'something2')
+		self.assertNotIn('new_file1', os.listdir('rw2'))
+		self.assertNotIn('new_file2', os.listdir('rw1'))
+
+	def test_rename(self):
+		os.rename('union/rw1_file', 'union/rw1_file_renamed')
+		self.assertEqual(read_from_file('union/rw1_file_renamed'), 'rw1')
+
+	def test_copystat(self):
+		shutil.copystat('union/rw1_file', 'union/rw2_file')
 
 
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):

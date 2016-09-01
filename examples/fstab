@@ -1,0 +1,1 @@
+/data/backup1=RW:/data/backup2=RW /data/backup unionfs  rw,cow,max_files=32768,allow_other,use_ino,suid,dev,nonempty,lbwrite 0 0

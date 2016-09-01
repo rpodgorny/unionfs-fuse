@@ -1,9 +1,9 @@
 #!/bin/bash
-
-label=$1
+export PATH=/sbin:/usr/local/bin:/bin:/usr/bin
+src=$1
 mpoint=$2
 shift 3
 dirs=${@##*,dirs=}
 dirs=${dirs/,/:}
-mount.fuse "unionfs#$dirs" "$mpoint" -o ${@%%,dirs=*} 
+mount.fuse "unionfs#$src" "$mpoint" -o ${@%%,dirs=*} 
 
