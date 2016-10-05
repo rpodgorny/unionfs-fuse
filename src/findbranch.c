@@ -60,7 +60,10 @@ static int find_branch(const char *path, searchflag_t flag) {
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
+		if (BUILD_PATH(p, uopt.branches[i].path, path)) {
+			errno = ENAMETOOLONG;
+			RETURN(-1);
+		}
 
 		struct stat stbuf;
 		int res = lstat(p, &stbuf);

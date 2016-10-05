@@ -107,12 +107,12 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 				len++;
 			}
 		}
-		va_end(ap);
 
 		len += strlen(str);
 
 		// +1 for final \0 not counted by strlen
 		if (len + 1 > max_len) {
+			va_end(ap);
 			USYSLOG (LOG_WARNING, "%s():%d Path too long \n", callfunc, line);
 			errno = ENAMETOOLONG;
 			RETURN(-errno);
@@ -120,6 +120,7 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 
 		strcat (path, str);
 	}
+	va_end(ap);
 	
 	if (len == 0) {
 		USYSLOG(LOG_ERR, "from: %s():%d : No argument given?\n", callfunc, line);
