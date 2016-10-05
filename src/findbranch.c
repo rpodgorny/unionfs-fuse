@@ -12,18 +12,18 @@
 *
 * Details about finding branches:
 * 	We begin at the top-level branch to look for a file or directory, in
-*	the code usually called "path". If path was not found, we check for a 
+*	the code usually called "path". If path was not found, we check for a
 *	whiteout-file/directory. If we find a whiteout, we won't check further
 *	in lower level branches. If neither path nor the corresponding whiteout
 *	have been found, we do the test the next branch and so on.
-*	If a file was found, but it is on a read-only branch and a read-write 
+*	If a file was found, but it is on a read-only branch and a read-write
 *	branch was requested we return EACCES. On the other hand we ignore
 *	directories on read-only branches, since the directory in the higher
 *	level branch doesn't prevent the user can later on see the file on the
-*	lower level branch - so no problem to create path in the lower level 
+*	lower level branch - so no problem to create path in the lower level
 *	branch.
-*	It also really important the files in higher level branches have 
-*	priority, since this is the reason, we can't write to file in a 
+*	It also really important the files in higher level branches have
+*	priority, since this is the reason, we can't write to file in a
 *	lower level branch, when another file already exists in a higher
 *	level ro-branch - on further access to the file the unmodified
 *	file in the ro-branch will visible.
@@ -121,7 +121,7 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	DBG("Check for parent directory\n");
 
 	// So path does not exist, now again, but with dirname only.
-	// We MUST NOT call find_rw_branch_cow() // since this function 
+	// We MUST NOT call find_rw_branch_cow() // since this function
 	// doesn't work properly for directories.
 	char *dname = u_dirname(path);
 	if (dname == NULL) {
@@ -133,10 +133,10 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	DBG("branch = %d\n", branch);
 
 	// No branch found, so path does nowhere exist, error
-	if (branch < 0) goto out; 
+	if (branch < 0) goto out;
 
 	// Reminder rw_hint == -1 -> autodetect, we do not care which branch it is
-	if (uopt.branches[branch].rw 
+	if (uopt.branches[branch].rw
 	&& (rw_hint == -1 || branch == rw_hint)) goto out;
 
 	if (!uopt.cow_enabled) {
@@ -185,7 +185,7 @@ int find_rw_branch_cow(const char *path) {
 
 /**
  * copy-on-write
- * Find path in a union branch and if this branch is read-only, 
+ * Find path in a union branch and if this branch is read-only,
  * copy the file to a read-write branch.
  * NOTE: Don't call this to copy directories. Use path_create() for that!
  *       It will definitely fail, when a ro-branch is on top of a rw-branch
