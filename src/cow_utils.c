@@ -68,7 +68,7 @@ int setfile(const char *path, struct stat *fs)
 	ut.actime  = fs->st_atime;
 	ut.modtime = fs->st_mtime;
 	if (utime(path, &ut)) {
-		USYSLOG(LOG_WARNING,   "utimes: %s", path);
+		USYSLOG(LOG_WARNING, "utimes: %s", path);
 		rval = 1;
 	}
 	/*
@@ -79,14 +79,14 @@ int setfile(const char *path, struct stat *fs)
 	*/
 	if (chown(path, fs->st_uid, fs->st_gid)) {
 		if (errno != EPERM) {
-			USYSLOG(LOG_WARNING,   "chown: %s", path);
+			USYSLOG(LOG_WARNING, "chown: %s", path);
 			rval = 1;
 		}
 		fs->st_mode &= ~(S_ISTXT | S_ISUID | S_ISGID);
 	}
-	
+
 	if (chmod(path, fs->st_mode)) {
-		USYSLOG(LOG_WARNING,   "chown: %s", path);
+		USYSLOG(LOG_WARNING, "chown: %s", path);
 		rval = 1;
 	}
 
@@ -101,7 +101,7 @@ int setfile(const char *path, struct stat *fs)
 		errno = 0;
 		if (chflags(path, fs->st_flags)) {
 			if (errno != EOPNOTSUPP || fs->st_flags != 0) {
-				USYSLOG(LOG_WARNING,   "chflags: %s", path);
+				USYSLOG(LOG_WARNING, "chflags: %s", path);
 				rval = 1;
 			}
 			RETURN(rval);
@@ -119,7 +119,7 @@ static int setlink(const char *path, struct stat *fs)
 
 	if (lchown(path, fs->st_uid, fs->st_gid)) {
 		if (errno != EPERM) {
-			USYSLOG(LOG_WARNING,   "lchown: %s", path);
+			USYSLOG(LOG_WARNING, "lchown: %s", path);
 			RETURN(1);
 		}
 	}
@@ -167,17 +167,17 @@ int copy_file(struct cow *cow)
 	if (fs->st_size > 0 && fs->st_size <= 8 * 1048576) {
 		if ((p = mmap(NULL, (size_t)fs->st_size, PROT_READ,
 		    MAP_FILE|MAP_SHARED, from_fd, (off_t)0)) == MAP_FAILED) {
-			USYSLOG(LOG_WARNING,   "mmap: %s", cow->from_path);
+			USYSLOG(LOG_WARNING, "mmap: %s", cow->from_path);
 			rval = 1;
 		} else {
 			madvise(p, fs->st_size, MADV_SEQUENTIAL);
 			if (write(to_fd, p, fs->st_size) != fs->st_size) {
-				USYSLOG(LOG_WARNING,   "%s", cow->to_path);
+				USYSLOG(LOG_WARNING, "%s", cow->to_path);
 				rval = 1;
 			}
 			/* Some systems don't unmap on close(2). */
 			if (munmap(p, fs->st_size) < 0) {
-				USYSLOG(LOG_WARNING,   "%s", cow->from_path);
+				USYSLOG(LOG_WARNING, "%s", cow->from_path);
 				rval = 1;
 			}
 		}
@@ -187,13 +187,13 @@ int copy_file(struct cow *cow)
 		while ((rcount = read(from_fd, buf, MAXBSIZE)) > 0) {
 			wcount = write(to_fd, buf, rcount);
 			if (rcount != wcount || wcount == -1) {
-				USYSLOG(LOG_WARNING,   "%s", cow->to_path);
+				USYSLOG(LOG_WARNING, "%s", cow->to_path);
 				rval = 1;
 				break;
 			}
 		}
 		if (rcount < 0) {
-			USYSLOG(LOG_WARNING,   "copy failed: %s", cow->from_path);
+			USYSLOG(LOG_WARNING, "copy failed: %s", cow->from_path);
 			rval = 1;
 		}
 	}
@@ -214,20 +214,20 @@ int copy_file(struct cow *cow)
 	(S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
 	else if (fs->st_mode & (S_ISUID | S_ISGID) && fs->st_uid == cow->uid) {
 		if (fstat(to_fd, &to_stat)) {
-			USYSLOG(LOG_WARNING,   "%s", cow->to_path);
+			USYSLOG(LOG_WARNING, "%s", cow->to_path);
 			rval = 1;
 		} else if (fs->st_gid == to_stat.st_gid &&
 		    fchmod(to_fd, fs->st_mode & RETAINBITS & ~cow->umask)) {
-			USYSLOG(LOG_WARNING,   "%s", cow->to_path);
+			USYSLOG(LOG_WARNING, "%s", cow->to_path);
 			rval = 1;
 		}
 	}
 	(void)close(from_fd);
 	if (close(to_fd)) {
-		USYSLOG(LOG_WARNING,   "%s", cow->to_path);
+		USYSLOG(LOG_WARNING, "%s", cow->to_path);
 		rval = 1;
 	}
-	
+
 	RETURN(rval);
 }
 
@@ -242,17 +242,17 @@ int copy_link(struct cow *cow)
 	char link[PATHLEN_MAX];
 
 	if ((len = readlink(cow->from_path, link, sizeof(link)-1)) == -1) {
-		USYSLOG(LOG_WARNING,   "readlink: %s", cow->from_path);
+		USYSLOG(LOG_WARNING, "readlink: %s", cow->from_path);
 		RETURN(1);
 	}
 
 	link[len] = '\0';
-	
+
 	if (symlink(link, cow->to_path)) {
-		USYSLOG(LOG_WARNING,   "symlink: %s", link);
+		USYSLOG(LOG_WARNING, "symlink: %s", link);
 		RETURN(1);
 	}
-	
+
 	RETURN(setlink(cow->to_path, cow->stat));
 }
 
@@ -265,7 +265,7 @@ int copy_fifo(struct cow *cow)
 	DBG("from %s to %s\n", cow->from_path, cow->to_path);
 
 	if (mkfifo(cow->to_path, cow->stat->st_mode)) {
-		USYSLOG(LOG_WARNING,   "mkfifo: %s", cow->to_path);
+		USYSLOG(LOG_WARNING, "mkfifo: %s", cow->to_path);
 		RETURN(1);
 	}
 	RETURN(setfile(cow->to_path, cow->stat));
@@ -280,7 +280,7 @@ int copy_special(struct cow *cow)
 	DBG("from %s to %s\n", cow->from_path, cow->to_path);
 
 	if (mknod(cow->to_path, cow->stat->st_mode, cow->stat->st_rdev)) {
-		USYSLOG(LOG_WARNING,   "mknod: %s", cow->to_path);
+		USYSLOG(LOG_WARNING, "mknod: %s", cow->to_path);
 		RETURN(1);
 	}
 	RETURN(setfile(cow->to_path, cow->stat));
