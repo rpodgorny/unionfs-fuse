@@ -858,8 +858,8 @@ int main(int argc, char *argv[]) {
 
 	// enable fuse permission checks, we need to set this, even we we are
 	// not root, since we don't have our own access() function
-	int uid = getuid();
-	int gid = getgid();
+	uid_t uid = getuid();
+	gid_t gid = getgid();
 	bool default_permissions = true;
 
 	if (uid != 0 && gid != 0 && uopt.relaxed_permissions) {
