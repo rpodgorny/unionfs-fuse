@@ -2,6 +2,7 @@
 - fixed NEWS file ;-)
 - reverted meta directory name back to .unionfs (from .unionfs-fuse)
   this was never meant to be changed and slipped in in 1.0 release
+- fixes and speed improvements
 
 1.0
 - add unionfsctl utility to control unionfs-fuse over ioctl
