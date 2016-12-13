@@ -88,6 +88,16 @@ class UnionFS_Version(Common, unittest.TestCase):
 		self.assertIn('unionfs-fuse version:', res)
 
 
+# TODO: this is supposed to trigger unionfs_fsync but it doesn't seem to work
+class UnionFS_Sync(Common, unittest.TestCase):
+	def setUp(self):
+		super().setUp()
+		self.mount('%s ro1=ro:ro2=ro union' % self.unionfs_path)
+
+	def test_sync(self):
+		call('sync union')
+
+
 class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
@@ -173,6 +183,12 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 
 	def test_copystat(self):
 		shutil.copystat('union/ro1_file', 'union/rw1_file')
+
+	def test_mkdir(self):
+		os.mkdir('union/test')
+		self.assertTrue(os.path.isdir('union/dir'))
+		self.assertTrue(os.path.isdir('rw1/dir'))
+		self.assertFalse(os.path.isdir('ro1/dir'))
 
 
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
