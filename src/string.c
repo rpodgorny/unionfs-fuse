@@ -50,7 +50,7 @@ char *whiteout_tag(const char *fname) {
  * check if the sum of the strings is larger than PATHLEN_MAX
  *
  * This function requires a NULL as last argument!
- * 
+ *
  * path already MUST have been allocated!
  */
 int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
@@ -60,7 +60,7 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 
 	(void)str_ptr; // please the compile to avoid warning in non-debug mode
 	(void)line;
-	(void)callfunc; 
+	(void)callfunc;
 
 	path[0] = '\0'; // that way can easily strcat even the first element
 
@@ -69,8 +69,8 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 		char *str = va_arg (ap, char *); // the next path element
 		if (!str) break;
 
-		/* Prevent '//' in pathes, if len > 0 we are not in the first 
-		 * loop-run. This is rather ugly, but I don't see another way to 
+		/* Prevent '//' in pathes, if len > 0 we are not in the first
+		 * loop-run. This is rather ugly, but I don't see another way to
 		 * make sure there really is a '/'. By simply cutting off
 		 * the initial '/' of the added string, we could run into a bug
 		 * and would not have a '/' between path elements at all
@@ -78,25 +78,25 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 		if (len > 0) {
 			// walk to the end of path
 			while (*path != '\0') path++;
-			
+
 			// we are on '\0', now go back to the last char
 			path--;
-			
+
 			if (*path == '/') {
 				int count = len;
-				
+
 				// count makes sure nobody tricked us and gave
 				// slashes as first path only...
 				while (*path == '/' && count > 1) {
 					// possibly there are several slashes...
 					// But we want only one slash
 					path--;
-					count--; 
+					count--;
 				}
-					
+
 				// now we are *before* '/', walk to slash again
 				path++;
-				
+
 				// eventually we walk over the slashes of the
 				// next string
 				while (*str == '/') str++;
@@ -121,13 +121,13 @@ int build_path(char *path, int max_len, const char *callfunc, int line, ...) {
 		strcat (path, str);
 	}
 	va_end(ap);
-	
+
 	if (len == 0) {
 		USYSLOG(LOG_ERR, "from: %s():%d : No argument given?\n", callfunc, line);
 		errno = EIO;
 		RETURN(-errno);
 	}
-	
+
 	DBG("from: %s():%d path: %s\n", callfunc, line, str_ptr);
 	RETURN(0);
 }
@@ -146,7 +146,7 @@ char *u_dirname(const char *path) {
 		return ret;
 	}
 
-	char *ri = strrchr(ret, '/'); 
+	char *ri = strrchr(ret, '/');
 	if (ri != NULL) {
 		*ri = '\0'; // '/' found, so a full path
 	} else {
