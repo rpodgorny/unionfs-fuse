@@ -3,18 +3,17 @@ unionfs.log
 unionfs
 unionfsctl
 
+# gcov (coverage)
+coverage
+src/*.gcda
+src/*.gcno
+
 # build directory
 build/*
 BUILD/*
 
 # codelite project files
 *.project
-
-# vi tmp files
-*.swp
-
-# build directory
-build/*
 
 # vi tmp files
 *.swp
