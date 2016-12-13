@@ -33,7 +33,7 @@
 
 /**
   * Hide metadata. As is causes a slight slowndown this is optional
-  * 
+  *
   */
 static bool hide_meta_files(int branch, const char *path, struct dirent *de)
 {
@@ -47,13 +47,14 @@ static bool hide_meta_files(int branch, const char *path, struct dirent *de)
 
 	// HIDE out .unionfs directory
 	if (strcmp(uopt.branches[branch].path, path) == 0
-	&&  strcmp(METANAME, de->d_name) == 0) {
+	&& strcmp(METANAME, de->d_name) == 0) {
 		RETURN(true);
 	}
 
 	// HIDE fuse META files
-	if  (strncmp(FUSE_META_FILE, de->d_name, FUSE_META_LENGTH) == 0) 
+	if (strncmp(FUSE_META_FILE, de->d_name, FUSE_META_LENGTH) == 0) {
 		RETURN(true);
+	}
 
 	RETURN(false);
 }
@@ -116,7 +117,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	(void)fi;
 	int i = 0;
 	int rc = 0;
-	
+
 	// we will store already added files here to handle same file names across different branches
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
 
@@ -191,7 +192,7 @@ out:
  * check if a directory on all paths is empty
  * return 0 if empty, 1 if not and negative value on error
  *
- * TODO: This shares lots of code with unionfs_readdir(), can we merge 
+ * TODO: This shares lots of code with unionfs_readdir(), can we merge
  *       both functions?
  */
 int dir_not_empty(const char *path) {
@@ -201,7 +202,7 @@ int dir_not_empty(const char *path) {
 	int i = 0;
 	int rc = 0;
 	int not_empty = 0;
-	
+
 	struct hashtable *whiteouts = NULL;
 
 	if (uopt.cow_enabled) whiteouts = create_hashtable(16, string_hash, string_equal);
@@ -234,10 +235,10 @@ int dir_not_empty(const char *path) {
 
 		struct dirent *de;
 		while ((de = readdir(dp)) != NULL) {
-			
 			// Ignore . and ..
-			if ((strcmp(de->d_name, ".") == 0) ||  (strcmp(de->d_name, "..") == 0)) 
+			if ((strcmp(de->d_name, ".") == 0) ||  (strcmp(de->d_name, "..") == 0)) {
 				continue;
+			}
 
 			// check if we need file hiding
 			if (uopt.cow_enabled) {
@@ -261,8 +262,6 @@ out:
 	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 0);
 
 	if (rc) RETURN(rc);
-	
+
 	RETURN(not_empty);
 }
-
-
