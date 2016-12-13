@@ -48,32 +48,50 @@ class Common:
 		write_to_file('rw2/rw_common_file', 'rw2')
 
 		os.mkdir('union')
+		self.mounted = False
 
 	def tearDown(self):
 		# In User Mode Linux, fusermount -u union fails with a permission error
 		# when trying to lock the fuse lock file.
 
-		if os.environ.get('RUNNING_ON_TRAVIS_CI'):
-			# TODO: investigate the following
-			# the sleep seems to be needed for some users or else the umount fails
-			# anyway, everything works fine on my system, so why wait? ;-)
-			# if it fails for someone, let's find the race and fix it!
-			# actually had to re-enable it because travis-ci is one of the bad cases
-			time.sleep(1)
+		if self.mounted:
+			if os.environ.get('RUNNING_ON_TRAVIS_CI'):
+				# TODO: investigate the following
+				# the sleep seems to be needed for some users or else the umount fails
+				# anyway, everything works fine on my system, so why wait? ;-)
+				# if it fails for someone, let's find the race and fix it!
+				# actually had to re-enable it because travis-ci is one of the bad cases
+				time.sleep(1)
 
-			call('umount union')
-		else:
-			call('fusermount -u union')
+				call('umount union')
+			else:
+				call('fusermount -u union')
 
 		os.chdir(self.original_cwd)
 
 		shutil.rmtree(self.tmpdir)
 
+	def mount(self, cmd):
+		call(cmd)
+		self.mounted = True
+
+
+class UnionFS_Help(Common, unittest.TestCase):
+	def test_help(self):
+		res = call('%s --help' % self.unionfs_path).decode()
+		self.assertIn('Usage:', res)
+
+
+class UnionFS_Version(Common, unittest.TestCase):
+	def test_help(self):
+		res = call('%s --version' % self.unionfs_path).decode()
+		self.assertIn('unionfs-fuse version:', res)
+
 
 class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('%s -o cow ro1=ro:ro2=ro union' % self.unionfs_path)
+		self.mount('%s -o cow ro1=ro:ro2=ro union' % self.unionfs_path)
 
 	def test_listing(self):
 		lst = ['ro1_file', 'ro2_file', 'ro_common_file', 'common_file']
@@ -117,7 +135,7 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('%s rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('%s rw1=rw:ro1=ro union' % self.unionfs_path)
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
@@ -160,7 +178,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('%s -o cow rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('%s -o cow rw1=rw:ro1=ro union' % self.unionfs_path)
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
@@ -278,7 +296,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('%s ro1=ro:rw1=rw union' % self.unionfs_path)
+		self.mount('%s ro1=ro:rw1=rw union' % self.unionfs_path)
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
@@ -316,7 +334,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('%s -o cow ro1=ro:rw1=rw union' % self.unionfs_path)
+		self.mount('%s -o cow ro1=ro:rw1=rw union' % self.unionfs_path)
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
@@ -352,7 +370,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		call('%s rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('%s rw1=rw:ro1=ro union' % self.unionfs_path)
 
 	def test_debug(self):
 		debug_fn = '%s/debug.log' % self.tmpdir
