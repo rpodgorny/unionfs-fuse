@@ -12,6 +12,9 @@ build_coverage:
 clean: clean_coverage
 	$(MAKE) -C src/ clean
 
+test: clean build
+	./test.py
+
 test_coverage: clean build_coverage coverage
 	./test.py
 	(cd src && gcovr -r . --html -o ../coverage/index.html --html-details)
