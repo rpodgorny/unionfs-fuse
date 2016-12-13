@@ -85,7 +85,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_END
 };
 
-static int unionfs_chmod(const char *path, mode_t mode) {
+static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -100,7 +100,7 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	RETURN(0);
 }
 
-static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
+static int unionfs_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -193,7 +193,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 	RETURN(0);
 }
 
-static int unionfs_getattr(const char *path, struct stat *stbuf) {
+static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
 	DBG("%s\n", path);
 
 	int i = find_rorw_branch(path);
@@ -221,7 +221,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
  * init method
  * called before first access to the filesystem
  */
-static void * unionfs_init(struct fuse_conn_info *conn) {
+static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 	// just to prevent the compiler complaining about unused variables
 	(void) conn->max_readahead;
 
@@ -447,19 +447,19 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
  * TODO: If we rename a directory on a read-only branch, we need to copy over
  *       all files to the renamed directory on the read-write branch.
  */
-static int unionfs_rename(const char *from, const char *to) {
-	DBG("from %s to %s\n", from, to);
+static int unionfs_rename(const char *oldpath, const char *newpath, unsigned int flags) {
+	DBG("from %s to %s\n", oldpath, newpath);
 
 	bool is_dir = false; // is 'from' a file or directory
 
-	int j = find_rw_branch_cutlast(to);
+	int j = find_rw_branch_cutlast(newpath);
 	if (j == -1) RETURN(-errno);
 
-	int i = find_rorw_branch(from);
+	int i = find_rorw_branch(oldpath);
 	if (i == -1) RETURN(-errno);
 
 	if (!uopt.branches[i].rw) {
-		i = find_rw_branch_cow_common(from, true);
+		i = find_rw_branch_cow_common(oldpath, true);
 		if (i == -1) RETURN(-errno);
 	}
 
@@ -470,8 +470,8 @@ static int unionfs_rename(const char *from, const char *to) {
 	}
 
 	char f[PATHLEN_MAX], t[PATHLEN_MAX];
-	if (BUILD_PATH(f, uopt.branches[i].path, from)) RETURN(-ENAMETOOLONG);
-	if (BUILD_PATH(t, uopt.branches[i].path, to)) RETURN(-ENAMETOOLONG);
+	if (BUILD_PATH(f, uopt.branches[i].path, oldpath)) RETURN(-ENAMETOOLONG);
+	if (BUILD_PATH(t, uopt.branches[i].path, newpath)) RETURN(-ENAMETOOLONG);
 
 	filetype_t ftype = path_is_dir(f);
 	if (ftype == NOT_EXISTING)
@@ -484,9 +484,9 @@ static int unionfs_rename(const char *from, const char *to) {
 		// since original file is on a read-only branch, we copied the from file to a writable branch,
 		// but since we will rename from, we also need to hide the from file on the read-only branch
 		if (is_dir)
-			res = hide_dir(from, i);
+			res = hide_dir(oldpath, i);
 		else
-			res = hide_file(from, i);
+			res = hide_file(oldpath, i);
 		if (res) RETURN(-errno);
 	}
 
@@ -498,11 +498,11 @@ static int unionfs_rename(const char *from, const char *to) {
 		if (!uopt.branches[i].rw) {
 			if (unlink(f))
 				USYSLOG(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
-				       "also unlink()  failed\n", __func__, from);
+				       "also unlink()  failed\n", __func__, oldpath);
 
-			if (remove_hidden(from, i))
+			if (remove_hidden(oldpath, i))
 				USYSLOG(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
-				       "also removing the whiteout  failed\n", __func__, from);
+				       "also removing the whiteout  failed\n", __func__, oldpath);
 		}
 		RETURN(-err);
 	}
@@ -512,12 +512,12 @@ static int unionfs_rename(const char *from, const char *to) {
 		// We only need to do this if we have been on a rw-branch, since we created
 		// a whiteout for read-only branches anyway.
 		if (is_dir)
-			maybe_whiteout(from, i, WHITEOUT_DIR);
+			maybe_whiteout(oldpath, i, WHITEOUT_DIR);
 		else
-			maybe_whiteout(from, i, WHITEOUT_FILE);
+			maybe_whiteout(oldpath, i, WHITEOUT_FILE);
 	}
 
-	remove_hidden(to, i); // remove hide file (if any)
+	remove_hidden(newpath, i); // remove hide file (if any)
 	RETURN(0);
 }
 
@@ -643,25 +643,25 @@ static int unionfs_statfs(const char *path, struct statvfs *stbuf) {
 	RETURN(retVal);
 }
 
-static int unionfs_symlink(const char *from, const char *to) {
-	DBG("from %s to %s\n", from, to);
+static int unionfs_symlink(const char *linkname, const char *path) {
+	DBG("from %s to %s\n", linkname, path);
 
-	int i = find_rw_branch_cutlast(to);
+	int i = find_rw_branch_cutlast(path);
 	if (i == -1) RETURN(-errno);
 
-	char t[PATHLEN_MAX];
-	if (BUILD_PATH(t, uopt.branches[i].path, to)) RETURN(-ENAMETOOLONG);
+	char path_[PATHLEN_MAX];
+	if (BUILD_PATH(path_, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-	int res = symlink(from, t);
+	int res = symlink(linkname, path_);
 	if (res == -1) RETURN(-errno);
 
-	set_owner(t); // no error check, since creating the file succeeded
+	set_owner(path_); // no error check, since creating the file succeeded
 
-	remove_hidden(to, i); // remove hide file (if any)
+	remove_hidden(path, i); // remove hide file (if any)
 	RETURN(0);
 }
 
-static int unionfs_truncate(const char *path, off_t size) {
+static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info *fi) {
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -677,7 +677,7 @@ static int unionfs_truncate(const char *path, off_t size) {
 	RETURN(0);
 }
 
-static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
+static int unionfs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi) {
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -687,14 +687,14 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #ifdef UNIONFS_HAVE_AT
-	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
+	int res = utimensat(0, p, tv, AT_SYMLINK_NOFOLLOW);
 #else
-	struct timeval tv[2];
-	tv[0].tv_sec = ts[0].tv_sec;
-	tv[0].tv_usec = ts[0].tv_nsec / 1000;
-	tv[1].tv_sec = ts[1].tv_sec;
-	tv[1].tv_usec = ts[1].tv_nsec / 1000;
-	int res = utimes(p, tv);
+	struct timeval tv_[2];
+	tv_[0].tv_sec = tv[0].tv_sec;
+	tv_[0].tv_usec = tv[0].tv_nsec / 1000;
+	tv_[1].tv_sec = tv[1].tv_sec;
+	tv_[1].tv_usec = tv[1].tv_nsec / 1000;
+	int res = utimes(p, tv_);
 #endif
 
 	if (res == -1) RETURN(-errno);
