@@ -1,6 +1,6 @@
 CFLAGS += -Wall -fPIC
-CPPFLAGS += $(shell pkg-config --cflags fuse)
-CPPFLAGS += -DFUSE_USE_VERSION=29
+CPPFLAGS += $(shell pkg-config --cflags fuse3)
+CPPFLAGS += -DFUSE_USE_VERSION=30
 
 CPPFLAGS += -DLIBC_XATTR # glibc nowadays includes xattr
 # CPPFLAGS += -DLIBATTR_XATTR # define this to libattr xattr include
@@ -10,7 +10,7 @@ CPPFLAGS += -DLIBC_XATTR # glibc nowadays includes xattr
 
 LDFLAGS +=
 
-LIB = $(shell pkg-config --libs fuse) -lpthread
+LIB = $(shell pkg-config --libs fuse3) -lpthread
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 LIBUNIONFS_OBJ = fuse_ops.o opts.o debug.o findbranch.o readdir.o \
