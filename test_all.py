@@ -322,16 +322,16 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		cow_path = 'rw1/recursive'
 
 		operations = [
-			lambda path: os.access(path, os.F_OK),
-			lambda path: os.chmod(path, 0o644),
-			lambda path: os.chown(path, os.getuid(), os.getgid()),  # no-op chown to avoid permission errors
-			lambda path: os.lchown(path, os.getuid(), os.getgid()),
-			lambda path: os.stat(path),
+			('access', lambda path: os.access(path, os.F_OK)),
+			('chmod', lambda path: os.chmod(path, 0o644)),
+			('chown', lambda path: os.chown(path, os.getuid(), os.getgid())),  # no-op chown to avoid permission errors
+			('lchown', lambda path: os.lchown(path, os.getuid(), os.getgid())),
+			('stat', lambda path: os.stat(path)),
 		]
 
-		for op in operations:
+		for name, op in operations:
 			op(union)
-			self.assertNotEqual(get_dir_contents(union), get_dir_contents(cow_path))
+			self.assertNotEqual(get_dir_contents(union), get_dir_contents(cow_path), name)
 
 	def test_rmdir(self):
 		with self.assertRaises(OSError):
