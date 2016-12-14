@@ -6,6 +6,7 @@ import os
 import shutil
 import time
 import tempfile
+import stat
 
 
 def call(cmd):
@@ -189,6 +190,13 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		self.assertTrue(os.path.isdir('union/dir'))
 		self.assertTrue(os.path.isdir('rw1/dir'))
 		self.assertFalse(os.path.isdir('ro1/dir'))
+
+	# TODO: enable this once we decide a good way to run root-only tests
+	#def test_mknod(self):
+	#	os.mknod('union/node', stat.S_IFBLK)
+	#	self.assertTrue(os.path.exists('union/node'))
+	#	self.assertTrue(os.path.exists('rw1/node'))
+	#	self.assertFalse(os.path.exists('ro1/node'))
 
 
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
