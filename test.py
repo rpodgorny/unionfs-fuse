@@ -185,7 +185,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		shutil.copystat('union/ro1_file', 'union/rw1_file')
 
 	def test_mkdir(self):
-		os.mkdir('union/test')
+		os.mkdir('union/dir')
 		self.assertTrue(os.path.isdir('union/dir'))
 		self.assertTrue(os.path.isdir('rw1/dir'))
 		self.assertFalse(os.path.isdir('ro1/dir'))
