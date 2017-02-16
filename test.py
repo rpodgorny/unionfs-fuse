@@ -114,26 +114,20 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def test_write(self):
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro1_file', 'something')
-
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro2_file', 'something')
-
 		with self.assertRaises(PermissionError):
 			write_to_file('union/ro_common_file', 'something')
-
 		with self.assertRaises(PermissionError):
 			write_to_file('union/common_file', 'something')
 
 	def test_delete(self):
 		with self.assertRaises(PermissionError):
 			os.remove('union/ro1_file')
-
 		with self.assertRaises(PermissionError):
 			os.remove('union/ro2_file')
-
 		with self.assertRaises(PermissionError):
 			os.remove('union/ro_common_file')
-
 		with self.assertRaises(PermissionError):
 			os.remove('union/common_file')
 
