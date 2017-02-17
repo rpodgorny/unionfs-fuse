@@ -53,7 +53,7 @@ static int rmdir_rw(const char *path, int branch_rw) {
 /**
   * If the branch that has the directory to be removed is in read-only mode,
   * we create a file with a HIDE tag in an upper level branch.
-  * To other fuse functions this tag means, not to expose the 
+  * To other fuse functions this tag means, not to expose the
   * lower level directory.
   */
 static int rmdir_ro(const char *path, int branch_ro) {
@@ -64,7 +64,6 @@ static int rmdir_ro(const char *path, int branch_ro) {
 
 	if (branch_rw < 0) return -EACCES;
 
-	
 	DBG("Calling hide_dir\n");
 	if (hide_dir(path, branch_rw) == -1) {
 		switch (errno) {
@@ -96,10 +95,11 @@ int unionfs_rmdir(const char *path) {
 	int res;
 	if (!uopt.branches[i].rw) {
 		// read-only branch
-		if (!uopt.cow_enabled)
+		if (!uopt.cow_enabled) {
 			res = EROFS;
-		else
+		} else {
 			res = rmdir_ro(path, i);
+		}
 	} else {
 		// read-write branch
 		res = rmdir_rw(path, i);
