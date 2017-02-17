@@ -13,10 +13,10 @@ clean: clean_coverage
 	$(MAKE) -C src/ clean
 
 test: clean build
-	./test.py
+	python3 -m pytest
 
 test_coverage: clean build_coverage coverage
-	./test.py
+	python3 -m pytest
 	(cd src && gcovr -r . --html -o ../coverage/index.html --html-details)
 	(cd src && gcovr -r .)
 

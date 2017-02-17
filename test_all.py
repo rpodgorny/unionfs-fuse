@@ -41,6 +41,12 @@ class Common:
 		for d in self._dirs:
 			os.mkdir(d)
 			write_to_file('%s/%s_file' % (d, d), d)
+			os.mkdir('%s/%s_dir' % (d, d))
+			write_to_file('%s/%s_dir/%s_file' % (d, d, d), d)
+			os.mkdir('%s/common_empty_dir' % d)
+			os.mkdir('%s/common_dir' % d)
+			write_to_file('%s/common_dir/%s_file' % (d, d), d)
+			write_to_file('%s/common_dir/common_file' % d, d)
 			write_to_file('%s/common_file' % d, d)
 
 		write_to_file('ro1/ro_common_file', 'ro1')
@@ -69,7 +75,6 @@ class Common:
 				call('fusermount -u union')
 
 		os.chdir(self.original_cwd)
-
 		shutil.rmtree(self.tmpdir)
 
 	def mount(self, cmd):
@@ -105,7 +110,7 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 		self.mount('%s -o cow ro1=ro:ro2=ro union' % self.unionfs_path)
 
 	def test_listing(self):
-		lst = ['ro1_file', 'ro2_file', 'ro_common_file', 'common_file']
+		lst = ['ro1_file', 'ro2_file', 'ro_common_file', 'common_file', 'ro1_dir', 'ro2_dir', 'common_dir', 'common_empty_dir', ]
 		self.assertEqual(set(lst), set(os.listdir('union')))
 
 	def test_overlay_order(self):
@@ -131,6 +136,10 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 		with self.assertRaises(PermissionError):
 			os.remove('union/common_file')
 
+	def test_rmdir(self):
+		with self.assertRaises(OSError):
+			os.rmdir('union/ro1_dir')
+
 	def test_rename(self):
 		for d in ['ro1', 'ro2', 'ro_common', 'common']:
 			with self.assertRaises(PermissionError):
@@ -143,7 +152,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		self.mount('%s rw1=rw:ro1=ro union' % self.unionfs_path)
 
 	def test_listing(self):
-		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
+		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
 		self.assertEqual(set(lst), set(os.listdir('union')))
 
 	def test_delete(self):
@@ -192,6 +201,20 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	#	self.assertTrue(os.path.exists('rw1/node'))
 	#	self.assertFalse(os.path.exists('ro1/node'))
 
+	def test_rmdir(self):
+		with self.assertRaises(OSError):
+			os.rmdir('union/ro1_dir')
+		os.remove('union/rw1_dir/rw1_file')
+		os.rmdir('union/rw1_dir')
+		self.assertFalse(os.path.isdir('union/rw1_dir'))
+		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		os.rmdir('union/common_empty_dir')
+		# TODO: decide what the correct behaviour should be
+		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
+		#os.remove('union/common_dir/common_file')
+		#os.rmdir('union/common_dir')
+		#self.assertFalse(os.path.isdir('union/common_dir'))
+
 
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
@@ -199,7 +222,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		self.mount('%s -o cow rw1=rw:ro1=ro union' % self.unionfs_path)
 
 	def test_listing(self):
-		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
+		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
 		self.assertEqual(set(lst), set(os.listdir('union')))
 
 	def test_whiteout(self):
@@ -310,6 +333,20 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 			op(union)
 			self.assertNotEqual(get_dir_contents(union), get_dir_contents(cow_path))
 
+	def test_rmdir(self):
+		with self.assertRaises(OSError):
+			os.rmdir('union/ro1_dir')
+		os.remove('union/rw1_dir/rw1_file')
+		os.rmdir('union/rw1_dir')
+		self.assertFalse(os.path.isdir('union/rw1_dir'))
+		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		os.rmdir('union/common_empty_dir')
+		# TODO: decide what the correct behaviour should be
+		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
+		#os.remove('union/common_dir/common_file')
+		#os.rmdir('union/common_dir')
+		#self.assertFalse(os.path.isdir('union/common_dir'))
+
 
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
@@ -317,7 +354,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 		self.mount('%s ro1=ro:rw1=rw union' % self.unionfs_path)
 
 	def test_listing(self):
-		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
+		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
 		self.assertEqual(set(lst), set(os.listdir('union')))
 
 	def test_delete(self):
@@ -348,6 +385,20 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 		#os.rename('union/common_file', 'union/common_file_renamed')
 		#self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
 
+	def test_rmdir(self):
+		with self.assertRaises(OSError):
+			os.rmdir('union/ro1_dir')
+		os.remove('union/rw1_dir/rw1_file')
+		os.rmdir('union/rw1_dir')
+		self.assertFalse(os.path.isdir('union/rw1_dir'))
+		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		# TODO: decide what the correct behaviour should be
+		#os.rmdir('union/common_empty_dir')
+		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
+		#os.remove('union/common_dir/common_file')
+		#os.rmdir('union/common_dir')
+		#self.assertFalse(os.path.isdir('union/common_dir'))
+
 
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
@@ -355,7 +406,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 		self.mount('%s -o cow ro1=ro:rw1=rw union' % self.unionfs_path)
 
 	def test_listing(self):
-		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
+		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
 		self.assertEqual(set(lst), set(os.listdir('union')))
 
 	def test_delete(self):
@@ -382,6 +433,20 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 		# TODO: how should the common file behave?
 		#os.rename('union/common_file', 'union/common_file_renamed')
 		#self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
+
+	def test_rmdir(self):
+		with self.assertRaises(OSError):
+			os.rmdir('union/ro1_dir')
+		os.remove('union/rw1_dir/rw1_file')
+		os.rmdir('union/rw1_dir')
+		self.assertFalse(os.path.isdir('union/rw1_dir'))
+		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		# TODO: decide what the correct behaviour should be
+		#os.rmdir('union/common_empty_dir')
+		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
+		#os.remove('union/common_dir/common_file')
+		#os.rmdir('union/common_dir')
+		#self.assertFalse(os.path.isdir('union/common_dir'))
 
 
 @unittest.skipIf(os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
