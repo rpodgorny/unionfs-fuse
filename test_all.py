@@ -6,7 +6,6 @@ import os
 import shutil
 import time
 import tempfile
-import stat
 
 
 def call(cmd):
