@@ -19,7 +19,7 @@ if (UNIX AND APPLE)
   include_directories("/usr/local/include/osxfuse/fuse")
 endif()
 
-add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26)
+add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=30)
 
 option(WITH_XATTR "Enable support for extended attributes" OFF)
 
