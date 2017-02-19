@@ -27,4 +27,6 @@ typedef struct {
 	unsigned char rw;	 // the writable flag
 } branch_entry_t;
 
+extern struct fuse_operations unionfs_oper;
+
 #endif

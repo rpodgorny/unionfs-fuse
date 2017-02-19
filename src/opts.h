@@ -56,6 +56,8 @@ bool set_debug_onoff(int value);
 void uopt_init();
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs);
 void unionfs_post_opts();
+void add_branch(char *branch);
+int parse_branches(const char *arg);
 
 
 #endif
