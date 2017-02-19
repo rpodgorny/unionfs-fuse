@@ -170,7 +170,7 @@ char *add_trailing_slash(char *path) {
  * Add a given branch and its options to the array of available branches.
  * example branch string "branch1=RO" or "/path/path2=RW"
  */
-static void add_branch(char *branch) {
+void add_branch(char *branch) {
 	uopt.branches = realloc(uopt.branches, (uopt.nbranches+1) * sizeof(branch_entry_t));
 	if (uopt.branches == NULL) {
 		fprintf(stderr, "%s: realloc failed\n", __func__);
@@ -207,7 +207,7 @@ static void add_branch(char *branch) {
  * These options define our branch paths.
  * example arg string: "branch1=RW:branch2=RO:branch3=RO"
  */
-static int parse_branches(const char *arg) {
+int parse_branches(const char *arg) {
 	// the last argument is  our mountpoint, don't take it as branch!
 	if (uopt.nbranches) return 0;
 
