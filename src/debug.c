@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <stdarg.h>
 
 #include "opts.h"
 #include "debug.h"
@@ -66,3 +67,27 @@ void put_dbgfile(void)
 	pthread_rwlock_unlock(&file_lock);
 }
 
+void debug_operation(const char *func, int line, const char *format, ...)
+{
+	if (!uopt.debug) return;
+	FILE* dbgfile = get_dbgfile();
+	fprintf(stderr, "%s(): %d: ", func, line);
+	fprintf(dbgfile, "%s(): %d: ", func, line);
+	va_list arg;
+	va_start(arg, format);
+	vfprintf(stderr, format, arg);
+	va_end(arg);
+	va_start(arg, format);
+	vfprintf(dbgfile, format, arg);
+	va_end(arg);
+	fflush(stderr);
+	fflush(stdout);
+	put_dbgfile();
+}
+
+int debug_return(const char *func, int line, int returncode)
+{
+	int res = returncode;
+	debug_operation(func, line, "return %d\n", returncode);
+	return res;
+}

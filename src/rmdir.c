@@ -41,11 +41,11 @@
 static int rmdir_rw(const char *path, int branch_rw) {
 	DBG("%s\n", path);
 
+	int res;
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[branch_rw].path, path)) return ENAMETOOLONG;
+	if ((res = BUILD_PATH(p, uopt.branches[branch_rw].path, path)) < 0) return res;
 
-	int res = rmdir(p);
-	if (res == -1) return errno;
+	if ((res = rmdir(p)) == -1) return -errno;
 
 	return 0;
 }
@@ -59,23 +59,23 @@ static int rmdir_rw(const char *path, int branch_rw) {
 static int rmdir_ro(const char *path, int branch_ro) {
 	DBG("%s\n", path);
 
-	// find a writable branch above branch_ro
-	int branch_rw = find_lowest_rw_branch(branch_ro);
+	int branch_rw, res;
 
-	if (branch_rw < 0) return -EACCES;
+	// find a writable branch above branch_ro
+	if ((res = find_lowest_rw_branch(branch_ro, &branch_rw)) < 0) return -EACCES;
 
 	DBG("Calling hide_dir\n");
-	if (hide_dir(path, branch_rw) == -1) {
-		switch (errno) {
-		case (EEXIST):
-		case (ENOTDIR):
-		case (ENOTEMPTY):
+	if ((res = hide_dir(path, branch_rw)) < 0) {
+		switch (res) {
+		case (-EEXIST):
+		case (-ENOTDIR):
+		case (-ENOTEMPTY):
 			// catch errors not allowed for rmdir()
 			USYSLOG (LOG_ERR, "%s: Creating the whiteout failed: %s\n",
-				__func__, strerror(errno));
-			errno = EFAULT;
+				__func__, strerror(-res));
+			res = -EFAULT;
 		}
-		return errno;
+		return res;
 	}
 
 	return 0;
@@ -89,14 +89,14 @@ int unionfs_rmdir(const char *path) {
 
 	if (dir_not_empty(path)) return -ENOTEMPTY;
 
-	int i = find_rorw_branch(path);
-	if (i == -1) return -errno;
+	int i, res;
 
-	int res;
+	if ((res = find_rorw_branch(path, &i)) < 0) return res;
+
 	if (!uopt.branches[i].rw) {
 		// read-only branch
 		if (!uopt.cow_enabled) {
-			res = EROFS;
+			res = -EROFS;
 		} else {
 			res = rmdir_ro(path, i);
 		}
@@ -109,5 +109,5 @@ int unionfs_rmdir(const char *path) {
 		}
 	}
 
-	return -res;
+	return res;
 }

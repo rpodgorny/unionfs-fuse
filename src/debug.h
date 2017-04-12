@@ -13,23 +13,12 @@
 
 #define DBG(format, ...) 						\
 	do {								\
-		if (!uopt.debug) break;					\
-									\
-		FILE* dbgfile = get_dbgfile();				\
-									\
-		fprintf(stderr, "%s(): %d: ", __func__, __LINE__);	\
-		fprintf(dbgfile, "%s(): %d: ", __func__, __LINE__);	\
-		fprintf(stderr, format, ##__VA_ARGS__);			\
-		fprintf(dbgfile, format, ##__VA_ARGS__);		\
-		fflush(stderr);						\
-		fflush(stdout);						\
-		put_dbgfile();						\
+		debug_operation(__func__, __LINE__, format, ##__VA_ARGS__);	\
 	} while (0)
 
 #define RETURN(returncode) 						\
 	do {								\
-		if (uopt.debug) DBG("return %d\n", returncode);		\
-		return returncode;					\
+		return debug_return(__func__, __LINE__, returncode);		\
 	} while (0)
 
 
@@ -37,10 +26,10 @@
  * to optimize those out, debug.c will only have definitions if DEBUG
  * is defined. So if DEBUG is NOT defined, we define empty functions here */
 int debug_init();
-void dbg_in(const char *function);
-
 FILE* get_dbgfile(void);
 void put_dbgfile(void);
+void debug_operation(const char *func, int line, const char *format, ...);
+int debug_return(const char *func, int line, int returncode);
 
 #endif // DEBUG_H
 

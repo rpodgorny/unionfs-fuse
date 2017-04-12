@@ -37,7 +37,7 @@
  */
 static int filedir_hidden(const char *path) {
 	// cow mode disabled, no need for hidden files
-	if (!uopt.cow_enabled) RETURN(false);
+	if (!uopt.cow_enabled) RETURN(0);
 	
 	char p[PATHLEN_MAX];
 	if (strlen(path) + strlen(HIDETAG) > PATHLEN_MAX) RETURN(-ENAMETOOLONG);
@@ -57,10 +57,11 @@ static int filedir_hidden(const char *path) {
 int path_hidden(const char *path, int branch) {
 	DBG("%s\n", path);
 
-	if (!uopt.cow_enabled) RETURN(false);
+	if (!uopt.cow_enabled) RETURN(0);
 
+	int res;
 	char whiteoutpath[PATHLEN_MAX];
-	if (BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path)) RETURN(false);
+	if ((res = BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path)) < 0) RETURN(res);
 
 	// -1 as we MUST not end on the next path element 
 	char *walk = whiteoutpath + uopt.branches[branch].path_len + strlen(METADIR) - 1;
@@ -76,8 +77,7 @@ int path_hidden(const char *path, int branch) {
 		char p[PATHLEN_MAX];
 		// walk - path = strlen(/dir1)
 		snprintf(p, (walk - whiteoutpath) + 1, "%s", whiteoutpath);
-		int res = filedir_hidden(p);
-		if (res) RETURN(res); // path is hidden or error
+		if ((res = filedir_hidden(p))) RETURN(res); // path is hidden or error
 
 		// as above the do loop, walk over the next slashes, walk = dir2/
 		while (*walk == '/') walk++;
@@ -97,10 +97,10 @@ int remove_hidden(const char *path, int maxbranch) {
 
 	if (maxbranch == -1) maxbranch = uopt.nbranches;
 
-	int i;
+	int i, res;
 	for (i = 0; i <= maxbranch; i++) {
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.branches[i].path, METADIR, path)) RETURN(-ENAMETOOLONG);
+		if ((res = BUILD_PATH(p, uopt.branches[i].path, METADIR, path)) < 0) RETURN(res);
 		if (strlen(p) + strlen(HIDETAG) > PATHLEN_MAX) RETURN(-ENAMETOOLONG);
 		strcat(p, HIDETAG); // TODO check length
 
@@ -137,22 +137,21 @@ filetype_t path_is_dir(const char *path) {
 static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 	DBG("%s\n", path);
 
+	int res;
 	char metapath[PATHLEN_MAX];
-
-	if (BUILD_PATH(metapath, METADIR, path))  RETURN(-1);
+	if ((res = BUILD_PATH(metapath, METADIR, path)) < 0)  RETURN(res);
 
 	// p MUST be without path to branch prefix here! 2 x branch_rw is correct here!
 	// this creates e.g. branch/.unionfs/some_directory
 	path_create_cutlast(metapath, branch_rw, branch_rw);
 
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath)) RETURN(-1);
+	if ((res = BUILD_PATH(p, uopt.branches[branch_rw].path, metapath)) < 0) RETURN(res);
 	strcat(p, HIDETAG); // TODO check length
 
-	int res;
 	if (mode == WHITEOUT_FILE) {
 		res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-		if (res == -1) RETURN(-1);
+		if (res == -1) RETURN(-errno);
 		res = close(res);
 	} else {
 		res = mkdir(p, S_IRWXU);
@@ -188,9 +187,10 @@ int hide_dir(const char *path, int branch_rw) {
 int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode) {
 	DBG("%s\n", path);
 
+	int i , res;
 	// we are not interested in the branch itself, only if it exists at all
-	if (find_rorw_branch(path) != -1) {
-		int res = do_create_whiteout(path, branch_rw, mode);
+	if ((res = find_rorw_branch(path, &i)) == 0) {
+		res = do_create_whiteout(path, branch_rw, mode);
 		RETURN(res);
 	}
 
@@ -205,10 +205,11 @@ int set_owner(const char *path) {
 	if (ctx->uid != 0 && ctx->gid != 0) {
 		int res = lchown(path, ctx->uid, ctx->gid);
 		if (res) {
+			res = -errno;
 			USYSLOG(LOG_WARNING,
 			       ":%s: Setting the correct file owner failed: %s !\n", 
 			       __func__, strerror(errno));
-			RETURN(-errno);
+			RETURN(res);
 		}
 	}
 	RETURN(0);

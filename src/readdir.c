@@ -116,7 +116,7 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 	(void)offset;
 	(void)fi;
 	int i = 0;
-	int rc = 0;
+	int res = 0;
 
 	// we will store already added files here to handle same file names across different branches
 	struct hashtable *files = create_hashtable(16, string_hash, string_equal);
@@ -131,19 +131,17 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 		if (subdir_hidden) break;
 
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.branches[i].path, path)) {
-			rc = -ENAMETOOLONG;
+		if ((res = BUILD_PATH(p, uopt.branches[i].path, path)) < 0)
 			goto out;
-		}
 
 		// check if branches below this branch are hidden
-		int res = path_hidden(path, i);
-		if (res < 0) {
-			rc = res; // error
+		if ((res = path_hidden(path, i)) < 0)
 			goto out;
-		}
 
-		if (res > 0) subdir_hidden = true;
+		if (res > 0) {
+			subdir_hidden = true;
+			res = 0;
+		}
 
 		DIR *dp = opendir(p);
 		if (dp == NULL) {
@@ -185,7 +183,7 @@ out:
 
 	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 0);
 
-	RETURN(rc);
+	RETURN(res);
 }
 
 /**
@@ -200,7 +198,7 @@ int dir_not_empty(const char *path) {
 	DBG("%s\n", path);
 
 	int i = 0;
-	int rc = 0;
+	int res = 0;
 	int not_empty = 0;
 
 	struct hashtable *whiteouts = NULL;
@@ -213,19 +211,17 @@ int dir_not_empty(const char *path) {
 		if (subdir_hidden) break;
 
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.branches[i].path, path)) {
-			rc = -ENAMETOOLONG;
+		if ((res = BUILD_PATH(p, uopt.branches[i].path, path)) < 0)
 			goto out;
-		}
 
 		// check if branches below this branch are hidden
-		int res = path_hidden(path, i);
-		if (res < 0) {
-			rc = res; // error
+		if ((res = path_hidden(path, i)) < 0)
 			goto out;
-		}
 
-		if (res > 0) subdir_hidden = true;
+		if (res > 0) {
+			subdir_hidden = true;
+			res = 0;
+		}
 
 		DIR *dp = opendir(p);
 		if (dp == NULL) {
@@ -261,7 +257,7 @@ int dir_not_empty(const char *path) {
 out:
 	if (uopt.cow_enabled) hashtable_destroy(whiteouts, 0);
 
-	if (rc) RETURN(rc);
+	if (res) RETURN(res);
 
 	RETURN(not_empty);
 }

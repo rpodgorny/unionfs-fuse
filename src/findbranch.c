@@ -54,19 +54,18 @@
 /**
  *  Find a branch that has "path". Return the branch number.
  */
-static int find_branch(const char *path, searchflag_t flag) {
+static int find_branch(const char *path, int *branch, searchflag_t flag) {
 	DBG("%s\n", path);
 
-	int i = 0;
+	int i, res;
 	for (i = 0; i < uopt.nbranches; i++) {
 		char p[PATHLEN_MAX];
-		if (BUILD_PATH(p, uopt.branches[i].path, path)) {
-			errno = ENAMETOOLONG;
-			RETURN(-1);
+		if ((res = BUILD_PATH(p, uopt.branches[i].path, path)) < 0) {
+			RETURN(res);
 		}
 
 		struct stat stbuf;
-		int res = lstat(p, &stbuf);
+		res = lstat(p, &stbuf);
 
 		DBG("%s: res = %d\n", p, res);
 
@@ -74,10 +73,14 @@ static int find_branch(const char *path, searchflag_t flag) {
 			switch (flag) {
 			case RWRO:
 				// any path we found is fine
-				RETURN(i);
+				*branch = i;
+				RETURN(0);
 			case RWONLY:
 				// we need a rw-branch
-				if (uopt.branches[i].rw) RETURN(i);
+				if (uopt.branches[i].rw) {
+					*branch = i;
+					RETURN(0);
+				}
 				break;
 			default:
 				USYSLOG(LOG_ERR, "%s: Unknown flag %d\n", __func__, flag);
@@ -88,24 +91,21 @@ static int find_branch(const char *path, searchflag_t flag) {
 		res = path_hidden(path, i);
 		if (res > 0) {
 			// So no path, but whiteout found. No need to search in further branches
-			errno = ENOENT;
-			RETURN(-1);
+			RETURN(-ENOENT);
 		} else if (res < 0) {
-			errno = res; // error
-			RETURN(-1);
+			RETURN(res);
 		}
 	}
 
-	errno = ENOENT;
-	RETURN(-1);
+	RETURN(-ENOENT);
 }
 
 /**
  * Find a ro or rw branch.
  */
-int find_rorw_branch(const char *path) {
+int find_rorw_branch(const char *path, int *branch) {
 	DBG("%s\n", path);
-	int res = find_branch(path, RWRO);
+	int res = find_branch(path, branch, RWRO);
 	RETURN(res);
 }
 
@@ -115,11 +115,11 @@ int find_rorw_branch(const char *path) {
  * @path 	- the path to find or to copy (with last element cut off)
  * @ rw_hint	- the rw branch to copy to, set to -1 to autodetect it
  */
-int __find_rw_branch_cutlast(const char *path, int rw_hint) {
-	int branch = find_rw_branch_cow(path);
-	DBG("branch = %d\n", branch);
+int __find_rw_branch_cutlast(const char *path, int *branch, int rw_hint) {
+	int res = find_rw_branch_cow(path, branch);
+	DBG("branch = %d\n", *branch);
 
-	if (branch >= 0 || (branch < 0 && errno != ENOENT)) RETURN(branch);
+	if (res == 0 || (res < 0 && res != -ENOENT)) RETURN(res);
 
 	DBG("Check for parent directory\n");
 
@@ -128,62 +128,62 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	// doesn't work properly for directories.
 	char *dname = u_dirname(path);
 	if (dname == NULL) {
-		errno = ENOMEM;
-		RETURN(-1);
+		RETURN(-ENOMEM);
 	}
 
-	branch = find_rorw_branch(dname);
-	DBG("branch = %d\n", branch);
+	res = find_rorw_branch(dname, branch);
+	DBG("branch = %d\n", *branch);
 
 	// No branch found, so path does nowhere exist, error
-	if (branch < 0) goto out;
+	if (res < 0) goto out;
 
 	// Reminder rw_hint == -1 -> autodetect, we do not care which branch it is
-	if (uopt.branches[branch].rw
-	&& (rw_hint == -1 || branch == rw_hint)) goto out;
+	if (uopt.branches[*branch].rw
+	&& (rw_hint == -1 || *branch == rw_hint)) {
+		res = 0;
+		goto out;
+	}
 
 	if (!uopt.cow_enabled) {
 		// So path exists, but is not writable.
-		branch = -1;
-		errno = EACCES;
+		res = -EACCES;
 		goto out;
 	}
 
 	int branch_rw;
 	// since it is a directory, any rw-branch is fine
 	if (rw_hint == -1)
-		branch_rw = find_lowest_rw_branch(uopt.nbranches);
+		res = find_lowest_rw_branch(uopt.nbranches, &branch_rw);
 	else
-		branch_rw = rw_hint;
+		res = branch_rw = rw_hint;
 
 	DBG("branch_rw = %d\n", branch_rw);
 
 	// no writable branch found, we must return an error
-	if (branch_rw < 0) {
-		branch = -1;
-		errno = EACCES;
+	if (res < 0 || branch_rw < 0) {
+		res = -EACCES;
 		goto out;
 	}
 
-	if (path_create(dname, branch, branch_rw) == 0) branch = branch_rw; // path successfully copied
+	if (path_create(dname, *branch, branch_rw) == 0) *branch = branch_rw; // path successfully copied
 
 out:
 	free(dname);
 
-	RETURN(branch);
+	RETURN(res);
 }
 
 /**
  * Call __find_rw_branch_cutlast()
  */
-int find_rw_branch_cutlast(const char *path) {
+int find_rw_branch_cutlast(const char *path, int *branch) {
 	int rw_hint = -1; // autodetect rw_branch
-	int res = __find_rw_branch_cutlast(path, rw_hint);
+	int res = __find_rw_branch_cutlast(path, branch, rw_hint);
 	RETURN(res);
 }
 
-int find_rw_branch_cow(const char *path) {
-	return find_rw_branch_cow_common(path, false);
+int find_rw_branch_cow(const char *path, int *branch) {
+	return find_rw_branch_cow_common(path, branch, false);
 }
 
 /**
@@ -194,47 +194,53 @@ int find_rw_branch_cow(const char *path) {
  *       It will definitely fail, when a ro-branch is on top of a rw-branch
  *       and a directory is to be copied from ro- to rw-branch.
  */
-int find_rw_branch_cow_common(const char *path, bool copy_dir) {
+int find_rw_branch_cow_common(const char *path, int *branch, bool copy_dir) {
 	DBG("%s\n", path);
 
-	int branch_rorw = find_rorw_branch(path);
+	int branch_rorw, branch_rw, res;
 
 	// not found anywhere
-	if (branch_rorw < 0) RETURN(-1);
+	if ((res = find_rorw_branch(path, &branch_rorw)) < 0) RETURN(res);
 
 	// the found branch is writable, good!
-	if (uopt.branches[branch_rorw].rw) RETURN(branch_rorw);
+	if (uopt.branches[branch_rorw].rw) {
+		*branch = branch_rorw;
+		RETURN(0);
+	}
 
 	// cow is disabled and branch is not writable, so deny write permission
 	if (!uopt.cow_enabled) {
-		errno = EACCES;
-		RETURN(-1);
+		RETURN(-EACCES);
 	}
 
-	int branch_rw = find_lowest_rw_branch(branch_rorw);
-	if (branch_rw < 0) {
+	if ((res = find_lowest_rw_branch(branch_rorw, &branch_rw)) < 0) {
 		// no writable branch found
-		errno = EACCES;
-		RETURN(-1);
+		RETURN(-EACCES);
 	}
 
-	if (cow_cp(path, branch_rorw, branch_rw, copy_dir)) RETURN(-1);
+	if ((res = cow_cp(path, branch_rorw, branch_rw, copy_dir)) < 0)
+		RETURN(res);
 
 	// remove a file that might hide the copied file
 	remove_hidden(path, branch_rw);
 
-	RETURN(branch_rw);
+	*branch = branch_rw;
+
+	RETURN(0);
 }
 
 /**
  * Find lowest possible writable branch but only lower than branch_ro.
  */
-int find_lowest_rw_branch(int branch_ro) {
+int find_lowest_rw_branch(int branch_ro, int *branch) {
 	DBG_IN();
 
-	int i = 0;
+	int i;
 	for (i = 0; i < branch_ro; i++) {
-		if (uopt.branches[i].rw) RETURN(i); // found it it.
+		if (uopt.branches[i].rw) {
+			*branch = i;
+			RETURN(0);
+		}
 	}
 
 	RETURN(-1);

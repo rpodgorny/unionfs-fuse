@@ -39,15 +39,15 @@
 static int unlink_ro(const char *path, int branch_ro) {
 	DBG("%s\n", path);
 
+	int branch_rw, res;
 	// find a writable branch above branch_ro
-	int branch_rw = find_lowest_rw_branch(branch_ro);
+	if ((res = find_lowest_rw_branch(branch_ro, &branch_rw)) < 0)
+		RETURN(-EACCES);
 
-	if (branch_rw < 0) RETURN(EACCES);
-
-	if (hide_file(path, branch_rw) == -1) {
+	if ((res = hide_file(path, branch_rw)) < 0) {
 		// creating the file with the hide tag failed
 		// TODO: open() error messages are not optimal on unlink()
-		RETURN(errno);
+		RETURN(res);
 	}
 
 	RETURN(0);
@@ -60,11 +60,11 @@ static int unlink_ro(const char *path, int branch_ro) {
 static int unlink_rw(const char *path, int branch_rw) {
 	DBG("%s\n", path);
 
+	int res;
 	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[branch_rw].path, path)) RETURN(ENAMETOOLONG);
+	if ((res = BUILD_PATH(p, uopt.branches[branch_rw].path, path)) < 0) RETURN(res);
 
-	int res = unlink(p);
-	if (res == -1) RETURN(errno);
+	if ((res = unlink(p)) == -1) RETURN(-errno);
 
 	RETURN(0);
 }
@@ -75,14 +75,14 @@ static int unlink_rw(const char *path, int branch_rw) {
 int unionfs_unlink(const char *path) {
 	DBG("%s\n", path);
 
-	int i = find_rorw_branch(path);
-	if (i == -1) RETURN(errno);
+	int i, res;
 
-	int res;
+	if ((res = find_rorw_branch(path, &i)) < 0) RETURN(res);
+
 	if (!uopt.branches[i].rw) {
 		// read-only branch
 		if (!uopt.cow_enabled) {
-			res = EROFS;
+			res = -EROFS;
 		} else {
 			res = unlink_ro(path, i);
 		}
@@ -95,5 +95,5 @@ int unionfs_unlink(const char *path) {
 		}
 	}
 
-	RETURN(-res);
+	RETURN(res);
 }
