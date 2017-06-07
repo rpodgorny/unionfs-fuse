@@ -7,6 +7,7 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include <errno.h>
 #include "opts.h"
 
 #define DBG_IN() DBG("\n");
@@ -15,6 +16,7 @@
 	do {								\
 		if (!uopt.debug) break;					\
 									\
+		int _errno = errno; \
 		FILE* dbgfile = get_dbgfile();				\
 									\
 		fprintf(stderr, "%s(): %d: ", __func__, __LINE__);	\
@@ -24,6 +26,7 @@
 		fflush(stderr);						\
 		fflush(stdout);						\
 		put_dbgfile();						\
+		errno = _errno; \
 	} while (0)
 
 #define RETURN(returncode) 						\
