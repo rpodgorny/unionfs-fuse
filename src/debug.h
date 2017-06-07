@@ -12,27 +12,25 @@
 
 #define DBG_IN() DBG("\n");
 
-#define DBG(format, ...) 						\
-	do {								\
-		if (!uopt.debug) break;					\
-									\
+#define DBG(format, ...) \
+	do { \
+		if (!uopt.debug) break; \
 		int _errno = errno; \
-		FILE* dbgfile = get_dbgfile();				\
-									\
-		fprintf(stderr, "%s(): %d: ", __func__, __LINE__);	\
-		fprintf(dbgfile, "%s(): %d: ", __func__, __LINE__);	\
-		fprintf(stderr, format, ##__VA_ARGS__);			\
-		fprintf(dbgfile, format, ##__VA_ARGS__);		\
-		fflush(stderr);						\
-		fflush(stdout);						\
-		put_dbgfile();						\
+		FILE* dbgfile = get_dbgfile(); \
+		fprintf(stderr, "%s(): %d: ", __func__, __LINE__); \
+		fprintf(dbgfile, "%s(): %d: ", __func__, __LINE__); \
+		fprintf(stderr, format, ##__VA_ARGS__); \
+		fprintf(dbgfile, format, ##__VA_ARGS__); \
+		fflush(stderr); \
+		fflush(stdout); \
+		put_dbgfile(); \
 		errno = _errno; \
 	} while (0)
 
-#define RETURN(returncode) 						\
-	do {								\
-		if (uopt.debug) DBG("return %d\n", returncode);		\
-		return returncode;					\
+#define RETURN(returncode) \
+	do { \
+		if (uopt.debug) DBG("return %d\n", returncode); \
+		return returncode; \
 	} while (0)
 
 
