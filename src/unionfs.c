@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 	if (uid != 0 && gid != 0 && uopt.relaxed_permissions) {
 		default_permissions = false;
 	} else if (uopt.relaxed_permissions) {
-		// protec the user of a very critical security issue
+		// protect the user of a very critical security issue
 		fprintf(stderr, "Relaxed permissions disallowed for root!\n");
 		exit(1);
 	}
