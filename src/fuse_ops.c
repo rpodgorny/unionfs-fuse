@@ -161,7 +161,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 		res = fsync(fi->fh);
 	}
 
-	if (res == -1)  RETURN(-errno);
+	if (res == -1) RETURN(-errno);
 
 	RETURN(0);
 }
