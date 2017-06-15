@@ -476,5 +476,22 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 		self.assertEqual(ex.output, b'')
 
 
+class UnionFS_RW_RO_COW_RelaxedPermissions_TestCase(Common, unittest.TestCase):
+	def setUp(self):
+		super().setUp()
+		self.mount('%s -o cow,relaxed_permissions rw1=rw:ro1=ro union' % self.unionfs_path)
+
+	def test_access(self):
+		self.assertFalse(os.access('union/file', os.F_OK))
+		write_to_file('union/file', 'something')
+		os.chmod('union/file', 0o222)  # -w--w--w-
+		self.assertTrue(os.access('union/file', os.W_OK))
+		self.assertFalse(os.access('union/file', os.R_OK))
+		self.assertFalse(os.access('union/file', os.X_OK))
+		os.chmod('union/file', 0o444)  # r--r--r--
+		self.assertTrue(os.access('union/file', os.R_OK))
+		self.assertFalse(os.access('union/file', os.W_OK))
+		self.assertFalse(os.access('union/file', os.X_OK))
+
 if __name__ == '__main__':
 	unittest.main()
