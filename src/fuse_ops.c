@@ -161,7 +161,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 		res = fsync(fi->fh);
 	}
 
-	if (res == -1)  RETURN(-errno);
+	if (res == -1) RETURN(-errno);
 
 	RETURN(0);
 }
@@ -193,7 +193,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_fil
 static int unionfs_access(const char *path, int mask) {
 	struct stat s;
 
-	if (unionfs_getattr(path, &s) != 0)
+	if (unionfs_getattr(path, &s, NULL) != 0)
 		RETURN(-ENOENT);
 
 	if ((mask & X_OK) && (s.st_mode & S_IXUSR) == 0)
