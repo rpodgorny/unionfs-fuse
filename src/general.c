@@ -213,3 +213,64 @@ int set_owner(const char *path) {
 	}
 	RETURN(0);
 }
+
+static int build_copyup_path(const char *path, int branch_rw,
+	char *path_out) {
+
+	char metapath[PATHLEN_MAX];
+
+	if (BUILD_PATH(metapath, METADIR, path))  RETURN(-1);
+
+	path_create_cutlast(metapath, branch_rw, branch_rw);
+
+	if (BUILD_PATH(path_out, uopt.branches[branch_rw].path, metapath)) RETURN(-1);
+	strcat(path_out, COPYUPTAG);
+
+	RETURN(0);
+}
+
+/**
+ * Creates copy-up meta file to indicate ongoing copy-up.
+ */
+int start_copyup_file(const char *path, int branch_rw) {
+	DBG("%s\n", path);
+
+	char p[PATHLEN_MAX];
+	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(-1);
+
+	int res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	if (res == -1) RETURN(-1);
+	res = close(res);
+
+	RETURN(res);
+}
+
+/**
+ * Removes copy-up meta file to indicate copy-up is complete.
+ */
+int stop_copyup_file(const char *path, int branch_rw) {
+	DBG("%s\n", path);
+
+	char p[PATHLEN_MAX];
+	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(-1);
+
+	unlink(p);
+
+	RETURN(0);
+}
+
+/**
+ * Returns true when a copy-up is in progerss.
+ * Otherwise false.
+ */
+bool ongoing_copyup(const char *path, int branch_rw) {
+
+	char p[PATHLEN_MAX];
+	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(false);
+
+	struct stat stbuf;
+	if (lstat(p, &stbuf) == 0) RETURN(true);
+	if (errno != ENOENT) RETURN(true);
+
+	RETURN(false);
+}

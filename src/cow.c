@@ -177,7 +177,9 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 			USYSLOG(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
 			RETURN(1);
 		default:
+			start_copyup_file(path, branch_rw);
 			res = copy_file(&cow);
+			stop_copyup_file(path, branch_rw);
 	}
 
 	RETURN(res);
