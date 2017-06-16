@@ -1,5 +1,13 @@
 #!/usr/bin/python
 
+# This script forks two parallel processes - one for writing (to trigger
+# copy-up) and another for checking file size.
+# File size checking process sleeps 5 secs to give writer process
+# sufficient time to trigger copy-up.
+# But this also means, copy-up needs to slowed down artificially to
+# reproduce this problem reliably. And this can be done by adding
+# some sleep in cow_utils.c:copy_file() function.
+
 import os
 import signal
 import hashlib
