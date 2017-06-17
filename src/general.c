@@ -22,6 +22,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <pthread.h>
+#include <sys/file.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -231,32 +232,58 @@ static int build_copyup_path(const char *path, int branch_rw,
 
 /**
  * Creates copy-up meta file to indicate ongoing copy-up.
+ * It also locks the metafile. Lock is meant for blocking
+ * competing processes to block copy-up.
+ * @return locked file descriptor.
  */
-int start_copyup_file(const char *path, int branch_rw) {
+int lock_file_copyup(const char *path, int branch_rw) {
 	DBG("%s\n", path);
 
 	char p[PATHLEN_MAX];
 	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(-1);
 
-	int res = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-	if (res == -1) RETURN(-1);
-	res = close(res);
+	int lockfd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	if (lockfd  == -1) {
+		USYSLOG(LOG_ERR, "open(%s) failed. %s\n",
+			p, strerror(errno));
+		RETURN(-1);
+	}
 
-	RETURN(res);
+	if (flock(lockfd, LOCK_EX) != 0) {
+		USYSLOG(LOG_ERR, "flock(%d) failed to lock. %s\n",
+			lockfd, strerror(errno));
+		close(lockfd);
+		RETURN(-1);
+	}
+
+	RETURN(lockfd);
 }
 
 /**
  * Removes copy-up meta file to indicate copy-up is complete.
+ * Also unlocks the copy-up meta file.
  */
-int stop_copyup_file(const char *path, int branch_rw) {
+int unlock_file_copyup(const char *path, int branch_rw, int lockfd) {
 	DBG("%s\n", path);
 
 	char p[PATHLEN_MAX];
 	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(-1);
 
+	/* we do not check the return status of unlink here, because
+	 * only one competing process succeeds and rest of the
+	 * processes fail.
+	 */
 	unlink(p);
 
-	RETURN(0);
+	if (flock(lockfd, LOCK_UN) != 0) {
+		USYSLOG(LOG_ERR, "flock(%d) failed to unlock. %s\n",
+			lockfd, strerror(errno));
+		RETURN(-1);
+	}
+
+	int res = close(lockfd);
+
+	RETURN(res);
 }
 
 /**

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# This script forks two parallel processes - one for writing (to trigger
+# This script forks three parallel processes - two for writing (to trigger
 # copy-up) and another for checking file size.
 # File size checking process sleeps 5 secs to give writer process
 # sufficient time to trigger copy-up.
@@ -87,20 +87,33 @@ def test_func_writer(fc):
 
 # set up function: do setup and fork a process to execute the tests
 def main():
-	t1 = multiprocessing.Value('i', -1)
-	t2 = multiprocessing.Value('i', -1)
 	do_setup()
-	p1 = multiprocessing.Process(target=test_func_writer, args=(t1,))
-	p2 = multiprocessing.Process(target=test_func_checker, args=(t2,))
-	p1.start()
-	p2.start()
-	p1.join()
-	p2.join()
+
+	tw1 = multiprocessing.Value('i', -1)
+	tw2 = multiprocessing.Value('i', -1)
+	tc = multiprocessing.Value('i', -1)
+
+	# two writers and one checker
+	pw1 = multiprocessing.Process(target=test_func_writer, args=(tw1,))
+	pw2 = multiprocessing.Process(target=test_func_writer, args=(tw2,))
+	pc = multiprocessing.Process(target=test_func_checker, args=(tc,))
+
+	pw1.start()
+	pw2.start()
+	pc.start()
+
+	pc.join()
+	pw1.join()
+	pw2.join()
+
 	undo_setup()
-	if t1.value < 0:
-		print "***** Writer failed. *****"
-	elif t2.value < 0:
-		print "****** Checker failed. *******"
+
+	if tw1.value < 0:
+		print "***** Writer1 failed. *****"
+	elif tw2.value < 0:
+		print "***** Writer2 failed. *****"
+	elif tc.value < 0:
+		print "***** Checker failed. *****"
 	else:
 		print "***** Test passed *******"
 
