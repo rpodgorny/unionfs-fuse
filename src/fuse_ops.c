@@ -161,7 +161,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 		res = fsync(fi->fh);
 	}
 
-	if (res == -1)  RETURN(-errno);
+	if (res == -1) RETURN(-errno);
 
 	RETURN(0);
 }
@@ -186,6 +186,24 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 	 * it to max(nlink_t).
 	 */
 	if (S_ISDIR(stbuf->st_mode)) stbuf->st_nlink = 1;
+
+	RETURN(0);
+}
+
+static int unionfs_access(const char *path, int mask) {
+	struct stat s;
+
+	if (unionfs_getattr(path, &s) != 0)
+		RETURN(-ENOENT);
+
+	if ((mask & X_OK) && (s.st_mode & S_IXUSR) == 0)
+		RETURN(-EACCES);
+
+	if ((mask & W_OK) && (s.st_mode & S_IWUSR) == 0)
+		RETURN(-EACCES);
+
+	if ((mask & R_OK) && (s.st_mode & S_IRUSR) == 0)
+		RETURN(-EACCES);
 
 	RETURN(0);
 }
@@ -783,6 +801,7 @@ struct fuse_operations unionfs_oper = {
 	.flush = unionfs_flush,
 	.fsync = unionfs_fsync,
 	.getattr = unionfs_getattr,
+	.access = unionfs_access,
 	.init = unionfs_init,
 #if FUSE_VERSION >= 28
 	.ioctl = unionfs_ioctl,

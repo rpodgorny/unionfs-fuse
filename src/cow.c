@@ -60,7 +60,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	if (nbranch_ro == nbranch_rw) RETURN(0); // the special case again
 
-	if (setfile(dirp, &buf))  RETURN(1); // directory already removed by another process?
+	if (setfile(dirp, &buf)) RETURN(1); // directory already removed by another process?
 
 	// TODO: time, but its values are modified by the next dir/file creation steps?
 
@@ -75,7 +75,7 @@ int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	DBG("%s\n", path);
 
 	if (!uopt.cow_enabled) RETURN(0);
-	
+
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[nbranch_rw].path, path)) RETURN(-ENAMETOOLONG);
 

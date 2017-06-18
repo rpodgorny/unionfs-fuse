@@ -39,10 +39,10 @@
 static int filedir_hidden(const char *path) {
 	// cow mode disabled, no need for hidden files
 	if (!uopt.cow_enabled) RETURN(false);
-	
+
 	char p[PATHLEN_MAX];
 	if (strlen(path) + strlen(HIDETAG) > PATHLEN_MAX) RETURN(-ENAMETOOLONG);
-	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG); 
+	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG);
 	DBG("%s\n", p);
 
 	struct stat stbuf;
@@ -63,7 +63,7 @@ int path_hidden(const char *path, int branch) {
 	char whiteoutpath[PATHLEN_MAX];
 	if (BUILD_PATH(whiteoutpath, uopt.branches[branch].path, METADIR, path)) RETURN(false);
 
-	// -1 as we MUST not end on the next path element 
+	// -1 as we MUST not end on the next path element
 	char *walk = whiteoutpath + uopt.branches[branch].path_len + strlen(METADIR) - 1;
 
 	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
@@ -72,7 +72,7 @@ int path_hidden(const char *path, int branch) {
 	do {
 		// walk over the directory name, walk will now be /dir2
 		while (*walk != '\0' && *walk != '/') walk++;
-	
+
 		// +1 due to \0, which gets added automatically
 		char p[PATHLEN_MAX];
 		// walk - path = strlen(/dir1)
@@ -124,11 +124,11 @@ filetype_t path_is_dir(const char *path) {
 	DBG("%s\n", path);
 
 	struct stat buf;
-	
+
 	if (lstat(path, &buf) == -1) RETURN(NOT_EXISTING);
-	
+
 	if (S_ISDIR(buf.st_mode)) RETURN(IS_DIR);
-	
+
 	RETURN(IS_FILE);
 }
 
@@ -140,7 +140,7 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 
 	char metapath[PATHLEN_MAX];
 
-	if (BUILD_PATH(metapath, METADIR, path))  RETURN(-1);
+	if (BUILD_PATH(metapath, METADIR, path)) RETURN(-1);
 
 	// p MUST be without path to branch prefix here! 2 x branch_rw is correct here!
 	// this creates e.g. branch/.unionfs/some_directory
@@ -207,7 +207,7 @@ int set_owner(const char *path) {
 		int res = lchown(path, ctx->uid, ctx->gid);
 		if (res) {
 			USYSLOG(LOG_WARNING,
-			       ":%s: Setting the correct file owner failed: %s !\n", 
+			       ":%s: Setting the correct file owner failed: %s !\n",
 			       __func__, strerror(errno));
 			RETURN(-errno);
 		}
