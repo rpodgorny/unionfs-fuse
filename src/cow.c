@@ -157,7 +157,7 @@ static int copy_file_locked(struct cow *cow, const char *path,
 
 	res = copy_file(cow);
 out:
-	/* unlock copy-ip metadata */
+	/* unlock copy-up metadata */
 	unlock_file_copyup(path, branch_rw, lockfd);
 	RETURN(res);
 }

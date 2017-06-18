@@ -215,32 +215,32 @@ int set_owner(const char *path) {
 	RETURN(0);
 }
 
-static int build_copyup_path(const char *path, int branch_rw,
-	char *path_out) {
+static int build_copyup_path(const char *path, int branch,
+	bool do_create_path, char *path_out) {
 
-	char metapath[PATHLEN_MAX];
+	char mp[PATHLEN_MAX];
+	if (BUILD_PATH(mp, METADIR, path))  RETURN(-1);
 
-	if (BUILD_PATH(metapath, METADIR, path))  RETURN(-1);
+	if (do_create_path) {
+		path_create_cutlast(mp, branch, branch);
+	}
 
-	path_create_cutlast(metapath, branch_rw, branch_rw);
-
-	if (BUILD_PATH(path_out, uopt.branches[branch_rw].path, metapath)) RETURN(-1);
+	if (BUILD_PATH(path_out, uopt.branches[branch].path, mp)) RETURN(-1);
 	strcat(path_out, COPYUPTAG);
 
 	RETURN(0);
 }
 
 /**
- * Creates copy-up meta file to indicate ongoing copy-up.
- * It also locks the metafile. Lock is meant for blocking
- * competing processes to block copy-up.
+ * Creates copy-up meta file to indicate ongoing copy-up. It also locks the
+ * metafile. Lock is meant for blocking competing processes trying to copy-up.
  * @return locked file descriptor.
  */
 int lock_file_copyup(const char *path, int branch_rw) {
 	DBG("%s\n", path);
 
 	char p[PATHLEN_MAX];
-	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(-1);
+	if (build_copyup_path(path, branch_rw, true, p) != 0) RETURN(-1);
 
 	int lockfd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 	if (lockfd  == -1) {
@@ -261,13 +261,14 @@ int lock_file_copyup(const char *path, int branch_rw) {
 
 /**
  * Removes copy-up meta file to indicate copy-up is complete.
- * Also unlocks the copy-up meta file.
+ * Also unlocks the copy-up meta file to unlock other competing
+ * processes.
  */
 int unlock_file_copyup(const char *path, int branch_rw, int lockfd) {
 	DBG("%s\n", path);
 
 	char p[PATHLEN_MAX];
-	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(-1);
+	if (build_copyup_path(path, branch_rw, false, p) != 0) RETURN(-1);
 
 	/* we do not check the return status of unlink here, because
 	 * only one competing process succeeds and rest of the
@@ -293,7 +294,7 @@ int unlock_file_copyup(const char *path, int branch_rw, int lockfd) {
 bool ongoing_copyup(const char *path, int branch_rw) {
 
 	char p[PATHLEN_MAX];
-	if (build_copyup_path(path, branch_rw, p) != 0) RETURN(false);
+	if (build_copyup_path(path, branch_rw, false, p) != 0) RETURN(false);
 
 	struct stat stbuf;
 	if (lstat(p, &stbuf) == 0) RETURN(true);
