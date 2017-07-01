@@ -266,7 +266,7 @@ static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_
 	(void) arg; // avoid compiler warning
 	(void) fi;  // avoid compiler warning
 
-	fprintf(stderr, "Got ioctl: %d\n", cmd);
+	DBG("got ioctl: %d\n", cmd);
 
 #ifdef FUSE_IOCTL_COMPAT // 32bit-mode within 64-bit
 	if (flags & FUSE_IOCTL_COMPAT)
