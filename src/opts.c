@@ -139,7 +139,7 @@ char *make_absolute(char *relpath) {
 		fprintf(stderr, "%s: malloc failed\n", __func__);
 		exit(1); // still at early stage, we can abort
 	}
-	
+
 	// the ending required slash is added later by add_trailing_slash()
 	snprintf(abspath, abslen, "%s/%s", cwd, relpath);
 
@@ -290,13 +290,14 @@ static void print_help(const char *progname) {
 	"    -o dirs=branch[=RO/RW][:branch...]\n"
 	"                           alternate way to specify directories to merge\n"
 	"    -o hide_meta_files     \".unionfs\" is a secret directory not\n"
-	"                           visible by readdir(), and so are\n" 
+	"                           visible by readdir(), and so are\n"
         "                           .fuse_hidden* files\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
-	"\n",
+	"\n"
+	"FUSE Options:\n",
 	progname);
 }
 
@@ -376,7 +377,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
-			fuse_opt_add_arg(outargs, "-ho");
+			fuse_lib_help(outargs);
 			uopt.doexit = 1;
 			return 0;
 		case KEY_HIDE_META_FILES:
