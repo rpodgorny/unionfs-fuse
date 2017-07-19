@@ -32,7 +32,7 @@ libunionfs.a: $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ) uioctl.h version.h
 	$(AR) rc $@ $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ)
 
 libunionfs.so: libunionfs.a
-	$(CC) -shared -o $@ $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ)
+	$(CC) -shared -o $@ $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ) $(LIB)
 
 clean:
 	rm -f unionfs

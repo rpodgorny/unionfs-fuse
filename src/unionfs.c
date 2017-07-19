@@ -21,14 +21,6 @@
 #include "opts.h"
 #include "usyslog.h"
 
-#ifndef _IOC_SIZE
-#ifdef IOCPARM_LEN
-#define _IOC_SIZE(x) IOCPARM_LEN(x)
-#else
-#error "No mechanism for determining ioctl length found."
-#endif
-#endif
-
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
 	FUSE_OPT_KEY("cow", KEY_COW),
