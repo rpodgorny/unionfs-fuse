@@ -157,7 +157,7 @@ static void * syslog_thread(void *arg)
 	// FIXME: What is a better way to prevent a compiler warning about
 	//        unused variable 'arg'
 	int tinfo = *((int *) arg);
-	if (tinfo == 0 && tinfo == 1)
+	if (tinfo == 0 || tinfo == 1)
 		printf("Starting thread %d", tinfo);
 
 	pthread_mutex_t sleep_mutex; 
