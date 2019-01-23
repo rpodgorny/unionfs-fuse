@@ -286,6 +286,9 @@ static void print_help(const char *progname) {
         "                           want to have a union of \"/\" \n"
 	"    -o cow                 enable copy-on-write\n"
 	"                           mountpoint\n"
+	"    -o even                distribute file allocation evenly among\n"
+	"                           writable branches\n"
+	"                           the most free place\n"
 	"    -o debug_file          file to write debug information into\n"
 	"    -o dirs=branch[=RO/RW][:branch...]\n"
 	"                           alternate way to specify directories to merge\n"
@@ -394,6 +397,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_RELAXED_PERMISSIONS:
 			uopt.relaxed_permissions = true;
+			return 0;
+		case KEY_EVEN_PLACEMENT:
+			uopt.even = true;
 			return 0;
 		case KEY_VERSION:
 			printf("unionfs-fuse version: "VERSION"\n");
