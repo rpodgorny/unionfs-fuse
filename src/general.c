@@ -22,6 +22,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -212,4 +213,15 @@ int set_owner(const char *path) {
 		}
 	}
 	RETURN(0);
+}
+
+void print_iso8601(FILE *file, struct timeval tv)
+{
+	char timestampbuf[100];
+	struct tm tm;
+
+	localtime_r(&tv.tv_sec, &tm);
+	strftime(timestampbuf, sizeof("YYYY-MM-ddTHH:mm:ss.SSS+0000"), "%Y-%m-%dT%H:%M:%S.000%z", &tm);
+	sprintf(timestampbuf + 20, "%03ld%s", tv.tv_usec / 1000, timestampbuf + 23);
+	fprintf(file, timestampbuf);
 }
