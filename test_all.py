@@ -7,6 +7,7 @@ import shutil
 import time
 import tempfile
 import stat
+import platform
 
 
 def call(cmd):
@@ -25,6 +26,11 @@ def read_from_file(fn):
 
 def get_dir_contents(directory):
 	return [dirs for (_, dirs, _) in os.walk(directory)]
+
+
+def get_osxfuse_unionfs_mounts():
+	mount_output = call('mount -t osxfuse').decode('utf8')
+	return [line.split(' ')[0] for line in mount_output.split('\n') if len(line) > 0]
 
 
 class Common:
@@ -71,6 +77,8 @@ class Common:
 				time.sleep(1)
 
 				call('umount union')
+			elif platform.system() == 'Darwin':
+				call('umount %s' % self.mount_device)
 			else:
 				call('fusermount -u union')
 
@@ -78,7 +86,15 @@ class Common:
 		shutil.rmtree(self.tmpdir)
 
 	def mount(self, cmd):
-		call(cmd)
+		if platform.system() == 'Darwin':
+			# Need to get the unionfs device name so that we can unmount it later:
+			prev_mounts = get_osxfuse_unionfs_mounts()
+			call(cmd)
+			cur_mounts = get_osxfuse_unionfs_mounts()
+			self.mount_device = list(set(cur_mounts)-set(prev_mounts))[0]
+		else:
+			call(cmd)
+		
 		self.mounted = True
 
 
@@ -450,6 +466,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 
 
 @unittest.skipIf(os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
+@unittest.skipIf(platform.system() == 'Darwin', 'Not supported on macOS')
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
