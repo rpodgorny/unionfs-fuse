@@ -783,7 +783,7 @@ static int unionfs_setxattr(const char *path, const char *name, const char *valu
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #if __APPLE__
-	int res = setxattr(p, name, value, size, position, flags | XATTR_NOFOLLOW);
+	int res = setxattr(p, name, value, size, position, (flags | XATTR_NOFOLLOW) & ~XATTR_NOSECURITY);
 #else
 	int res = lsetxattr(p, name, value, size, flags);
 #endif
