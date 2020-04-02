@@ -32,18 +32,26 @@ may be used for live CDs or live USB sticks, etc. So it can serve
 "/" as filesystem. If you do not specify this option and try to use
 it for "/", it will deadlock on calling 'pivot_root'.
 If you set this option, you also need to specify the branches relatively
-to the given chroot directory. See examples/S01a-unionfs-live-cd.sh
+to the given chroot directory. See
+.I examples/S01a-unionfs-live-cd.sh
 for an example.
 .TP
 \fB\-o cow
 Enable copy\-on\-write
 .TP
 \fB\-o hide_meta_files
-In our unionfs root path we have a .unionfs directory that includes
+In our unionfs root path we have a
+.I .unionfs
+directory that includes
 metadata, such as hidden (deleted) files. This option makes this
-directory invisible from readdir(), so for example "ls -la /union_root/"
-will not show it. However, this directory is still there and "cd .unionfs"
-or "ls -l .unionfs" still work. Also, libfuse will create .fuse_hidden*
+directory invisible from readdir(), so for example
+.B ls -la /union_root
+will not show it. However, this directory is still there and
+.B cd .unionfs
+or
+.B ls -l .unionfs
+still work. Also, libfuse will create
+.I \%.fuse_hidden*
 files, if a file is open, but will be deleted. Those fuse meta files will
 be invisible as well. This option is especially useful for package builders.
 .TP
@@ -67,7 +75,8 @@ Since version 0.23 without any effect, just left over for compatibility.
 Might be removed in future versions.
 .TP
 \fB\-o relaxed_permissions
-Usually we automatically add the libfuse option "-odefault_permissions"
+Usually we automatically add the libfuse option
+.B \-o \%default_permissions
 so that libfuse takes over permission checks. However, if running not
 as root (so as UID\ !=\ 0 and GID\ !=\ 0), permissions on the underlying
 filesystem are already sufficient. In order to prevent severe
@@ -81,12 +90,15 @@ from the summary of blocks. This may sound weird, but it actually fixes
 .TP
 .SH "Options to libfuse"
 There are several further options available, which don't directly apply to
-unionfs, but to libfuse. Please run "unionfs --help" to see these.
-We already set the "-o default-permissions" options on our own.
+unionfs, but to libfuse. Please run
+.B unionfs \-\-help
+to see these. We already set
+.B \-o \%default_permissions
+option on our own.
 .SH "EXAMPLES"
 .Vb 5
 \& unionfs \-o cow,max_files=32768 \e
-\&              -o allow_other,use_ino,suid,dev,nonempty \e
+\&              \-o allow_other,use_ino,suid,dev,nonempty \e
 \&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
 \&              /u/union/etc
 .Ve
