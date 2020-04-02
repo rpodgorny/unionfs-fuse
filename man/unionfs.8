@@ -20,9 +20,9 @@ unionfs\-fuse \- A userspace unionfs implementation
 .PP
 It first tries to access the file on the top branch and if the file does not exist
 there, it continues on lower level branches.
-If the user tries to modify a file on a lower level read\-only branch
-the file is copied to a higher level read\-write branch if the
-\fBcopy\-on\-write (cow) \fR mode was enabled.
+If the user tries to modify a file on a lower level read\-only branch while
+.B copy\-on\-write (cow)
+mode is enabled, the file will be copied to a higher level read\-write branch.
 .SH "OPTIONS"
 Below is a summary of unionfs options
 .TP
@@ -64,11 +64,11 @@ to stderr and a debug file (./unionfs_debug.log by default).
 Write unionfs debug information into that file.
 .TP
 \fB\-o max_files=number
-Maximum number of open files. Most system have a default of 1024 open
-files per process. For example if unionfs serves "/" applications like
-KDE or GNOME might have much more open files, which will make the unionfs
-process to exceed this limit. Suggested for "/" is >16000 or even >32000 files.
-If this limit exceeds unionfs will not be able to open further files.
+Maximum number of open files. Most systems have a default limit of 1024
+open files per process. For example if unionfs serves "/", applications
+like KDE or GNOME might have many open files, making the unionfs process
+reach this limit and unable to open further files. Suggested value for "/"
+is >16000 or even >32000 files.
 .TP
 \fB\-o noinitgroups
 Since version 0.23 without any effect, just left over for compatibility.
