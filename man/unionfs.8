@@ -16,7 +16,7 @@ unionfs\-fuse \- A userspace unionfs implementation
              \fBtop_branch:lower_branch:...:lowest_branch \fR
              \fBmount_point\fR
 .SH "DESCRIPTION"
-\fBunionfs\fR overlays several directory into one single mount point.
+\fBunionfs\fR overlays several directories into one single mount point.
 .PP
 It first tries to access the file on the top branch and if the file does not exist
 there, it continues on lower level branches.
@@ -27,11 +27,11 @@ the file is copied to a higher level read\-write branch if the
 Below is a summary of unionfs options
 .TP
 \fB\-o chroot=path
-Path to chroot into. By using this option unionfs
+Path to chroot into. By using this option, unionfs
 may be used for live CDs or live USB sticks, etc. So it can serve
 "/" as filesystem. If you do not specify this option and try to use
-it for "/" it will deadlock on calling 'pivot_root'.
-If you do set this option, you also need to specify the branches relativly
+it for "/", it will deadlock on calling 'pivot_root'.
+If you set this option, you also need to specify the branches relatively
 to the given chroot directory. See examples/S01a-unionfs-live-cd.sh
 for an example.
 .TP
@@ -40,16 +40,15 @@ Enable copy\-on\-write
 .TP
 \fB\-o hide_meta_files
 In our unionfs root path we have a .unionfs directory that includes
-metadata, such as hidden (deleted) files. This options make this
+metadata, such as hidden (deleted) files. This option makes this
 directory invisible from readdir(), so for example "ls -la /union_root/"
 will not show it. However, this directory is still there and "cd .unionfs"
 or "ls -l .unionfs" still work. Also, libfuse will create .fuse_hidden*
-files, if a file is open, but will be deleted. Those fuse meta files also
-will be invisble. This option is especially usufull for
-package builders.
+files, if a file is open, but will be deleted. Those fuse meta files will
+be invisible as well. This option is especially useful for package builders.
 .TP
 \fB\-d
-Enable debugging for unionfs and libfuse. Useful for developers if the code
+Enable debugging for unionfs and libfuse. Useful for developers
 if the code does not behave as expected. Debug information will be written
 to stderr and a debug file (./unionfs_debug.log by default).
 .TP
@@ -70,14 +69,14 @@ Might be removed in future versions.
 \fB\-o relaxed_permissions
 Usually we automatically add the libfuse option "-odefault_permissions"
 so that libfuse takes over permission checks. However, if running not
-as root (so as uid =! 0  and gid != 0), permissions of the underlying
-filesystem are already sufficient. In order to prevent from severe
+as root (so as UID\ !=\ 0 and GID\ !=\ 0), permissions on the underlying
+filesystem are already sufficient. In order to prevent severe
 security issues, this option is not allowed if running as root.
 .TP
 \fB\-o statfs_omit_ro
-By default blocks of all branches are counted in statfs() calls
-(e.g. by 'df'). On setting this option read-only branches will be omitted
-for the summary of blocks. This may sound weird but it actually fixes
+By default, blocks of all branches are counted in statfs() calls
+(e.g. by 'df'). With this option, read-only branches will be omitted
+from the summary of blocks. This may sound weird, but it actually fixes
 "wrong" percentage of free space.
 .TP
 .SH "Options to libfuse"
