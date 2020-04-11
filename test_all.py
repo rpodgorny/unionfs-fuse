@@ -494,5 +494,6 @@ class UnionFS_RW_RO_COW_RelaxedPermissions_TestCase(Common, unittest.TestCase):
 		self.assertFalse(os.access('union/file', os.W_OK))
 		self.assertFalse(os.access('union/file', os.X_OK))
 
+
 if __name__ == '__main__':
 	unittest.main()
