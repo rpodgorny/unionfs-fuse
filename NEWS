@@ -1,3 +1,6 @@
+2.1
+- fixed Finder fails on MacOS
+
 2.0
 - fixed NEWS file ;-)
 - reverted meta directory name back to .unionfs (from .unionfs-fuse)
