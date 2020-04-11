@@ -94,7 +94,6 @@ class Common:
 			self.mount_device = list(set(cur_mounts)-set(prev_mounts))[0]
 		else:
 			call(cmd)
-		
 		self.mounted = True
 
 
