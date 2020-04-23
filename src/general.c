@@ -22,6 +22,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <pthread.h>
+#include <sys/file.h>
 
 #include "unionfs.h"
 #include "opts.h"
@@ -212,4 +213,92 @@ int set_owner(const char *path) {
 		}
 	}
 	RETURN(0);
+}
+
+static int build_copyup_path(const char *path, int branch,
+	bool do_create_path, char *path_out) {
+
+	char mp[PATHLEN_MAX];
+	if (BUILD_PATH(mp, METADIR, path))  RETURN(-1);
+
+	if (do_create_path) {
+		path_create_cutlast(mp, branch, branch);
+	}
+
+	if (BUILD_PATH(path_out, uopt.branches[branch].path, mp)) RETURN(-1);
+	strcat(path_out, COPYUPTAG);
+
+	RETURN(0);
+}
+
+/**
+ * Creates copy-up meta file to indicate ongoing copy-up. It also locks the
+ * metafile. Lock is meant for blocking competing processes trying to copy-up.
+ * @return locked file descriptor.
+ */
+int lock_file_copyup(const char *path, int branch_rw) {
+	DBG("%s\n", path);
+
+	char p[PATHLEN_MAX];
+	if (build_copyup_path(path, branch_rw, true, p) != 0) RETURN(-1);
+
+	int lockfd = open(p, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+	if (lockfd  == -1) {
+		USYSLOG(LOG_ERR, "open(%s) failed. %s\n",
+			p, strerror(errno));
+		RETURN(-1);
+	}
+
+	if (flock(lockfd, LOCK_EX) != 0) {
+		USYSLOG(LOG_ERR, "flock(%d) failed to lock. %s\n",
+			lockfd, strerror(errno));
+		close(lockfd);
+		RETURN(-1);
+	}
+
+	RETURN(lockfd);
+}
+
+/**
+ * Removes copy-up meta file to indicate copy-up is complete.
+ * Also unlocks the copy-up meta file to unlock other competing
+ * processes.
+ */
+int unlock_file_copyup(const char *path, int branch_rw, int lockfd) {
+	DBG("%s\n", path);
+
+	char p[PATHLEN_MAX];
+	if (build_copyup_path(path, branch_rw, false, p) != 0) RETURN(-1);
+
+	/* we do not check the return status of unlink here, because
+	 * only one competing process succeeds and rest of the
+	 * processes fail.
+	 */
+	unlink(p);
+
+	if (flock(lockfd, LOCK_UN) != 0) {
+		USYSLOG(LOG_ERR, "flock(%d) failed to unlock. %s\n",
+			lockfd, strerror(errno));
+		RETURN(-1);
+	}
+
+	int res = close(lockfd);
+
+	RETURN(res);
+}
+
+/**
+ * Returns true when a copy-up is in progerss.
+ * Otherwise false.
+ */
+bool ongoing_copyup(const char *path, int branch_rw) {
+
+	char p[PATHLEN_MAX];
+	if (build_copyup_path(path, branch_rw, false, p) != 0) RETURN(false);
+
+	struct stat stbuf;
+	if (lstat(p, &stbuf) == 0) RETURN(true);
+	if (errno != ENOENT) RETURN(true);
+
+	RETURN(false);
 }

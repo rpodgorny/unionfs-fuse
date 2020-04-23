@@ -9,6 +9,7 @@
 
 #define PATHLEN_MAX 1024
 #define HIDETAG "_HIDDEN~"
+#define COPYUPTAG "_COPYUP~"
 
 #define METANAME ".unionfs"
 #define METADIR (METANAME  "/") // string concetanation!
