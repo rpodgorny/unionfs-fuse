@@ -27,6 +27,9 @@ int hide_dir(const char *path, int branch_rw);
 filetype_t path_is_dir (const char *path);
 int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode);
 int set_owner(const char *path);
+void print_iso8601(FILE *file, struct timeval tv);
+uint64_t randupto64(uint64_t max);
+int statvfs_local(const char *path, struct statvfs *stbuf);
 
 
 #endif
