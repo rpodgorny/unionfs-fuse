@@ -139,7 +139,7 @@ char *make_absolute(char *relpath) {
 		fprintf(stderr, "%s: malloc failed\n", __func__);
 		exit(1); // still at early stage, we can abort
 	}
-	
+
 	// the ending required slash is added later by add_trailing_slash()
 	snprintf(abspath, abslen, "%s/%s", cwd, relpath);
 
@@ -283,15 +283,15 @@ static void print_help(const char *progname) {
 	"\n"
 	"UnionFS options:\n"
 	"    -o chroot=path         chroot into this path. Use this if you \n"
-        "                           want to have a union of \"/\" \n"
+	"                           want to have a union of \"/\" \n"
 	"    -o cow                 enable copy-on-write\n"
 	"                           mountpoint\n"
 	"    -o debug_file          file to write debug information into\n"
 	"    -o dirs=branch[=RO/RW][:branch...]\n"
 	"                           alternate way to specify directories to merge\n"
 	"    -o hide_meta_files     \".unionfs\" is a secret directory not\n"
-	"                           visible by readdir(), and so are\n" 
-        "                           .fuse_hidden* files\n"
+	"                           visible by readdir(), and so are\n"
+	"                           .fuse_hidden* files\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
@@ -316,7 +316,7 @@ void unionfs_post_opts(void) {
 
 	// Make the pathes absolute and add trailing slashes
 	int i;
-	for (i = 0; i<uopt.nbranches; i++) {
+	for (i = 0; i < uopt.nbranches; i++) {
 		// if -ochroot= is specified, the path has to be given absolute
 		// or relative to the chroot, so no need to make it absolute
 		// also won't work, since we are not yet in the chroot here
