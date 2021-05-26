@@ -14,6 +14,6 @@ install:
   - sudo apt-get install libfuse3-dev
   #- sudo apt-get install meson ninja-build
   #- ./travis_install.sh
-  - cmake .
+  #- cmake .
   - make
 script: ./test
