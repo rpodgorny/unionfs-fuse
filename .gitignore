@@ -2,6 +2,7 @@
 unionfs.log
 unionfs
 unionfsctl
+libunionfs.so
 
 # gcov (coverage)
 coverage

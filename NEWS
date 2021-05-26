@@ -1,3 +1,7 @@
+2.1
+- fixed Finder fails on MacOS
+- Implement access() for "cow,relaxed_permissions" use case
+
 2.0
 - fixed NEWS file ;-)
 - reverted meta directory name back to .unionfs (from .unionfs-fuse)

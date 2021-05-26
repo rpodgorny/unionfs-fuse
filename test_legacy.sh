@@ -1,5 +1,5 @@
 #!/bin/bash
-# this is a legacy version (will be removed in the future). please use test.py.
+# this is a legacy version (will be removed in the future). please use ./test script (which uses python).
 
 set -v
 set -e
