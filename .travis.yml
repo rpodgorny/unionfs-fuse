@@ -11,7 +11,7 @@ before_install:
   - sudo chown root:$USER /etc/fuse.conf
 install:
   - sudo apt-get install cmake make gcc
-  - sudo apt-get install meson ninja
+  - sudo apt-get install meson ninja-build
   - ./travis_install.sh
   - cmake .
   - make
