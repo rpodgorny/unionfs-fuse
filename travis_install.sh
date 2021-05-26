@@ -1,8 +1,9 @@
 #!/bin/sh
 
-wget https://github.com/libfuse/libfuse/releases/download/fuse-3.0.2/fuse-3.0.2.tar.gz
-tar xzf fuse-3.0.2.tar.gz
-cd fuse-3.0.2
+FUSE_VER=3.10.3
+wget https://github.com/libfuse/libfuse/releases/download/fuse-${FUSE_VER}/fuse-${FUSE_VER}.tar.gz
+tar xzf fuse-${FUSE_VER}.tar.gz
+cd fuse-${FUSE_VER}
 mkdir build
 cd build
 meson ..
