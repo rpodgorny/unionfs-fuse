@@ -60,15 +60,15 @@ int setfile(const char *path, struct stat *fs)
 {
 	DBG("%s\n", path);
 
-	struct utimbuf ut;
+	struct timespec ut[2];
 	int rval = 0;
 
 	fs->st_mode &= S_ISUID | S_ISGID | S_ISTXT | S_IRWXU | S_IRWXG | S_IRWXO;
 
-	ut.actime  = fs->st_atime;
-	ut.modtime = fs->st_mtime;
-	if (utime(path, &ut)) {
-		USYSLOG(LOG_WARNING, "utimes: %s", path);
+	ut[0] = fs->st_atim;
+	ut[1] = fs->st_mtim;
+	if (utimensat(AT_FDCWD, path, ut, 0)) {
+		USYSLOG(LOG_WARNING, "utimensat: %s", path);
 		rval = 1;
 	}
 	/*
