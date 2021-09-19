@@ -1,3 +1,6 @@
+2.2
+- fixed timestamp precision lost on cow copy
+
 2.1
 - fixed Finder fails on MacOS
 - Implement access() for "cow,relaxed_permissions" use case
