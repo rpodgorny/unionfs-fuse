@@ -29,11 +29,11 @@ How to build
 
 You can either use plain make or cmake (pick one).
 
-* 1. plain make
+1. plain make
 
 Just issue `make` - this compiles the code with some static settings (xattrs enabled, ...) tuned for my linux system.
 
-* 2. cmake
+2. cmake
 
 ```
 mkdir build; cd build
