@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/rpodgorny/unionfs-fuse.svg?branch=master)](https://travis-ci.org/rpodgorny/unionfs-fuse)
-[![Gratipay](http://img.shields.io/gratipay/rpodgorny.svg)](https://gratipay.com/rpodgorny/)
+[![Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/rpodgorny/donate)
 
 unionfs-fuse
 ============
