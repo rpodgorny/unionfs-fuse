@@ -60,15 +60,28 @@ int setfile(const char *path, struct stat *fs)
 {
 	DBG("%s\n", path);
 
+#ifdef __APPLE__
+	struct utimbuf ut;
+#else
 	struct timespec ut[2];
+#endif
 	int rval = 0;
 
 	fs->st_mode &= S_ISUID | S_ISGID | S_ISTXT | S_IRWXU | S_IRWXG | S_IRWXO;
 
+// TODO: bring the macos version in line with the linux one. but macos does not seem to have st_atim and st_mtim defined (but has st_atimespec and st_mtimespec) - investigate!
+// https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/stat.2.html
+#ifdef __APPLE__
+	ut.actime  = fs->st_atime;
+	ut.modtime = fs->st_mtime;
+	if (utime(path, &ut)) {
+		USYSLOG(LOG_WARNING, "utimes: %s", path);
+#else
 	ut[0] = fs->st_atim;
 	ut[1] = fs->st_mtim;
 	if (utimensat(AT_FDCWD, path, ut, 0)) {
 		USYSLOG(LOG_WARNING, "utimensat: %s", path);
+#endif
 		rval = 1;
 	}
 	/*
