@@ -20,6 +20,8 @@ if (UNIX AND APPLE)
 	include_directories("/usr/local/include/osxfuse/fuse")
 	# New include path for MacFuse
 	include_directories("/usr/local/include/fuse")
+
+	link_directories("/usr/local/lib")
 endif()
 
 add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26)
