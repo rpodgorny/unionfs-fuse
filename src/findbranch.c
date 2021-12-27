@@ -39,6 +39,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <errno.h>
 
@@ -139,10 +140,10 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	if (branch < 0) goto out;
 
 	// Reminder rw_hint == -1 -> autodetect, we do not care which branch it is
-	if (uopt.branches[branch].rw
+	if (uopt.branches[branch].rw && !uopt.even
 	&& (rw_hint == -1 || branch == rw_hint)) goto out;
 
-	if (!uopt.cow_enabled) {
+	if (!(uopt.cow_enabled || uopt.even)) {
 		// So path exists, but is not writable.
 		branch = -1;
 		errno = EACCES;
@@ -152,7 +153,7 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 	int branch_rw;
 	// since it is a directory, any rw-branch is fine
 	if (rw_hint == -1)
-		branch_rw = find_lowest_rw_branch(uopt.nbranches);
+		branch_rw = uopt.even ? find_evenly_rw_branch() : find_lowest_rw_branch(uopt.nbranches);
 	else
 		branch_rw = rw_hint;
 
@@ -238,4 +239,49 @@ int find_lowest_rw_branch(int branch_ro) {
 	}
 
 	RETURN(-1);
+}
+
+int find_evenly_rw_branch() {
+	DBG_IN();
+
+	int branch = -1;
+	uint64_t *spaces;
+	uint64_t choice;
+	uint64_t sum = 0;
+
+	spaces = malloc(uopt.nbranches * sizeof(*spaces));
+	if (!spaces)
+		goto out;
+
+	int i = 0;
+	for (i = 0; i < uopt.nbranches; i++) {
+		struct statvfs stb;
+		uint64_t free;
+		int res = statvfs_local(uopt.branches[i].path, &stb);
+		if (res == -1)
+			goto out;
+
+		free = uopt.branches[i].rw ? stb.f_frsize * stb.f_bavail : 0;
+		sum += free;
+		spaces[i] = sum;
+		DBG("branch = %d free = %"PRIu64" sum = %"PRIu64"\n", i, free,
+		    sum);
+	}
+	if (sum == 0)
+		goto out;
+
+	choice = randupto64(sum - 1);
+	DBG("choice = %"PRIu64"\n", choice);
+
+	for (i = 0; i < uopt.nbranches; i++) {
+		if (spaces[i] > choice) {
+			branch = i;
+			break;
+		}
+	}
+
+out:
+
+	free(spaces);
+	RETURN(branch);
 }

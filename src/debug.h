@@ -8,7 +8,9 @@
 #define DEBUG_H
 
 #include <errno.h>
+#include <sys/time.h>
 #include "opts.h"
+#include "general.h"
 
 #define DBG_IN() DBG("\n");
 
@@ -17,8 +19,12 @@
 		if (!uopt.debug) break; \
 		int _errno = errno; \
 		FILE* dbgfile = get_dbgfile(); \
-		fprintf(stderr, "%s(): %d: ", __func__, __LINE__); \
-		fprintf(dbgfile, "%s(): %d: ", __func__, __LINE__); \
+		struct timeval _tv_dbg; \
+		gettimeofday(&_tv_dbg, NULL); \
+		print_iso8601(stderr, _tv_dbg); \
+		print_iso8601(dbgfile, _tv_dbg); \
+		fprintf(stderr, " %s(): %d: ", __func__, __LINE__); \
+		fprintf(dbgfile, " %s(): %d: ", __func__, __LINE__); \
 		fprintf(stderr, format, ##__VA_ARGS__); \
 		fprintf(dbgfile, format, ##__VA_ARGS__); \
 		fflush(stderr); \
