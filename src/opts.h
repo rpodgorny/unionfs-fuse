@@ -8,7 +8,7 @@
 #define OPTS_H
 
 
-#include <fuse.h>
+#include <fuse3/fuse.h>
 #include <stdbool.h>
 
 #include "unionfs.h"

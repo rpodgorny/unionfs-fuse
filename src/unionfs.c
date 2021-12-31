@@ -10,7 +10,7 @@
 *            Bernd Schubert <bernd-schubert@gmx.de>
 */
 
-#include <fuse.h>
+#include <fuse3/fuse.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

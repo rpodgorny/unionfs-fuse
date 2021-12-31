@@ -40,7 +40,7 @@ static int filedir_hidden(const char *path) {
 	if (!uopt.cow_enabled) RETURN(false);
 
 	char p[PATHLEN_MAX];
-	if (strlen(path) + strlen(HIDETAG) > PATHLEN_MAX) RETURN(-ENAMETOOLONG);
+	if (strlen(path) + strlen(HIDETAG) + 1 > PATHLEN_MAX) RETURN(-ENAMETOOLONG);
 	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG);
 	DBG("%s\n", p);
 

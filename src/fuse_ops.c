@@ -19,7 +19,7 @@
 	#define _DEFAULT_SOURCE 1
 #endif
 
-#include <fuse.h>
+#include <fuse3/fuse.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,7 +58,8 @@
 #include "conf.h"
 #include "uioctl.h"
 
-static int unionfs_chmod(const char *path, mode_t mode) {
+static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
+	(void) fi;
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -73,7 +74,8 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	RETURN(0);
 }
 
-static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
+static int unionfs_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
+	(void) fi;
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -127,6 +129,7 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
  * which flush the data/metadata on close()
  */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
+	(void) path;
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int fd = dup(fi->fh);
@@ -148,6 +151,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
  * Just a stub. This method is optional and can safely be left unimplemented
  */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
+	(void) path;
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int res;
@@ -166,7 +170,8 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 	RETURN(0);
 }
 
-static int unionfs_getattr(const char *path, struct stat *stbuf) {
+static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
+	(void) fi;
 	DBG("%s\n", path);
 
 	int i = find_rorw_branch(path);
@@ -193,7 +198,7 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 static int unionfs_access(const char *path, int mask) {
 	struct stat s;
 
-	if (unionfs_getattr(path, &s) != 0)
+	if (unionfs_getattr(path, &s, NULL) != 0)
 		RETURN(-ENOENT);
 
 	if ((mask & X_OK) && (s.st_mode & S_IXUSR) == 0)
@@ -212,9 +217,10 @@ static int unionfs_access(const char *path, int mask) {
  * init method
  * called before first access to the filesystem
  */
-static void * unionfs_init(struct fuse_conn_info *conn) {
+static void * unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 	// just to prevent the compiler complaining about unused variables
-	(void) conn->max_readahead;
+	(void) cfg;
+	(void) conn;
 
 	// we only now (from unionfs_init) may go into the chroot, since otherwise
 	// fuse_main() will fail to open /dev/fuse and to call mount
@@ -260,8 +266,11 @@ static int unionfs_link(const char *from, const char *to) {
 	RETURN(0);
 }
 
-#if FUSE_VERSION >= 28
+#if FUSE_USE_VERSION < 35
 static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+#else
+static int unionfs_ioctl(const char *path, unsigned int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+#endif
 	(void) path;
 	(void) arg; // avoid compiler warning
 	(void) fi;  // avoid compiler warning
@@ -298,7 +307,6 @@ static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_
 
 	return 0;
 }
-#endif
 
 /**
  * unionfs mkdir() implementation
@@ -396,6 +404,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	(void) path;
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int res = pread(fi->fh, buf, size, offset);
@@ -424,6 +433,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
+	(void) path;
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int res = close(fi->fh);
@@ -437,7 +447,8 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
  * TODO: If we rename a directory on a read-only branch, we need to copy over
  *       all files to the renamed directory on the read-write branch.
  */
-static int unionfs_rename(const char *from, const char *to) {
+static int unionfs_rename(const char *from, const char *to, unsigned int flags) {
+	(void) flags;
 	DBG("from %s to %s\n", from, to);
 
 	bool is_dir = false; // is 'from' a file or directory
@@ -651,7 +662,8 @@ static int unionfs_symlink(const char *from, const char *to) {
 	RETURN(0);
 }
 
-static int unionfs_truncate(const char *path, off_t size) {
+static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info *fi) {
+	(void) fi;
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -667,7 +679,8 @@ static int unionfs_truncate(const char *path, off_t size) {
 	RETURN(0);
 }
 
-static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
+static int unionfs_utimens(const char *path, const struct timespec ts[2], struct fuse_file_info *fi) {
+	(void) fi;
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -803,9 +816,7 @@ struct fuse_operations unionfs_oper = {
 	.getattr = unionfs_getattr,
 	.access = unionfs_access,
 	.init = unionfs_init,
-#if FUSE_VERSION >= 28
 	.ioctl = unionfs_ioctl,
-#endif
 	.link = unionfs_link,
 	.mkdir = unionfs_mkdir,
 	.mknod = unionfs_mknod,

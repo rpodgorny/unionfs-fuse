@@ -24,7 +24,7 @@ if (UNIX AND APPLE)
 	link_directories("/usr/local/lib")
 endif()
 
-add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=26)
+add_definitions(-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=30)
 
 option(WITH_XATTR "Enable support for extended attributes" OFF)
 
