@@ -1,6 +1,9 @@
-project(unionfs-fuse C)
+cmake_minimum_required(VERSION 3.8)
 
-cmake_minimum_required(VERSION 2.0)
+project(unionfs-fuse VERSION 2.3
+                     DESCRIPTION "user-space implementation of union filesystem (with help of fuse)"
+                     LANGUAGES C)
+
 INCLUDE (CheckIncludeFiles)
 
 # Set a default build type for single-configuration
