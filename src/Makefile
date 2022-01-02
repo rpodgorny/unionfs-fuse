@@ -1,4 +1,4 @@
-CFLAGS += -Wall -fPIC
+CFLAGS += -W -Wall -fPIC
 CPPFLAGS += $(shell pkg-config --cflags fuse)
 CPPFLAGS += -DFUSE_USE_VERSION=29
 
