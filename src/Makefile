@@ -10,7 +10,7 @@ CPPFLAGS += -DLIBC_XATTR # glibc nowadays includes xattr
 
 LDFLAGS +=
 
-LIB = $(shell pkg-config --libs fuse3) -lpthread
+LIB = $(shell pkg-config --libs fuse3)
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 LIBUNIONFS_OBJ = fuse_ops.o opts.o debug.o findbranch.o readdir.o \
