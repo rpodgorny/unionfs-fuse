@@ -283,7 +283,7 @@ static void print_help(const char *progname) {
 	"\n"
 	"UnionFS options:\n"
 	"    -o chroot=path         chroot into this path. Use this if you \n"
-        "                           want to have a union of \"/\" \n"
+	"                           want to have a union of \"/\" \n"
 	"    -o cow                 enable copy-on-write\n"
 	"                           mountpoint\n"
 	"    -o debug_file          file to write debug information into\n"
@@ -291,7 +291,7 @@ static void print_help(const char *progname) {
 	"                           alternate way to specify directories to merge\n"
 	"    -o hide_meta_files     \".unionfs\" is a secret directory not\n"
 	"                           visible by readdir(), and so are\n"
-        "                           .fuse_hidden* files\n"
+	"                           .fuse_hidden* files\n"
 	"    -o max_files=number    Increase the maximum number of open files\n"
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
@@ -317,7 +317,7 @@ void unionfs_post_opts(void) {
 
 	// Make the pathes absolute and add trailing slashes
 	int i;
-	for (i = 0; i<uopt.nbranches; i++) {
+	for (i = 0; i < uopt.nbranches; i++) {
 		// if -ochroot= is specified, the path has to be given absolute
 		// or relative to the chroot, so no need to make it absolute
 		// also won't work, since we are not yet in the chroot here

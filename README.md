@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/rpodgorny/unionfs-fuse.svg?branch=master)](https://travis-ci.org/rpodgorny/unionfs-fuse)
-[![Gratipay](http://img.shields.io/gratipay/rpodgorny.svg)](https://gratipay.com/rpodgorny/)
+[![Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/rpodgorny/donate)
 
 unionfs-fuse
 ============
@@ -23,3 +23,22 @@ Why NOT choose it
 -----------------
 
 * Compared to kernel-space solution we need lots of useless context switches which makes kernel-only solution clear speed-winner (well, actually I've made some tests and the hard-drives seem to be the bottleneck so the speed is fine, too)
+
+How to build
+------------
+
+You can either use plain make or cmake (pick one).
+
+1. plain make
+
+Just issue `make` - this compiles the code with some static settings (xattrs enabled, ...) tuned for my linux system.
+
+2. cmake
+
+```
+mkdir build; cd build
+cmake ..
+make
+```
+
+This should allow for compilation on wider variety of systems (linux, macos, ...) and allows to enable/disable some features (xattrs, ...).
