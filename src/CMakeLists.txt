@@ -26,7 +26,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE REQUIRED fuse)
 target_include_directories(unionfs PUBLIC ${FUSE_INCLUDE_DIRS})
 target_compile_options(unionfs PUBLIC ${FUSE_CFLAGS_OTHER})
-target_link_libraries(unionfs ${FUSE_LIBRARIES})
+target_link_libraries(unionfs ${FUSE_LIBRARIES} pthread)
 
 add_executable(unionfsctl ${UNIONFSCTL_SRCS})
 
