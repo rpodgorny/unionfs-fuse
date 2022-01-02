@@ -296,8 +296,7 @@ static void print_help(const char *progname) {
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
-	"\n"
-	"FUSE Options:\n",
+	"\n",
 	progname);
 }
 
@@ -377,7 +376,7 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_HELP:
 			print_help(outargs->argv[0]);
-			fuse_lib_help(outargs);
+			fuse_opt_add_arg(outargs, "-ho");
 			uopt.doexit = 1;
 			return 0;
 		case KEY_HIDE_META_FILES:
