@@ -59,6 +59,9 @@
 #include "uioctl.h"
 
 static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -74,6 +77,9 @@ static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *f
 }
 
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -173,6 +179,9 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 }
 
 static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+
 	DBG("%s\n", path);
 
 	int i = find_rorw_branch(path);
@@ -221,6 +230,7 @@ static int unionfs_access(const char *path, int mask) {
 static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 	// just to prevent the compiler complaining about unused variables
 	(void) conn;
+	(void) cfg;
 
 	// we only now (from unionfs_init) may go into the chroot, since otherwise
 	// fuse_main() will fail to open /dev/fuse and to call mount
@@ -452,6 +462,9 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
  *       all files to the renamed directory on the read-write branch.
  */
 static int unionfs_rename(const char *oldpath, const char *newpath, unsigned int flags) {
+	// just to prevent the compiler complaining about unused variables
+	(void) flags;
+
 	DBG("from %s to %s\n", oldpath, newpath);
 
 	bool is_dir = false; // is 'from' a file or directory
@@ -666,6 +679,9 @@ static int unionfs_symlink(const char *from, const char *to) {
 }
 
 static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -682,6 +698,9 @@ static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info 
 }
 
 static int unionfs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);

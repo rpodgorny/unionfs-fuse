@@ -111,6 +111,11 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
  * unionfs-fuse readdir function
  */
 int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t off, struct fuse_file_info *fi, enum fuse_readdir_flags flags) {
+	// just to prevent the compiler complaining about unused variables
+	(void) off;
+	(void) fi;
+	(void) flags;
+
 	DBG("%s\n", path);
 
 	int i = 0;
