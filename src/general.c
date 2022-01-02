@@ -39,9 +39,9 @@ static int filedir_hidden(const char *path) {
 	// cow mode disabled, no need for hidden files
 	if (!uopt.cow_enabled) RETURN(false);
 
-	char p[PATHLEN_MAX];
+	char p[PATHLEN_MAX+1];
 	if (strlen(path) + strlen(HIDETAG) > PATHLEN_MAX) RETURN(-ENAMETOOLONG);
-	snprintf(p, PATHLEN_MAX, "%s%s", path, HIDETAG);
+	snprintf(p, PATHLEN_MAX+1, "%s%s", path, HIDETAG);
 	DBG("%s\n", p);
 
 	struct stat stbuf;
