@@ -266,8 +266,11 @@ static int unionfs_link(const char *from, const char *to) {
 	RETURN(0);
 }
 
-#if FUSE_VERSION >= 28
+#if FUSE_USE_VERSION < 35
 static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+#else
+static int unionfs_ioctl(const char *path, unsigned int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+#endif
 	(void) path;
 	(void) arg; // avoid compiler warning
 	(void) fi;  // avoid compiler warning
@@ -304,7 +307,6 @@ static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_
 
 	return 0;
 }
-#endif
 
 /**
  * unionfs mkdir() implementation
@@ -815,9 +817,7 @@ struct fuse_operations unionfs_oper = {
 	.getattr = unionfs_getattr,
 	.access = unionfs_access,
 	.init = unionfs_init,
-#if FUSE_VERSION >= 28
 	.ioctl = unionfs_ioctl,
-#endif
 	.link = unionfs_link,
 	.mkdir = unionfs_mkdir,
 	.mknod = unionfs_mknod,
