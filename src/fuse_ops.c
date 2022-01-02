@@ -127,6 +127,9 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
  * which flush the data/metadata on close()
  */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) path;
+
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int fd = dup(fi->fh);
@@ -148,6 +151,9 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
  * Just a stub. This method is optional and can safely be left unimplemented
  */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) path;
+
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int res;
@@ -214,7 +220,7 @@ static int unionfs_access(const char *path, int mask) {
  */
 static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
 	// just to prevent the compiler complaining about unused variables
-	(void) conn->max_readahead;
+	(void) conn;
 
 	// we only now (from unionfs_init) may go into the chroot, since otherwise
 	// fuse_main() will fail to open /dev/fuse and to call mount
@@ -396,6 +402,9 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) path;
+
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int res = pread(fi->fh, buf, size, offset);
@@ -424,6 +433,9 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) path;
+
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
 	int res = close(fi->fh);
