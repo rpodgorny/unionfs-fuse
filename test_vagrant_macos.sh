@@ -7,7 +7,7 @@ rm -rf Vagrantfile
 vagrant init rpodgorny/mymacos
 vagrant up
 
-vagrant upload $(pwd) xxx
+vagrant upload $(pwd) xxx/
 
 # TODO: get rid of source .bashrc
 echo "
