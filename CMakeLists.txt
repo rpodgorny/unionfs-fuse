@@ -12,7 +12,7 @@ IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 
-option(WITH_XATTR "Enable support for extended attributes" OFF)
+option(WITH_XATTR "Enable support for extended attributes" ON)
 
 # .h include files
 IF (WITH_XATTR)

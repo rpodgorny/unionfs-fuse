@@ -110,11 +110,15 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
 /**
  * unionfs-fuse readdir function
  */
-int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t off, struct fuse_file_info *fi, enum fuse_readdir_flags flags) {
-	// just to prevent the compiler complaining about unused variables
-	(void) off;
-	(void) fi;
+#if FUSE_USE_VERSION < 30
+int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+#else
+int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags) {
 	(void) flags;
+#endif
+	// just to prevent the compiler complaining about unused variables
+	(void) offset;
+	(void) fi;
 
 	DBG("%s\n", path);
 
@@ -176,7 +180,11 @@ int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t o
 			st.st_ino = de->d_ino;
 			st.st_mode = de->d_type << 12;
 
+#if FUSE_USE_VERSION < 30
+			if (filler(buf, de->d_name, &st, 0)) break;
+#else
 			if (filler(buf, de->d_name, &st, 0, 0)) break;
+#endif
 		}
 
 		closedir(dp);

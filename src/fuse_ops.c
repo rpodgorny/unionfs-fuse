@@ -58,9 +58,13 @@
 #include "conf.h"
 #include "uioctl.h"
 
+#if FUSE_USE_VERSION < 30
+static int unionfs_chmod(const char *path, mode_t mode) {
+#else
 static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
 	// just to prevent the compiler complaining about unused variables
 	(void) fi;
+#endif
 
 	DBG("%s\n", path);
 
@@ -76,9 +80,13 @@ static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *f
 	RETURN(0);
 }
 
+#if FUSE_USE_VERSION < 30
+static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
+#else
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
 	// just to prevent the compiler complaining about unused variables
 	(void) fi;
+#endif
 
 	DBG("%s\n", path);
 
@@ -178,9 +186,13 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 	RETURN(0);
 }
 
+#if FUSE_USE_VERSION < 30
+static int unionfs_getattr(const char *path, struct stat *stbuf) {
+#else
 static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
 	// just to prevent the compiler complaining about unused variables
 	(void) fi;
+#endif
 
 	DBG("%s\n", path);
 
@@ -208,7 +220,11 @@ static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_fil
 static int unionfs_access(const char *path, int mask) {
 	struct stat s;
 
+#if FUSE_USE_VERSION < 30
+	if (unionfs_getattr(path, &s) != 0)
+#else
 	if (unionfs_getattr(path, &s, NULL) != 0)
+#endif
 		RETURN(-ENOENT);
 
 	if ((mask & X_OK) && (s.st_mode & S_IXUSR) == 0)
@@ -227,10 +243,14 @@ static int unionfs_access(const char *path, int mask) {
  * init method
  * called before first access to the filesystem
  */
+#if FUSE_USE_VERSION < 30
+static void *unionfs_init(struct fuse_conn_info *conn) {
+#else
 static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
+	(void) cfg;
+#endif
 	// just to prevent the compiler complaining about unused variables
 	(void) conn;
-	(void) cfg;
 
 	// we only now (from unionfs_init) may go into the chroot, since otherwise
 	// fuse_main() will fail to open /dev/fuse and to call mount
@@ -461,22 +481,26 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
  * TODO: If we rename a directory on a read-only branch, we need to copy over
  *       all files to the renamed directory on the read-write branch.
  */
-static int unionfs_rename(const char *oldpath, const char *newpath, unsigned int flags) {
+#if FUSE_USE_VERSION < 30
+static int unionfs_rename(const char *from, const char *to) {
+#else
+static int unionfs_rename(const char *from, const char *to, unsigned int flags) {
 	// just to prevent the compiler complaining about unused variables
 	(void) flags;
+#endif
 
-	DBG("from %s to %s\n", oldpath, newpath);
+	DBG("from %s to %s\n", from, to);
 
 	bool is_dir = false; // is 'from' a file or directory
 
-	int j = find_rw_branch_cutlast(newpath);
+	int j = find_rw_branch_cutlast(to);
 	if (j == -1) RETURN(-errno);
 
-	int i = find_rorw_branch(oldpath);
+	int i = find_rorw_branch(from);
 	if (i == -1) RETURN(-errno);
 
 	if (!uopt.branches[i].rw) {
-		i = find_rw_branch_cow_common(oldpath, true);
+		i = find_rw_branch_cow_common(from, true);
 		if (i == -1) RETURN(-errno);
 	}
 
@@ -486,14 +510,14 @@ static int unionfs_rename(const char *oldpath, const char *newpath, unsigned int
 		RETURN(-EXDEV);
 	}
 
-	char op[PATHLEN_MAX], np[PATHLEN_MAX];
-	if (BUILD_PATH(op, uopt.branches[i].path, oldpath)) RETURN(-ENAMETOOLONG);
-	if (BUILD_PATH(np, uopt.branches[i].path, newpath)) RETURN(-ENAMETOOLONG);
+	char f[PATHLEN_MAX], t[PATHLEN_MAX];
+	if (BUILD_PATH(f, uopt.branches[i].path, from)) RETURN(-ENAMETOOLONG);
+	if (BUILD_PATH(t, uopt.branches[i].path, to)) RETURN(-ENAMETOOLONG);
 
-	filetype_t optype = path_is_dir(op);
-	if (optype == NOT_EXISTING)
+	filetype_t ftype = path_is_dir(f);
+	if (ftype == NOT_EXISTING)
 		RETURN(-ENOENT);
-	else if (optype == IS_DIR)
+	else if (ftype == IS_DIR)
 		is_dir = true;
 
 	int res;
@@ -501,25 +525,25 @@ static int unionfs_rename(const char *oldpath, const char *newpath, unsigned int
 		// since original file is on a read-only branch, we copied the from file to a writable branch,
 		// but since we will rename from, we also need to hide the from file on the read-only branch
 		if (is_dir)
-			res = hide_dir(oldpath, i);
+			res = hide_dir(from, i);
 		else
-			res = hide_file(oldpath, i);
+			res = hide_file(from, i);
 		if (res) RETURN(-errno);
 	}
 
-	res = rename(op, np);
+	res = rename(f, t);
 
 	if (res == -1) {
 		int err = errno; // unlink() might overwrite errno
 		// if from was on a read-only branch we copied it, but now rename failed so we need to delete it
 		if (!uopt.branches[i].rw) {
-			if (unlink(op))
+			if (unlink(f))
 				USYSLOG(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
-				       "also unlink()  failed\n", __func__, oldpath);
+				       "also unlink()  failed\n", __func__, from);
 
-			if (remove_hidden(oldpath, i))
+			if (remove_hidden(from, i))
 				USYSLOG(LOG_ERR, "%s: cow of %s succeeded, but rename() failed and now "
-				       "also removing the whiteout  failed\n", __func__, oldpath);
+				       "also removing the whiteout  failed\n", __func__, from);
 		}
 		RETURN(-err);
 	}
@@ -529,12 +553,12 @@ static int unionfs_rename(const char *oldpath, const char *newpath, unsigned int
 		// We only need to do this if we have been on a rw-branch, since we created
 		// a whiteout for read-only branches anyway.
 		if (is_dir)
-			maybe_whiteout(oldpath, i, WHITEOUT_DIR);
+			maybe_whiteout(from, i, WHITEOUT_DIR);
 		else
-			maybe_whiteout(oldpath, i, WHITEOUT_FILE);
+			maybe_whiteout(from, i, WHITEOUT_FILE);
 	}
 
-	remove_hidden(newpath, i); // remove hide file (if any)
+	remove_hidden(to, i); // remove hide file (if any)
 	RETURN(0);
 }
 
@@ -678,9 +702,13 @@ static int unionfs_symlink(const char *from, const char *to) {
 	RETURN(0);
 }
 
+#if FUSE_USE_VERSION < 30
+static int unionfs_truncate(const char *path, off_t size) {
+#else
 static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info *fi) {
 	// just to prevent the compiler complaining about unused variables
 	(void) fi;
+#endif
 
 	DBG("%s\n", path);
 
@@ -697,9 +725,13 @@ static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info 
 	RETURN(0);
 }
 
-static int unionfs_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi) {
+#if FUSE_USE_VERSION < 30
+static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
+#else
+static int unionfs_utimens(const char *path, const struct timespec ts[2], struct fuse_file_info *fi) {
 	// just to prevent the compiler complaining about unused variables
 	(void) fi;
+#endif
 
 	DBG("%s\n", path);
 
@@ -710,14 +742,14 @@ static int unionfs_utimens(const char *path, const struct timespec tv[2], struct
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #ifdef UNIONFS_HAVE_AT
-	int res = utimensat(0, p, tv, AT_SYMLINK_NOFOLLOW);
+	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
 #else
-	struct timeval tv_[2];
-	tv_[0].tv_sec = tv[0].tv_sec;
-	tv_[0].tv_usec = tv[0].tv_nsec / 1000;
-	tv_[1].tv_sec = tv[1].tv_sec;
-	tv_[1].tv_usec = tv[1].tv_nsec / 1000;
-	int res = utimes(p, tv_);
+	struct timeval tv[2];
+	tv[0].tv_sec = ts[0].tv_sec;
+	tv[0].tv_usec = ts[0].tv_nsec / 1000;
+	tv[1].tv_sec = ts[1].tv_sec;
+	tv[1].tv_usec = ts[1].tv_nsec / 1000;
+	int res = utimes(p, tv);
 #endif
 
 	if (res == -1) RETURN(-errno);
