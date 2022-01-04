@@ -30,17 +30,26 @@ You can either use plain make or cmake (pick one).
 
 1. plain make
 
-Just issue `make` - this compiles the code with some static settings (xattrs enabled, hard-coded fuse2, ...) tuned for my linux system.
+Just issue `make` - this compiles the code with some static settings (xattrs enabled, hard-coded libfuse2, ...) tuned for my linux system.
 
 2. cmake
 
 ```
-mkdir build; cd build
+mkdir build
+cd build
 cmake ..
 make
 ```
 
-This should allow for compilation on wider variety of systems (linux, macos, ...) and allows to enable/disable some features (xattrs, ...).
+This should allow for compilation on wider variety of systems (linux, macos, ...) and allows to enable/disable some features (xattrs, libfuse2/libfuse3, ...).
+
+To see the list of all options, run `cmake -LAH` after the `cmake ..` step.
+
+Example of option usage:
+
+```
+cmake .. -DWITH_LIBFUSE3=FALSE -DWITH_XATTR=FALSE
+```
 
 MacOS support
 -------------
