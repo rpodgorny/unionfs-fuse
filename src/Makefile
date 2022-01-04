@@ -1,6 +1,13 @@
 CFLAGS += -W -Wall -fPIC
+
 CPPFLAGS += $(shell pkg-config --cflags fuse3)
+LIB = $(shell pkg-config --libs fuse3)
 CPPFLAGS += -DFUSE_USE_VERSION=30
+
+# define the following (and comment out the above) for libfuse2
+#CPPFLAGS += $(shell pkg-config --cflags fuse)
+#LIB = $(shell pkg-config --libs fuse) -lpthread
+#CPPFLAGS += -DFUSE_USE_VERSION=29
 
 CPPFLAGS += -DLIBC_XATTR # glibc nowadays includes xattr
 # CPPFLAGS += -DLIBATTR_XATTR # define this to libattr xattr include
@@ -9,8 +16,6 @@ CPPFLAGS += -DLIBC_XATTR # glibc nowadays includes xattr
 # CPPFLAGS += -DDISABLE_AT    # disable *at function support
 
 LDFLAGS +=
-
-LIB = $(shell pkg-config --libs fuse3)
 
 HASHTABLE_OBJ = hashtable.o hashtable_itr.o
 LIBUNIONFS_OBJ = fuse_ops.o opts.o debug.o findbranch.o readdir.o \
