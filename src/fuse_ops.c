@@ -62,8 +62,7 @@
 static int unionfs_chmod(const char *path, mode_t mode) {
 #else
 static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) fi;
+	(void) fi;  // just to prevent the compiler complaining about unused variables
 #endif
 
 	DBG("%s\n", path);
@@ -84,8 +83,7 @@ static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *f
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
 #else
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) fi;
+	(void) fi;  // just to prevent the compiler complaining about unused variables
 #endif
 
 	DBG("%s\n", path);
@@ -141,8 +139,7 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
  * which flush the data/metadata on close()
  */
 static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) path;
+	(void) path;  // just to prevent the compiler complaining about unused variables
 
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
@@ -165,8 +162,7 @@ static int unionfs_flush(const char *path, struct fuse_file_info *fi) {
  * Just a stub. This method is optional and can safely be left unimplemented
  */
 static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) path;
+	(void) path;  // just to prevent the compiler complaining about unused variables
 
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
@@ -190,8 +186,7 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
 #else
 static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) fi;
+	(void) fi;  // just to prevent the compiler complaining about unused variables
 #endif
 
 	DBG("%s\n", path);
@@ -247,10 +242,9 @@ static int unionfs_access(const char *path, int mask) {
 static void *unionfs_init(struct fuse_conn_info *conn) {
 #else
 static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
-	(void) cfg;
+	(void) cfg;  // just to prevent the compiler complaining about unused variables
 #endif
-	// just to prevent the compiler complaining about unused variables
-	(void) conn;
+	(void) conn;  // just to prevent the compiler complaining about unused variables
 
 	// we only now (from unionfs_init) may go into the chroot, since otherwise
 	// fuse_main() will fail to open /dev/fuse and to call mount
@@ -434,8 +428,7 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 }
 
 static int unionfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) path;
+	(void) path;  // just to prevent the compiler complaining about unused variables
 
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
@@ -465,8 +458,7 @@ static int unionfs_readlink(const char *path, char *buf, size_t size) {
 }
 
 static int unionfs_release(const char *path, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) path;
+	(void) path;  // just to prevent the compiler complaining about unused variables
 
 	DBG("fd = %"PRIx64"\n", fi->fh);
 
@@ -485,8 +477,7 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 static int unionfs_rename(const char *from, const char *to) {
 #else
 static int unionfs_rename(const char *from, const char *to, unsigned int flags) {
-	// just to prevent the compiler complaining about unused variables
-	(void) flags;
+	(void) flags;  // just to prevent the compiler complaining about unused variables
 #endif
 
 	DBG("from %s to %s\n", from, to);
@@ -706,8 +697,7 @@ static int unionfs_symlink(const char *from, const char *to) {
 static int unionfs_truncate(const char *path, off_t size) {
 #else
 static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) fi;
+	(void) fi;  // just to prevent the compiler complaining about unused variables
 #endif
 
 	DBG("%s\n", path);
@@ -729,8 +719,7 @@ static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info 
 static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
 #else
 static int unionfs_utimens(const char *path, const struct timespec ts[2], struct fuse_file_info *fi) {
-	// just to prevent the compiler complaining about unused variables
-	(void) fi;
+	(void) fi;  // just to prevent the compiler complaining about unused variables
 #endif
 
 	DBG("%s\n", path);

@@ -114,11 +114,10 @@ static void read_whiteouts(const char *path, struct hashtable *whiteouts, int br
 int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
 #else
 int unionfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags) {
-	(void) flags;
+	(void) flags;  // just to prevent the compiler complaining about unused variables
 #endif
-	// just to prevent the compiler complaining about unused variables
-	(void) offset;
-	(void) fi;
+	(void) offset;  // just to prevent the compiler complaining about unused variables
+	(void) fi;  // just to prevent the compiler complaining about unused variables
 
 	DBG("%s\n", path);
 
