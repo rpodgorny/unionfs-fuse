@@ -16,7 +16,7 @@ option(WITH_LIBFUSE3 "Enable libfuse3 support" ON)
 find_package(PkgConfig REQUIRED)
 
 IF (WITH_LIBFUSE3)
-	add_definitions(-DFUSE_USE_VERSION=30)
+	add_definitions(-DFUSE_USE_VERSION=35)
 	pkg_check_modules(FUSE REQUIRED fuse3)
 ELSE (WITH_LIBFUSE3)
 	add_definitions(-DFUSE_USE_VERSION=29)

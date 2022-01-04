@@ -2,7 +2,7 @@ CFLAGS += -W -Wall -fPIC
 
 CPPFLAGS += $(shell pkg-config --cflags fuse3)
 LIB = $(shell pkg-config --libs fuse3)
-CPPFLAGS += -DFUSE_USE_VERSION=30
+CPPFLAGS += -DFUSE_USE_VERSION=35
 
 # define the following (and comment out the above) for libfuse2
 #CPPFLAGS += $(shell pkg-config --cflags fuse)
