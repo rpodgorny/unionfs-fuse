@@ -1,0 +1,6 @@
+# vagrant does not seem to "inherit" original image's vagrantfile so i need to provide this...
+
+Vagrant.configure(2) do |config|
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+end
+
