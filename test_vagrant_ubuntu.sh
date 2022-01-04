@@ -14,14 +14,14 @@ set -e -x
 uname -a
 
 sudo apt-get update -y
-sudo apt-get install -y pkg-config fuse3
-
-sudo modprobe fuse
-
-sudo apt-get install -y gcc make pkg-config cmake libfuse3-dev
+sudo apt-get install -y gcc make pkg-config cmake fuse3 libfuse3-dev
 
 sudo apt-get install -y python3 python3-pip
 sudo pip install pytest
+" | vagrant ssh
+
+echo "
+set -e -x
 
 cp -av /vagrant /var/tmp/xxx
 cd /var/tmp/xxx
@@ -32,6 +32,7 @@ cd build
 cmake ..
 make
 
+sudo modprobe fuse
 python3 ../test_all.py
 " | vagrant ssh
 
