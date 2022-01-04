@@ -8,7 +8,11 @@
 #define COW_UTILS_H
 
 #define VM_AND_BUFFER_CACHE_SYNCHRONIZED
-#define MAXBSIZE 4096
+
+// this is defined on bsd systems (thus, also on macos) but linux lacks it
+#ifndef MAXBSIZE
+	#define MAXBSIZE 4096  // TODO: isn't this too low? some bsds have this at 16k, macos seems to have this at (256 * 4096)
+#endif
 
 struct cow {
 	mode_t umask;
