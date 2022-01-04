@@ -12,11 +12,11 @@ echo "
 set -e -x
 
 sudo apt-get update -y
-sudo apt-get install -y pkg-config fuse
+sudo apt-get install -y pkg-config fuse3
 
 sudo modprobe fuse
 
-sudo apt-get install -y gcc make pkg-config cmake libfuse-dev
+sudo apt-get install -y gcc make pkg-config cmake libfuse3-dev
 
 sudo apt-get install -y python3 python3-pip
 sudo pip install pytest
