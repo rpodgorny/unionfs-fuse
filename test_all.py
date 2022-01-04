@@ -29,7 +29,8 @@ def get_dir_contents(directory):
 
 
 def get_osxfuse_unionfs_mounts():
-	mount_output = call('mount -t osxfuse').decode('utf8')
+	#mount_output = call('mount -t osxfuse').decode('utf8')  # for fuse3? or newer macos?
+	mount_output = call('mount -t macfuse').decode('utf8')
 	return [line.split(' ')[0] for line in mount_output.split('\n') if len(line) > 0]
 
 
