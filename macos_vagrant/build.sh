@@ -5,6 +5,7 @@ rm -rf Vagrantfile
 
 VERSION=10.12.6
 
+# unfortunately this was the only macos-based image that works on my linux system :-(
 vagrant init --box-version ${VERSION} --minimal jhcook/macos-sierra
 vagrant up
 
