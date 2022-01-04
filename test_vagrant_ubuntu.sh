@@ -26,6 +26,7 @@ sudo pip install pytest
 cp -av /vagrant /var/tmp/xxx
 cd /var/tmp/xxx
 
+rm -rf build
 mkdir build
 cd build
 cmake ..
