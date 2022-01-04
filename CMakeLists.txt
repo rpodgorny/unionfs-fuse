@@ -4,7 +4,7 @@ project(unionfs-fuse VERSION 2.3
                      DESCRIPTION "user-space implementation of union filesystem (with help of fuse)"
                      LANGUAGES C)
 
-INCLUDE (CheckIncludeFiles)
+INCLUDE(CheckIncludeFiles)
 
 # Set a default build type for single-configuration
 # CMake generators if no build type is set.
@@ -12,9 +12,8 @@ IF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 ENDIF(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
 
-option(WITH_XATTR "Enable support for extended attributes" OFF)
+option(WITH_XATTR "Enable support for extended attributes" ON)
 
-# .h include files
 IF (WITH_XATTR)
 	CHECK_INCLUDE_FILES("sys/xattr.h" HAVE_LIBC_XATTR)
 	CHECK_INCLUDE_FILES("attr/xattr.h" HAVE_LIBATTR_XATTR)
