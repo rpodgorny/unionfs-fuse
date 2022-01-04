@@ -58,7 +58,14 @@
 #include "conf.h"
 #include "uioctl.h"
 
+#if FUSE_USE_VERSION < 30
 static int unionfs_chmod(const char *path, mode_t mode) {
+#else
+static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+#endif
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -73,7 +80,14 @@ static int unionfs_chmod(const char *path, mode_t mode) {
 	RETURN(0);
 }
 
+#if FUSE_USE_VERSION < 30
 static int unionfs_chown(const char *path, uid_t uid, gid_t gid) {
+#else
+static int unionfs_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+#endif
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -172,7 +186,14 @@ static int unionfs_fsync(const char *path, int isdatasync, struct fuse_file_info
 	RETURN(0);
 }
 
+#if FUSE_USE_VERSION < 30
 static int unionfs_getattr(const char *path, struct stat *stbuf) {
+#else
+static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+#endif
+
 	DBG("%s\n", path);
 
 	int i = find_rorw_branch(path);
@@ -199,7 +220,11 @@ static int unionfs_getattr(const char *path, struct stat *stbuf) {
 static int unionfs_access(const char *path, int mask) {
 	struct stat s;
 
+#if FUSE_USE_VERSION < 30
 	if (unionfs_getattr(path, &s) != 0)
+#else
+	if (unionfs_getattr(path, &s, NULL) != 0)
+#endif
 		RETURN(-ENOENT);
 
 	if ((mask & X_OK) && (s.st_mode & S_IXUSR) == 0)
@@ -218,7 +243,12 @@ static int unionfs_access(const char *path, int mask) {
  * init method
  * called before first access to the filesystem
  */
-static void * unionfs_init(struct fuse_conn_info *conn) {
+#if FUSE_USE_VERSION < 30
+static void *unionfs_init(struct fuse_conn_info *conn) {
+#else
+static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) {
+	(void) cfg;
+#endif
 	// just to prevent the compiler complaining about unused variables
 	(void) conn;
 
@@ -266,8 +296,11 @@ static int unionfs_link(const char *from, const char *to) {
 	RETURN(0);
 }
 
-#if FUSE_VERSION >= 28
+#if FUSE_USE_VERSION < 35
 static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+#else
+static int unionfs_ioctl(const char *path, unsigned int cmd, void *arg, struct fuse_file_info *fi, unsigned int flags, void *data) {
+#endif
 	(void) path;
 	(void) arg; // avoid compiler warning
 	(void) fi;  // avoid compiler warning
@@ -304,7 +337,6 @@ static int unionfs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_
 
 	return 0;
 }
-#endif
 
 /**
  * unionfs mkdir() implementation
@@ -449,7 +481,14 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
  * TODO: If we rename a directory on a read-only branch, we need to copy over
  *       all files to the renamed directory on the read-write branch.
  */
+#if FUSE_USE_VERSION < 30
 static int unionfs_rename(const char *from, const char *to) {
+#else
+static int unionfs_rename(const char *from, const char *to, unsigned int flags) {
+	// just to prevent the compiler complaining about unused variables
+	(void) flags;
+#endif
+
 	DBG("from %s to %s\n", from, to);
 
 	bool is_dir = false; // is 'from' a file or directory
@@ -663,7 +702,14 @@ static int unionfs_symlink(const char *from, const char *to) {
 	RETURN(0);
 }
 
+#if FUSE_USE_VERSION < 30
 static int unionfs_truncate(const char *path, off_t size) {
+#else
+static int unionfs_truncate(const char *path, off_t size, struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+#endif
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -679,7 +725,14 @@ static int unionfs_truncate(const char *path, off_t size) {
 	RETURN(0);
 }
 
+#if FUSE_USE_VERSION < 30
 static int unionfs_utimens(const char *path, const struct timespec ts[2]) {
+#else
+static int unionfs_utimens(const char *path, const struct timespec ts[2], struct fuse_file_info *fi) {
+	// just to prevent the compiler complaining about unused variables
+	(void) fi;
+#endif
+
 	DBG("%s\n", path);
 
 	int i = find_rw_branch_cow(path);
@@ -815,9 +868,7 @@ struct fuse_operations unionfs_oper = {
 	.getattr = unionfs_getattr,
 	.access = unionfs_access,
 	.init = unionfs_init,
-#if FUSE_VERSION >= 28
 	.ioctl = unionfs_ioctl,
-#endif
 	.link = unionfs_link,
 	.mkdir = unionfs_mkdir,
 	.mknod = unionfs_mknod,

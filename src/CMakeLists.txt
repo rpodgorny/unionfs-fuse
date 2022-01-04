@@ -9,24 +9,24 @@ SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g")
 SET(CMAKE_C_FLAGS_RELEASE "-O2")
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -DDEBUG")
 
-# this should not be needed anymore since we use pkg_check_modules (see below)
-#if (UNIX AND APPLE)
-#	# Legacy include path for osxfuse
-#	include_directories("/usr/local/include/osxfuse/fuse")
-#	# New include path for MacFuse
-#	include_directories("/usr/local/include/fuse")
-#	link_directories("/usr/local/lib")
-#endif()
-
-add_definitions(-DFUSE_USE_VERSION=30)
-
 add_executable(unionfs ${UNIONFS_SRCS} ${HASHTABLE_SRCS})
 
+option(WITH_LIBFUSE3 "Enable libfuse3 support" ON)
+
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(FUSE REQUIRED fuse)
+
+IF (WITH_LIBFUSE3)
+	add_definitions(-DFUSE_USE_VERSION=30)
+	pkg_check_modules(FUSE REQUIRED fuse3)
+ELSE (WITH_LIBFUSE3)
+	add_definitions(-DFUSE_USE_VERSION=29)
+	pkg_check_modules(FUSE REQUIRED fuse)
+	target_link_libraries(unionfs pthread)
+ENDIF (WITH_LIBFUSE3)
+
 target_include_directories(unionfs PUBLIC ${FUSE_INCLUDE_DIRS})
 target_compile_options(unionfs PUBLIC ${FUSE_CFLAGS_OTHER})
-target_link_libraries(unionfs ${FUSE_LIBRARIES} pthread)
+target_link_libraries(unionfs ${FUSE_LIBRARIES})
 
 add_executable(unionfsctl ${UNIONFSCTL_SRCS})
 
