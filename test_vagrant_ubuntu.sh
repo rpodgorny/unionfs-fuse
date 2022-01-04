@@ -11,6 +11,8 @@ vagrant up
 echo "
 set -e -x
 
+uname -a
+
 sudo apt-get update -y
 sudo apt-get install -y pkg-config fuse3
 
