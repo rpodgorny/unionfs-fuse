@@ -1,5 +1,6 @@
-2.3
+3.0 (unreleased)
 - make it compile under MacOS again
+...
 
 2.2
 - fixed timestamp precision lost on cow copy
