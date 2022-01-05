@@ -26,8 +26,7 @@
 /**
  * Set debug path
  */
-void set_debug_path(char *new_path, int len)
-{
+void set_debug_path(char *new_path, int len) {
 	pthread_rwlock_wrlock(&uopt.dbgpath_lock); // LOCK path
 
 	if (uopt.dbgpath) free(uopt.dbgpath);
@@ -41,8 +40,7 @@ void set_debug_path(char *new_path, int len)
 /**
  * Check if a debug path is set
  */
-static bool get_has_debug_path(void)
-{
+static bool get_has_debug_path(void) {
 	pthread_rwlock_rdlock(&uopt.dbgpath_lock); // LOCK path
 
 	bool has_debug_path = (uopt.dbgpath) ? true : false;
@@ -55,8 +53,7 @@ static bool get_has_debug_path(void)
 /**
  * Enable or disable internal debugging
  */
-bool set_debug_onoff(int value)
-{
+bool set_debug_onoff(int value) {
 	bool res = false;
 
 	if (value) {
@@ -77,8 +74,7 @@ bool set_debug_onoff(int value)
 /**
  * Set the maximum number of open files
  */
-int set_max_open_files(const char *arg)
-{
+int set_max_open_files(const char *arg) {
 	struct rlimit rlim;
 	unsigned long max_files;
 	if (sscanf(arg, "max_files=%ld\n", &max_files) != 1) {
@@ -238,8 +234,7 @@ int parse_branches(const char *arg) {
   *       to the chroot, it is absolutely required
   *       -o chroot=path is provided before specifying the braches!
   */
-static char * get_opt_str(const char *arg, char *opt_name)
-{
+static char * get_opt_str(const char *arg, char *opt_name) {
 	char *str = index(arg, '=');
 
 	if (!str) {
@@ -348,7 +343,7 @@ void unionfs_post_opts(void) {
 }
 
 int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs) {
-	(void)data;
+	(void)data;  // prevent compiler warning
 
 	int res = 0; // for general purposes
 
