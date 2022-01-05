@@ -281,7 +281,7 @@ static void print_help(const char *progname) {
 	"                           want to have a union of \"/\" \n"
 	"    -o cow                 enable copy-on-write\n"
 	"                           mountpoint\n"
-	"    -o debug_file          file to write debug information into\n"
+	"    -o debug_file=<fn>     file to write debug information into\n"
 	"    -o dirs=branch[=RO/RW][:branch...]\n"
 	"                           alternate way to specify directories to merge\n"
 	"    -o hide_meta_files     \".unionfs\" is a secret directory not\n"
