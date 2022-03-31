@@ -490,7 +490,7 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 	int i = find_rorw_branch(from);
 	if (i == -1) RETURN(-errno);
 
-	if (uopt.branches[i].rw && branch_contains_file_or_parent_dir(i, to)) {
+	if (uopt.preserve_branch && uopt.branches[i].rw && branch_contains_file_or_parent_dir(i, to)) {
 		DBG("file can stay in same branch\n");
 		j = i;
 	}

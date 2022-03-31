@@ -512,5 +512,23 @@ class UnionFS_RW_RO_COW_RelaxedPermissions_TestCase(Common, unittest.TestCase):
 		self.assertFalse(os.access('union/file', os.X_OK))
 
 
+class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
+	def setUp(self):
+		super().setUp()
+		self.mount('%s -o preserve_branch rw1=rw:rw2=rw union' % self.unionfs_path)
+	
+	def test_move_from_branch_to_common(self):
+		import time
+		write_to_file('rw2/rw2_dir/rw2_file2', 'something')
+		self.assertTrue(os.access('union/rw2_dir/rw2_file2', os.F_OK))
+		self.assertFalse(os.access('union/common_dir/rw2_file2', os.F_OK))
+		os.rename('union/rw2_dir/rw2_file2', 'union/common_dir/rw2_file2')
+		self.assertFalse(os.access('rw1/common_dir/rw2_file2', os.F_OK))
+		self.assertFalse(os.access('rw2/rw2_dir/rw2_file2', os.F_OK))
+		self.assertFalse(os.access('union/rw2_dir/rw2_file2', os.F_OK))
+		self.assertTrue(os.access('rw2/common_dir/rw2_file2', os.F_OK))
+		self.assertTrue(os.access('union/common_dir/rw2_file2', os.F_OK))
+
+
 if __name__ == '__main__':
 	unittest.main()
