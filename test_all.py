@@ -11,7 +11,7 @@ import platform
 
 
 def call(cmd):
-	return subprocess.check_output(cmd, shell=True)
+	return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
 
 
 def write_to_file(fn, data):
