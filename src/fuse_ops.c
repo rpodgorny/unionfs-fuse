@@ -490,9 +490,19 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 	int i = find_rorw_branch(from);
 	if (i == -1) RETURN(-errno);
 
-	if (uopt.preserve_branch && uopt.branches[i].rw && branch_contains_file_or_parent_dir(i, to)) {
-		DBG("file can stay in same branch\n");
-		j = i;
+	if (uopt.preserve_branch && uopt.branches[i].rw) {
+		if (branch_contains_file_or_parent_dir(i, to)) {
+			DBG("...from branch contains target directory, no need to change branches\n");
+			j = i;
+		} else {
+			DBG("...creating target directory in from branch, no need to change branches\n");
+			
+			if (path_create_cutlast(to, j, i) == 0) {
+				j = i;
+			} else {
+				DBG("...failed to create path in from branch\n");
+			}
+		}
 	}
 
 	if (!uopt.branches[i].rw) {
