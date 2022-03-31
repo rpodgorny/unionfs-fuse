@@ -31,6 +31,12 @@ ELSE (WITH_XATTR)
 	add_definitions(-DDISABLE_XATTR)
 ENDIF (WITH_XATTR)
 
+if (UNIX AND APPLE)
+    find_library(MACFUSE_PATH fuse HINTS /usr/local/lib)
+    get_filename_component(MACFUSE_DIRECTORY ${MACFUSE_PATH} DIRECTORY)
+	link_directories(${MACFUSE_DIRECTORY})
+endif()
+
 INSTALL(PROGRAMS mount.unionfs DESTINATION sbin)
 
 add_subdirectory(src)
