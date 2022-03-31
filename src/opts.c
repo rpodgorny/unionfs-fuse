@@ -280,7 +280,8 @@ static void print_help(const char *progname) {
 	"    -o chroot=path         chroot into this path. Use this if you \n"
 	"                           want to have a union of \"/\" \n"
 	"    -o cow                 enable copy-on-write\n"
-	"                           mountpoint\n"
+	"    -o preserve_branch     Preserve branch when moving files, creating\n"
+	"                           directories as needed\n"
 	"    -o debug_file=<fn>     file to write debug information into\n"
 	"    -o dirs=branch[=RO/RW][:branch...]\n"
 	"                           alternate way to specify directories to merge\n"
@@ -364,6 +365,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_COW:
 			uopt.cow_enabled = true;
+			return 0;
+		case KEY_PRESERVE_BRANCH:
+			uopt.preserve_branch = true;
 			return 0;
 		case KEY_DEBUG_FILE:
 			uopt.dbgpath = get_opt_str(arg, "debug_file");

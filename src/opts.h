@@ -21,6 +21,7 @@ typedef struct {
 	branch_entry_t *branches;
 
 	bool cow_enabled;
+    bool preserve_branch;
 	bool statfs_omit_ro;
 	int doexit;
 	int retval;
@@ -36,6 +37,7 @@ typedef struct {
 enum {
 	KEY_CHROOT,
 	KEY_COW,
+    KEY_PRESERVE_BRANCH,
 	KEY_DEBUG_FILE,
 	KEY_DIRS,
 	KEY_HELP,
