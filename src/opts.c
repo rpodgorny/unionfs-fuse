@@ -291,7 +291,7 @@ static void print_help(const char *progname) {
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
-	"    -o direct_io           Support direct io\n"
+	"    -o direct_io           Enables direct io\n"
 	"\n",
 	progname);
 }

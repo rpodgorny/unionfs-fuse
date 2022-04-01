@@ -23,6 +23,7 @@
 
 static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("chroot=%s,", KEY_CHROOT),
+	FUSE_OPT_KEY("direct_io",KEY_DIRECT_IO),
 	FUSE_OPT_KEY("cow", KEY_COW),
 	FUSE_OPT_KEY("debug_file=%s", KEY_DEBUG_FILE),
 	FUSE_OPT_KEY("dirs=%s", KEY_DIRS),
@@ -36,7 +37,6 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
 	FUSE_OPT_KEY("--version", KEY_VERSION),
 	FUSE_OPT_KEY("-V", KEY_VERSION),
-	FUSE_OPT_KEY("direct_io",KEY_DIRECT_IO),
 	FUSE_OPT_END
 };
 

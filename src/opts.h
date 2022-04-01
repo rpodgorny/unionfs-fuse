@@ -36,6 +36,7 @@ typedef struct {
 
 enum {
 	KEY_CHROOT,
+	KEY_DIRECT_IO,
 	KEY_COW,
 	KEY_DEBUG_FILE,
 	KEY_DIRS,
@@ -47,7 +48,6 @@ enum {
 	KEY_RELAXED_PERMISSIONS,
 	KEY_STATFS_OMIT_RO,
 	KEY_VERSION,
-	KEY_DIRECT_IO,
 };
 
 
