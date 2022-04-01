@@ -28,95 +28,28 @@
 
 
 /**
- * Actually create the directory here.
- */
-static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
-	DBG("%s\n", path);
-
-	char dirp[PATHLEN_MAX]; // dir path to create
-	sprintf(dirp, "%s%s", uopt.branches[nbranch_rw].path, path);
-
-	struct stat buf;
-	int res = stat(dirp, &buf);
-	if (res != -1) RETURN(0); // already exists
-
-	if (nbranch_ro == nbranch_rw) {
-		// special case nbranch_ro = nbranch_rw, this is if we a create
-		// unionfs meta directories, so not directly on cow operations
-		buf.st_mode = S_IRWXU | S_IRWXG;
-	} else {
-		// data from the ro-branch
-		char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
-		sprintf(o_dirp, "%s%s", uopt.branches[nbranch_ro].path, path);
-		res = stat(o_dirp, &buf);
-		if (res == -1) RETURN(1); // lower level branch removed in the mean time?
-	}
-
-	res = mkdir(dirp, buf.st_mode);
-	if (res == -1) {
-		USYSLOG(LOG_DAEMON, "Creating %s failed: \n", dirp);
-		RETURN(1);
-	}
-
-	if (nbranch_ro == nbranch_rw) RETURN(0); // the special case again
-
-	if (setfile(dirp, &buf)) RETURN(1); // directory already removed by another process?
-
-	// TODO: time, but its values are modified by the next dir/file creation steps?
-
-	RETURN(0);
-}
-
-/**
  * l_nbranch (lower nbranch than nbranch) is write protected, create the dir path on
  * nbranch for an other COW operation.
  */
-int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
+int path_create_cow(const char *path, int nbranch_ro, int nbranch_rw) {
 	DBG("%s\n", path);
 
 	if (!uopt.cow_enabled) RETURN(0);
 
-	char p[PATHLEN_MAX];
-	if (BUILD_PATH(p, uopt.branches[nbranch_rw].path, path)) RETURN(-ENAMETOOLONG);
-
-	struct stat st;
-	if (!stat(p, &st)) {
-		// path does already exists, no need to create it
-		RETURN(0);
-	}
-
-	char *walk = (char *)path;
-
-	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
-	while (*walk == '/') walk++;
-
-	do {
-		// walk over the directory name, walk will now be /dir2
-		while (*walk != '\0' && *walk != '/') walk++;
-
-		// +1 due to \0, which gets added automatically
-		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
-		int res = do_create(p, nbranch_ro, nbranch_rw);
-		if (res) RETURN(res); // creating the directory failed
-
-		// as above the do loop, walk over the next slashes, walk = dir2/
-		while (*walk == '/') walk++;
-	} while (*walk != '\0');
-
-	RETURN(0);
+	return path_create(path, nbranch_ro, nbranch_rw);
 }
 
 /**
- * Same as  path_create(), but ignore the last segment in path,
+ * Same as  path_create_cow(), but ignore the last segment in path,
  * i.e. it might be a filename.
  */
-int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
+int path_create_cutlast_cow(const char *path, int nbranch_ro, int nbranch_rw) {
 	DBG("%s\n", path);
 
 	char *dname = u_dirname(path);
 	if (dname == NULL)
 		RETURN(-ENOMEM);
-	int ret = path_create(dname, nbranch_ro, nbranch_rw);
+	int ret = path_create_cow(dname, nbranch_ro, nbranch_rw);
 	free(dname);
 
 	RETURN(ret);
@@ -129,7 +62,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 	DBG("%s\n", path);
 
 	// create the path to the file
-	path_create_cutlast(path, branch_ro, branch_rw);
+	path_create_cutlast_cow(path, branch_ro, branch_rw);
 
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
 	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path))
@@ -163,7 +96,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 			if (copy_dir) {
 				res = copy_directory(path, branch_ro, branch_rw);
 			} else {
-				res = path_create(path, branch_ro, branch_rw);
+				res = path_create_cow(path, branch_ro, branch_rw);
 			}
 			break;
 		case S_IFBLK:
@@ -190,7 +123,7 @@ int copy_directory(const char *path, int branch_ro, int branch_rw) {
 	DBG("%s\n", path);
 
 	/* create the directory on the destination branch */
-	int res = path_create(path, branch_ro, branch_rw);
+	int res = path_create_cow(path, branch_ro, branch_rw);
 	if (res != 0) {
 		RETURN(res);
 	}
