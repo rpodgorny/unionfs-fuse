@@ -110,9 +110,6 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	int i = find_rw_branch_cutlast(path);
 	if (i == -1) RETURN(-errno);
     
-    if (uopt.direct_io){
-       fi->direct_io=1;
-    }
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
@@ -259,6 +256,10 @@ static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) 
 			exit(1);
 		}
 	}
+	
+	if (uopt.direct_io)
+        cfg->direct_io=1;
+
 
 #ifdef FUSE_CAP_IOCTL_DIR
 	if (conn->capable & FUSE_CAP_IOCTL_DIR)
@@ -403,9 +404,6 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 
 	int i;
 	
-	if (uopt.direct_io){
-	   fi->direct_io=1;
-	}
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
 		i = find_rw_branch_cutlast(path);
 	} else {
