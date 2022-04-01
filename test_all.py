@@ -90,11 +90,11 @@ class Common:
 		if platform.system() == 'Darwin':
 			# Need to get the unionfs device name so that we can unmount it later:
 			prev_mounts = get_osxfuse_unionfs_mounts()
-			call(cmd)
+			call('%s -o nobrowse %s' % (self.unionfs_path, cmd))
 			cur_mounts = get_osxfuse_unionfs_mounts()
 			self.mount_device = list(set(cur_mounts)-set(prev_mounts))[0]
 		else:
-			call(cmd)
+			call('%s %s' % (self.unionfs_path, cmd))
 		self.mounted = True
 
 
@@ -114,7 +114,7 @@ class UnionFS_Version(Common, unittest.TestCase):
 class UnionFS_Sync(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s ro1=ro:ro2=ro union' % self.unionfs_path)
+		self.mount('ro1=ro:ro2=ro union')
 
 	def test_sync(self):
 		call('sync union')
@@ -123,7 +123,7 @@ class UnionFS_Sync(Common, unittest.TestCase):
 class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow ro1=ro:ro2=ro union' % self.unionfs_path)
+		self.mount('-o cow ro1=ro:ro2=ro union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'ro2_file', 'ro_common_file', 'common_file', 'ro1_dir', 'ro2_dir', 'common_dir', 'common_empty_dir', ]
@@ -165,7 +165,7 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('rw1=rw:ro1=ro union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -235,7 +235,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('-o cow rw1=rw:ro1=ro union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -367,7 +367,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s ro1=ro:rw1=rw union' % self.unionfs_path)
+		self.mount('ro1=ro:rw1=rw union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -419,7 +419,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow ro1=ro:rw1=rw union' % self.unionfs_path)
+		self.mount('-o cow ro1=ro:rw1=rw union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -470,7 +470,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('rw1=rw:ro1=ro union')
 
 	def test_debug(self):
 		debug_fn = '%s/debug.log' % self.tmpdir
@@ -497,7 +497,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_RelaxedPermissions_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow,relaxed_permissions rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('-o cow,relaxed_permissions rw1=rw:ro1=ro union')
 
 	def test_access(self):
 		self.assertFalse(os.access('union/file', os.F_OK))
@@ -515,7 +515,7 @@ class UnionFS_RW_RO_COW_RelaxedPermissions_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o preserve_branch rw1=rw:rw2=rw union' % self.unionfs_path)
+		self.mount('-o preserve_branch rw1=rw:rw2=rw union')
 
 	def test_move_from_branch_to_common(self):
 		write_to_file('rw2/rw2_dir/rw2_file2', 'something')
