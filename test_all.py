@@ -516,8 +516,8 @@ class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
 		self.mount('%s -o preserve_branch rw1=rw:rw2=rw union' % self.unionfs_path)
-	
-	def test_move_from_branch2_to_common(self):
+
+	def test_move_from_branch_to_common(self):
 		write_to_file('rw2/rw2_dir/rw2_file2', 'something')
 		self.assertTrue(os.access('union/rw2_dir/rw2_file2', os.F_OK))
 		self.assertFalse(os.access('union/common_dir/rw2_file2', os.F_OK))
@@ -527,15 +527,28 @@ class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
 		self.assertFalse(os.access('union/rw2_dir/rw2_file2', os.F_OK))
 		self.assertTrue(os.access('rw2/common_dir/rw2_file2', os.F_OK))
 		self.assertTrue(os.access('union/common_dir/rw2_file2', os.F_OK))
-	
+
 	def test_move_from_branch1_to_branch2(self):
 		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
 		self.assertFalse(os.access('rw2/rw2_dir/rw1_file', os.F_OK))
+		self.assertFalse(os.access('rw1/rw2_dir/rw1_file', os.F_OK))
 		self.assertFalse(os.access('union/rw2_dir/rw1_file', os.F_OK))
 		os.rename('union/rw1_dir/rw1_file', 'union/rw2_dir/rw1_file')
 		self.assertFalse(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
-		self.assertTrue(os.access('rw2/rw2_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw1/rw2_dir/rw1_file', os.F_OK))
 		self.assertTrue(os.access('union/rw2_dir/rw1_file', os.F_OK))
+
+	def test_move_from_branch2_to_branch1(self):
+		self.assertTrue(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('union/rw2_dir/rw2_file', os.F_OK))
+		self.assertFalse(os.access('rw1/rw1_dir/rw2_file', os.F_OK))
+		self.assertFalse(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
+		self.assertFalse(os.access('union/rw1_dir/rw2_file', os.F_OK))
+		os.rename('union/rw2_dir/rw2_file', 'union/rw1_dir/rw2_file')
+		self.assertFalse(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw2_file', os.F_OK))
 
 
 if __name__ == '__main__':

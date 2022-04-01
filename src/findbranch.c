@@ -205,7 +205,7 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 		goto out;
 	}
 
-	if (path_create(dname, branch, branch_rw) == 0) branch = branch_rw; // path successfully copied
+	if (path_create_cow(dname, branch, branch_rw) == 0) branch = branch_rw; // path successfully copied
 
 out:
 	free(dname);
@@ -230,7 +230,7 @@ int find_rw_branch_cow(const char *path) {
  * copy-on-write
  * Find path in a union branch and if this branch is read-only,
  * copy the file to a read-write branch.
- * NOTE: Don't call this to copy directories. Use path_create() for that!
+ * NOTE: Don't call this to copy directories. Use path_create_cow() for that!
  *       It will definitely fail, when a ro-branch is on top of a rw-branch
  *       and a directory is to be copied from ro- to rw-branch.
  */
