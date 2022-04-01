@@ -109,7 +109,10 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 
 	int i = find_rw_branch_cutlast(path);
 	if (i == -1) RETURN(-errno);
-
+    
+    if (uopt.direct_io){
+       fi->direct_io=1;
+    }
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
@@ -399,6 +402,10 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 	DBG("%s\n", path);
 
 	int i;
+	
+	if (uopt.direct_io){
+	   fi->direct_io=1;
+	}
 	if (fi->flags & (O_WRONLY | O_RDWR)) {
 		i = find_rw_branch_cutlast(path);
 	} else {

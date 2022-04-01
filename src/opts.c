@@ -362,6 +362,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 		case KEY_CHROOT:
 			uopt.chroot = get_opt_str(arg, "chroot");
 			return 0;
+		case KEY_DIRECT_IO:
+		      uopt.direct_io = 1;
+		      return 0;
 		case KEY_COW:
 			uopt.cow_enabled = true;
 			return 0;
