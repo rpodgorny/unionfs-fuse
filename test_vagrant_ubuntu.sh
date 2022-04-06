@@ -11,8 +11,10 @@ CMAKE_CMD="cmake .."
 trap "vagrant destroy --force; rm -rf Vagrantfile" SIGINT SIGTERM ERR EXIT
 
 rm -rf Vagrantfile
-#vagrant init ubuntu/hirsute64
-vagrant init ubuntu/focal64
+#vagrant init ubuntu/bionic64
+#vagrant init --box-version 20220324.0.0 ubuntu/focal64
+vagrant init --box-version 20220405.0.0 ubuntu/jammy64
+#vagrant box update
 vagrant up
 
 echo "
