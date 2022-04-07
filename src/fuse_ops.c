@@ -492,6 +492,14 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 	if (i == -1) RETURN(-errno);
 
 	if (uopt.preserve_branch && uopt.branches[i].rw) {
+        int existing = find_rorw_branch(to);
+        
+        if (existing != -1 && existing != i) {
+            USYSLOG(LOG_ERR, "%s: from would overwrite to on a different branch, which"
+                "is not supported.\n", __func__, i, j);
+            RETURN(-EXDEV);
+        }
+        
 		if (branch_contains_file_or_parent_dir(i, to)) {
 			DBG("preserving branch\n");
 			j = i;
