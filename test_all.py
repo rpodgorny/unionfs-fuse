@@ -517,35 +517,96 @@ class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
 		super().setUp()
 		self.mount('-o preserve_branch rw1=rw:rw2=rw union')
 
-	def test_move_from_branch_to_common(self):
+	def test_file_move_from_low_branch_to_common(self):
 		write_to_file('rw2/rw2_dir/rw2_file2', 'something')
 		self.assertTrue(os.access('union/rw2_dir/rw2_file2', os.F_OK))
 		self.assertFalse(os.access('union/common_dir/rw2_file2', os.F_OK))
 		os.rename('union/rw2_dir/rw2_file2', 'union/common_dir/rw2_file2')
-		self.assertFalse(os.access('rw1/common_dir/rw2_file2', os.F_OK))
 		self.assertFalse(os.access('rw2/rw2_dir/rw2_file2', os.F_OK))
-		self.assertFalse(os.access('union/rw2_dir/rw2_file2', os.F_OK))
 		self.assertTrue(os.access('rw2/common_dir/rw2_file2', os.F_OK))
 		self.assertTrue(os.access('union/common_dir/rw2_file2', os.F_OK))
 
-	def test_move_from_branch1_to_branch2(self):
-		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+	def test_file_move_from_high_branch_to_low_branch(self):
 		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
-		self.assertFalse(os.access('rw2/rw2_dir/rw1_file', os.F_OK))
-		self.assertFalse(os.access('rw1/rw2_dir/rw1_file', os.F_OK))
 		self.assertFalse(os.access('union/rw2_dir/rw1_file', os.F_OK))
 		os.rename('union/rw1_dir/rw1_file', 'union/rw2_dir/rw1_file')
 		self.assertFalse(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
 		self.assertTrue(os.access('rw1/rw2_dir/rw1_file', os.F_OK))
 		self.assertTrue(os.access('union/rw2_dir/rw1_file', os.F_OK))
 
-	def test_move_from_branch2_to_branch1(self):
-		self.assertTrue(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+	def test_file_move_from_low_branch_to_high_branch(self):
 		self.assertTrue(os.access('union/rw2_dir/rw2_file', os.F_OK))
-		self.assertFalse(os.access('rw1/rw1_dir/rw2_file', os.F_OK))
-		self.assertFalse(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
 		self.assertFalse(os.access('union/rw1_dir/rw2_file', os.F_OK))
 		os.rename('union/rw2_dir/rw2_file', 'union/rw1_dir/rw2_file')
+		self.assertFalse(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw2_file', os.F_OK))
+
+	def test_file_move_to_nonexistent_path(self):
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		self.assertFalse(os.access('union/common_dir/new_dir', os.F_OK))
+		with self.assertRaises(OSError):
+			os.rename('union/rw1_dir/rw1_file', 'union/common_dir/new_dir/rw1_file')
+		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		self.assertFalse(os.access('rw2/common_dir/new_dir/rw1_file', os.F_OK))
+
+	def test_file_move_replace_in_single_branch(self):
+		write_to_file('rw1/rw1_file', 'rw1b')
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_file', os.F_OK))
+		os.rename('union/rw1_dir/rw1_file', 'union/rw1_file')
+		self.assertFalse(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw1/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_file', os.F_OK))
+		self.assertEqual(read_from_file('union/rw1_file'), 'rw1')
+
+	def test_file_move_replace_between_branches(self):
+		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		with self.assertRaises(OSError):
+			os.rename('union/rw2_dir/rw2_file', 'union/rw1_dir/rw1_file')
+		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		self.assertEqual(read_from_file('union/rw1_dir/rw1_file'), 'rw1')
+
+	def test_folder_move_from_low_branch_to_common(self):
+		self.assertTrue(os.access('union/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('union/common_dir/rw2_dir', os.F_OK))
+		os.rename('union/rw2_dir', 'union/common_dir/rw2_dir')
+		self.assertFalse(os.access('rw1/common_dir/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('rw2/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('rw2/common_dir/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('union/common_dir/rw2_dir', os.F_OK))
+
+	def test_folder_move_from_low_branch_to_high_branch(self):
+		self.assertTrue(os.access('union/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('union/rw1_dir/rw2_dir', os.F_OK))
+		os.rename('union/rw2_dir', 'union/rw1_dir/rw2_dir')
+		self.assertFalse(os.access('rw1/rw1_dir/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('rw2/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('rw2/rw1_dir/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw2_dir', os.F_OK))
+
+	def test_folder_move_from_high_branch_to_low_branch(self):
+		self.assertTrue(os.access('union/rw1_dir', os.F_OK))
+		self.assertFalse(os.access('union/rw2_dir/rw1_dir', os.F_OK))
+		os.rename('union/rw1_dir', 'union/rw2_dir/rw1_dir')
+		self.assertFalse(os.access('rw2/rw2_dir/rw1_dir', os.F_OK))
+		self.assertFalse(os.access('rw1/rw1_dir', os.F_OK))
+		self.assertTrue(os.access('rw1/rw2_dir/rw1_dir', os.F_OK))
+		self.assertTrue(os.access('union/rw2_dir/rw1_dir', os.F_OK))
+	
+	def test_permissions_after_creating_directories(self):
+		self.assertTrue(os.access('union/rw2_dir/rw2_file', os.F_OK))
+		self.assertFalse(os.access('union/rw1_dir/rw2_file', os.F_OK))
+		self.assertNotEqual(oct(os.stat('union/rw1_dir').st_mode)[-3:], '760')
+		os.chmod('union/rw1_dir', 0o760);
+		self.assertEqual(oct(os.stat('rw1/rw1_dir').st_mode)[-3:], '760')
+		self.assertEqual(oct(os.stat('union/rw1_dir').st_mode)[-3:], '760')
+		os.rename('union/rw2_dir/rw2_file', 'union/rw1_dir/rw2_file')
+		self.assertEqual(oct(os.stat('rw2/rw1_dir').st_mode)[-3:], '760')
+		self.assertEqual(oct(os.stat('union/rw1_dir').st_mode)[-3:], '760')
 		self.assertFalse(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
 		self.assertTrue(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
 		self.assertTrue(os.access('union/rw1_dir/rw2_file', os.F_OK))
