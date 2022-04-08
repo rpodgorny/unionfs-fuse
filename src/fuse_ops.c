@@ -495,8 +495,8 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
         int existing = find_rorw_branch(to);
         
         if (existing != -1 && existing != i) {
-            USYSLOG(LOG_ERR, "%s: from would overwrite to on a different branch, which"
-                "is not supported.\n", __func__, i, j);
+            USYSLOG(LOG_ERR, "%s: from %s would overwrite to on a different branch, which"
+                "is not supported.\n", __func__, from);
             RETURN(-EXDEV);
         }
         
