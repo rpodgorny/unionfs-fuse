@@ -32,8 +32,8 @@ ELSE (WITH_XATTR)
 ENDIF (WITH_XATTR)
 
 if (UNIX AND APPLE)
-    find_library(MACFUSE_PATH fuse HINTS /usr/local/lib)
-    get_filename_component(MACFUSE_DIRECTORY ${MACFUSE_PATH} DIRECTORY)
+	find_library(MACFUSE_PATH fuse HINTS /usr/local/lib)
+	get_filename_component(MACFUSE_DIRECTORY ${MACFUSE_PATH} DIRECTORY)
 	link_directories(${MACFUSE_DIRECTORY})
 endif()
 

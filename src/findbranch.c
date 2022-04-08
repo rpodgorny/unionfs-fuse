@@ -52,8 +52,9 @@
 #include "usyslog.h"
 
 static bool branch_contains_path(int branch, const char *path, bool *is_dir) {
-	if (branch < 0 || branch >= uopt.nbranches)
+	if (branch < 0 || branch >= uopt.nbranches) {
 		RETURN(false);
+	}
 
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch].path, path)) {
@@ -68,16 +69,18 @@ static bool branch_contains_path(int branch, const char *path, bool *is_dir) {
 	if (res == 0) {
 		(*is_dir) = S_ISDIR(stbuf.st_mode);
 		RETURN(true);
-	} else
+	} else {
 		RETURN(false);
+	}
 }
 
 bool branch_contains_file_or_parent_dir(int branch, const char *path) {
 	bool is_dir = false;
 	bool found = branch_contains_path(branch, path, &is_dir);
 
-	if (found)
+	if (found) {
 		RETURN(true);
+	}
 
 	char *dname = u_dirname(path);
 	if (dname == NULL) {
