@@ -4,5 +4,5 @@
 */
 
 #ifndef _VERSION_H
-#define VERSION "2.3"
+#define VERSION "2.3-Bri.1"
 #endif

@@ -51,6 +51,46 @@
 #include "debug.h"
 #include "usyslog.h"
 
+static bool branch_contains_path(int branch, const char *path, bool *is_dir) {
+	if (branch < 0 || branch >= uopt.nbranches)
+		RETURN(false);
+
+	char p[PATHLEN_MAX];
+	if (BUILD_PATH(p, uopt.branches[branch].path, path)) {
+		errno = ENAMETOOLONG;
+		RETURN(false);
+	}
+
+	printf("***** p: %s\n", p);
+	struct stat stbuf;
+	int res = lstat(p, &stbuf);
+
+	if (res == 0) {
+		(*is_dir) = S_ISDIR(stbuf.st_mode);
+		RETURN(true);
+	} else
+		RETURN(false);
+}
+
+bool branch_contains_file_or_parent_dir(int branch, const char *path) {
+	bool is_dir = false;
+	bool found = branch_contains_path(branch, path, &is_dir);
+
+	if (found)
+		RETURN(true);
+
+	char *dname = u_dirname(path);
+	if (dname == NULL) {
+		errno = ENOMEM;
+		RETURN(false);
+	}
+
+	found = branch_contains_path(branch, dname, &is_dir);
+
+	free(dname);
+	RETURN(found && is_dir);
+}
+
 /**
  *  Find a branch that has "path". Return the branch number.
  */
@@ -165,7 +205,7 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 		goto out;
 	}
 
-	if (path_create(dname, branch, branch_rw) == 0) branch = branch_rw; // path successfully copied
+	if (path_create_cow(dname, branch, branch_rw) == 0) branch = branch_rw; // path successfully copied
 
 out:
 	free(dname);
@@ -190,7 +230,7 @@ int find_rw_branch_cow(const char *path) {
  * copy-on-write
  * Find path in a union branch and if this branch is read-only,
  * copy the file to a read-write branch.
- * NOTE: Don't call this to copy directories. Use path_create() for that!
+ * NOTE: Don't call this to copy directories. Use path_create_cow() for that!
  *       It will definitely fail, when a ro-branch is on top of a rw-branch
  *       and a directory is to be copied from ro- to rw-branch.
  */

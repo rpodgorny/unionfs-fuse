@@ -482,6 +482,7 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 
 	DBG("from %s to %s\n", from, to);
 
+	int res;
 	bool is_dir = false; // is 'from' a file or directory
 
 	int j = find_rw_branch_cutlast(to);
@@ -489,6 +490,28 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 
 	int i = find_rorw_branch(from);
 	if (i == -1) RETURN(-errno);
+
+	if (uopt.preserve_branch && uopt.branches[i].rw) {
+        int existing = find_rorw_branch(to);
+        
+        if (existing != -1 && existing != i) {
+            USYSLOG(LOG_ERR, "%s: from %s would overwrite to on a different branch, which"
+                "is not supported.\n", __func__, from);
+            RETURN(-EXDEV);
+        }
+        
+		if (branch_contains_file_or_parent_dir(i, to)) {
+			DBG("preserving branch\n");
+			j = i;
+		} else {
+			DBG("preserving branch and creating directories to do so\n");
+			res = path_create_cutlast(to, j, i);
+
+			if (res == 0) {
+				j = i;
+			}
+		}
+	}
 
 	if (!uopt.branches[i].rw) {
 		i = find_rw_branch_cow_common(from, true);
@@ -511,7 +534,6 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 	else if (ftype == IS_DIR)
 		is_dir = true;
 
-	int res;
 	if (!uopt.branches[i].rw) {
 		// since original file is on a read-only branch, we copied the from file to a writable branch,
 		// but since we will rename from, we also need to hide the from file on the read-only branch

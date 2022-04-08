@@ -27,6 +27,7 @@
 #include "opts.h"
 #include "string.h"
 #include "cow.h"
+#include "cow_utils.h"
 #include "findbranch.h"
 #include "general.h"
 #include "debug.h"
@@ -143,7 +144,7 @@ static int do_create_whiteout(const char *path, int branch_rw, enum whiteout mod
 
 	// p MUST be without path to branch prefix here! 2 x branch_rw is correct here!
 	// this creates e.g. branch/.unionfs/some_directory
-	path_create_cutlast(metapath, branch_rw, branch_rw);
+	path_create_cutlast_cow(metapath, branch_rw, branch_rw);
 
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[branch_rw].path, metapath)) RETURN(-1);
@@ -212,4 +213,96 @@ int set_owner(const char *path) {
 		}
 	}
 	RETURN(0);
+}
+
+/**
+ * Actually create the directory here.
+ */
+static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
+	DBG("%s\n", path);
+
+	char dirp[PATHLEN_MAX]; // dir path to create
+	sprintf(dirp, "%s%s", uopt.branches[nbranch_rw].path, path);
+
+	struct stat buf;
+	int res = stat(dirp, &buf);
+	if (res != -1) RETURN(0); // already exists
+
+	if (nbranch_ro == nbranch_rw) {
+		// special case nbranch_ro = nbranch_rw, this is if we a create
+		// unionfs meta directories, so not directly on cow operations
+		buf.st_mode = S_IRWXU | S_IRWXG;
+	} else {
+		// data from the ro-branch
+		char o_dirp[PATHLEN_MAX]; // the pathname we want to copy
+		sprintf(o_dirp, "%s%s", uopt.branches[nbranch_ro].path, path);
+		res = stat(o_dirp, &buf);
+		if (res == -1) RETURN(1); // lower level branch removed in the mean time?
+	}
+
+	res = mkdir(dirp, buf.st_mode);
+	if (res == -1) {
+		USYSLOG(LOG_DAEMON, "Creating %s failed: \n", dirp);
+		RETURN(1);
+	}
+
+	if (nbranch_ro == nbranch_rw) RETURN(0); // the special case again
+
+	if (setfile(dirp, &buf)) RETURN(1); // directory already removed by another process?
+
+	// TODO: time, but its values are modified by the next dir/file creation steps?
+
+	RETURN(0);
+}
+
+/**
+ * create the dir path on nbranch_rw matching same path on nbranch_ro
+ */
+int path_create(const char *path, int nbranch_ro, int nbranch_rw) {
+	DBG("%s\n", path);
+
+	char p[PATHLEN_MAX];
+	if (BUILD_PATH(p, uopt.branches[nbranch_rw].path, path)) RETURN(-ENAMETOOLONG);
+
+	struct stat st;
+	if (!stat(p, &st)) {
+		// path does already exists, no need to create it
+		RETURN(0);
+	}
+
+	char *walk = (char *)path;
+
+	// first slashes, e.g. we have path = /dir1/dir2/, will set walk = dir1/dir2/
+	while (*walk == '/') walk++;
+
+	do {
+		// walk over the directory name, walk will now be /dir2
+		while (*walk != '\0' && *walk != '/') walk++;
+
+		// +1 due to \0, which gets added automatically
+		snprintf(p, (walk - path) + 1, "%s", path); // walk - path = strlen(/dir1)
+		int res = do_create(p, nbranch_ro, nbranch_rw);
+		if (res) RETURN(res); // creating the directory failed
+
+		// as above the do loop, walk over the next slashes, walk = dir2/
+		while (*walk == '/') walk++;
+	} while (*walk != '\0');
+
+	RETURN(0);
+}
+
+/**
+ * Same as  path_create(), but ignore the last segment in path,
+ * i.e. it might be a filename.
+ */
+int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
+	DBG("%s\n", path);
+
+	char *dname = u_dirname(path);
+	if (dname == NULL)
+		RETURN(-ENOMEM);
+	int ret = path_create(dname, nbranch_ro, nbranch_rw);
+	free(dname);
+
+	RETURN(ret);
 }

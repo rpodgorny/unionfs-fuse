@@ -11,7 +11,7 @@ import platform
 
 
 def call(cmd):
-	return subprocess.check_output(cmd, shell=True)
+	return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
 
 
 def write_to_file(fn, data):
@@ -90,11 +90,11 @@ class Common:
 		if platform.system() == 'Darwin':
 			# Need to get the unionfs device name so that we can unmount it later:
 			prev_mounts = get_osxfuse_unionfs_mounts()
-			call(cmd)
+			call('%s -o nobrowse %s' % (self.unionfs_path, cmd))
 			cur_mounts = get_osxfuse_unionfs_mounts()
 			self.mount_device = list(set(cur_mounts)-set(prev_mounts))[0]
 		else:
-			call(cmd)
+			call('%s %s' % (self.unionfs_path, cmd))
 		self.mounted = True
 
 
@@ -114,7 +114,7 @@ class UnionFS_Version(Common, unittest.TestCase):
 class UnionFS_Sync(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s ro1=ro:ro2=ro union' % self.unionfs_path)
+		self.mount('ro1=ro:ro2=ro union')
 
 	def test_sync(self):
 		call('sync union')
@@ -123,7 +123,7 @@ class UnionFS_Sync(Common, unittest.TestCase):
 class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow ro1=ro:ro2=ro union' % self.unionfs_path)
+		self.mount('-o cow ro1=ro:ro2=ro union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'ro2_file', 'ro_common_file', 'common_file', 'ro1_dir', 'ro2_dir', 'common_dir', 'common_empty_dir', ]
@@ -165,7 +165,7 @@ class UnionFS_RO_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('rw1=rw:ro1=ro union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -235,7 +235,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('-o cow rw1=rw:ro1=ro union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -367,7 +367,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s ro1=ro:rw1=rw union' % self.unionfs_path)
+		self.mount('ro1=ro:rw1=rw union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -419,7 +419,7 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow ro1=ro:rw1=rw union' % self.unionfs_path)
+		self.mount('-o cow ro1=ro:rw1=rw union')
 
 	def test_listing(self):
 		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
@@ -470,7 +470,7 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 class IOCTL_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('rw1=rw:ro1=ro union')
 
 	def test_debug(self):
 		debug_fn = '%s/debug.log' % self.tmpdir
@@ -497,7 +497,7 @@ class IOCTL_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_COW_RelaxedPermissions_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('%s -o cow,relaxed_permissions rw1=rw:ro1=ro union' % self.unionfs_path)
+		self.mount('-o cow,relaxed_permissions rw1=rw:ro1=ro union')
 
 	def test_access(self):
 		self.assertFalse(os.access('union/file', os.F_OK))
@@ -510,6 +510,132 @@ class UnionFS_RW_RO_COW_RelaxedPermissions_TestCase(Common, unittest.TestCase):
 		self.assertTrue(os.access('union/file', os.R_OK))
 		self.assertFalse(os.access('union/file', os.W_OK))
 		self.assertFalse(os.access('union/file', os.X_OK))
+
+
+class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
+	def setUp(self):
+		super().setUp()
+		self.mount('-o preserve_branch rw1=rw:rw2=rw union')
+
+	def test_file_move_from_low_branch_to_common(self):
+		write_to_file('rw2/rw2_dir/rw2_file2', 'something')
+		self.assertTrue(os.access('union/rw2_dir/rw2_file2', os.F_OK))
+		self.assertFalse(os.access('union/common_dir/rw2_file2', os.F_OK))
+		os.rename('union/rw2_dir/rw2_file2', 'union/common_dir/rw2_file2')
+		self.assertFalse(os.access('rw2/rw2_dir/rw2_file2', os.F_OK))
+		self.assertTrue(os.access('rw2/common_dir/rw2_file2', os.F_OK))
+		self.assertTrue(os.access('union/common_dir/rw2_file2', os.F_OK))
+
+	def test_file_move_from_high_branch_to_low_branch(self):
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		self.assertFalse(os.access('union/rw2_dir/rw1_file', os.F_OK))
+		os.rename('union/rw1_dir/rw1_file', 'union/rw2_dir/rw1_file')
+		self.assertFalse(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw1/rw2_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw2_dir/rw1_file', os.F_OK))
+
+	def test_file_move_from_low_branch_to_high_branch(self):
+		self.assertTrue(os.access('union/rw2_dir/rw2_file', os.F_OK))
+		self.assertFalse(os.access('union/rw1_dir/rw2_file', os.F_OK))
+		os.rename('union/rw2_dir/rw2_file', 'union/rw1_dir/rw2_file')
+		self.assertFalse(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw2_file', os.F_OK))
+
+	def test_file_move_to_nonexistent_path(self):
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		self.assertFalse(os.access('union/common_dir/new_dir', os.F_OK))
+		with self.assertRaises(OSError):
+			os.rename('union/rw1_dir/rw1_file', 'union/common_dir/new_dir/rw1_file')
+		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		self.assertFalse(os.access('rw2/common_dir/new_dir/rw1_file', os.F_OK))
+
+	def test_file_move_replace_in_single_branch(self):
+		write_to_file('rw1/rw1_file', 'rw1b')
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_file', os.F_OK))
+		os.rename('union/rw1_dir/rw1_file', 'union/rw1_file')
+		self.assertFalse(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw1/rw1_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_file', os.F_OK))
+		self.assertEqual(read_from_file('union/rw1_file'), 'rw1')
+
+	def test_file_move_replace_between_branches(self):
+		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		with self.assertRaises(OSError):
+			os.rename('union/rw2_dir/rw2_file', 'union/rw1_dir/rw1_file')
+		self.assertTrue(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		self.assertEqual(read_from_file('union/rw1_dir/rw1_file'), 'rw1')
+
+	def test_folder_move_from_low_branch_to_common(self):
+		self.assertTrue(os.access('union/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('union/common_dir/rw2_dir', os.F_OK))
+		os.rename('union/rw2_dir', 'union/common_dir/rw2_dir')
+		self.assertFalse(os.access('rw1/common_dir/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('rw2/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('rw2/common_dir/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('union/common_dir/rw2_dir', os.F_OK))
+
+	def test_folder_move_from_low_branch_to_high_branch(self):
+		self.assertTrue(os.access('union/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('union/rw1_dir/rw2_dir', os.F_OK))
+		os.rename('union/rw2_dir', 'union/rw1_dir/rw2_dir')
+		self.assertFalse(os.access('rw1/rw1_dir/rw2_dir', os.F_OK))
+		self.assertFalse(os.access('rw2/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('rw2/rw1_dir/rw2_dir', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw2_dir', os.F_OK))
+
+	def test_folder_move_from_high_branch_to_low_branch(self):
+		self.assertTrue(os.access('union/rw1_dir', os.F_OK))
+		self.assertFalse(os.access('union/rw2_dir/rw1_dir', os.F_OK))
+		os.rename('union/rw1_dir', 'union/rw2_dir/rw1_dir')
+		self.assertFalse(os.access('rw2/rw2_dir/rw1_dir', os.F_OK))
+		self.assertFalse(os.access('rw1/rw1_dir', os.F_OK))
+		self.assertTrue(os.access('rw1/rw2_dir/rw1_dir', os.F_OK))
+		self.assertTrue(os.access('union/rw2_dir/rw1_dir', os.F_OK))
+	
+	def test_permissions_after_creating_directories(self):
+		self.assertTrue(os.access('union/rw2_dir/rw2_file', os.F_OK))
+		self.assertFalse(os.access('union/rw1_dir/rw2_file', os.F_OK))
+		self.assertNotEqual(oct(os.stat('union/rw1_dir').st_mode)[-3:], '760')
+		os.chmod('union/rw1_dir', 0o760);
+		self.assertEqual(oct(os.stat('rw1/rw1_dir').st_mode)[-3:], '760')
+		self.assertEqual(oct(os.stat('union/rw1_dir').st_mode)[-3:], '760')
+		os.rename('union/rw2_dir/rw2_file', 'union/rw1_dir/rw2_file')
+		self.assertEqual(oct(os.stat('rw2/rw1_dir').st_mode)[-3:], '760')
+		self.assertEqual(oct(os.stat('union/rw1_dir').st_mode)[-3:], '760')
+		self.assertFalse(os.access('rw2/rw2_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
+		self.assertTrue(os.access('union/rw1_dir/rw2_file', os.F_OK))
+
+	def test_file_move_without_access(self):
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		os.chmod('union/rw2_dir', 0o500);
+		try:
+			self.assertFalse(os.access('union/rw2_dir/rw1_file', os.F_OK))
+			with self.assertRaises(PermissionError):
+				os.rename('union/rw1_dir/rw1_file', 'union/rw2_dir/rw1_file')
+			self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+			self.assertFalse(os.access('union/rw2_dir/rw1_file', os.F_OK))
+		finally:
+			# Ensure teardown can delete the files it needs to:
+			os.chmod('union/rw2_dir', 0o700);
+
+	def test_file_move_with_access(self):
+		os.mkdir('rw1/rw2_dir')
+		os.chmod('rw2/rw2_dir', 0o500);
+		try:
+			self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+			os.rename('union/rw1_dir/rw1_file', 'union/rw2_dir/rw1_file')
+			self.assertFalse(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+			self.assertTrue(os.access('rw1/rw2_dir/rw1_file', os.F_OK))
+			self.assertTrue(os.access('union/rw2_dir/rw1_file', os.F_OK))
+		finally:
+			# Ensure teardown can delete the files it needs to:
+			os.chmod('rw2/rw2_dir', 0o700);
 
 
 if __name__ == '__main__':
