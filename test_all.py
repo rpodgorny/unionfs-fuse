@@ -596,7 +596,7 @@ class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
 		self.assertFalse(os.access('rw1/rw1_dir', os.F_OK))
 		self.assertTrue(os.access('rw1/rw2_dir/rw1_dir', os.F_OK))
 		self.assertTrue(os.access('union/rw2_dir/rw1_dir', os.F_OK))
-	
+
 	def test_permissions_after_creating_directories(self):
 		self.assertTrue(os.access('union/rw2_dir/rw2_file', os.F_OK))
 		self.assertFalse(os.access('union/rw1_dir/rw2_file', os.F_OK))
