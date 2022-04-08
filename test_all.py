@@ -611,6 +611,32 @@ class UnionFS_RW_RW_PreserveBranch_TestCase(Common, unittest.TestCase):
 		self.assertTrue(os.access('rw2/rw1_dir/rw2_file', os.F_OK))
 		self.assertTrue(os.access('union/rw1_dir/rw2_file', os.F_OK))
 
+	def test_file_move_without_access(self):
+		self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+		os.chmod('union/rw2_dir', 0o500);
+		try:
+			self.assertFalse(os.access('union/rw2_dir/rw1_file', os.F_OK))
+			with self.assertRaises(PermissionError):
+				os.rename('union/rw1_dir/rw1_file', 'union/rw2_dir/rw1_file')
+			self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+			self.assertFalse(os.access('union/rw2_dir/rw1_file', os.F_OK))
+		finally:
+			# Ensure teardown can delete the files it needs to:
+			os.chmod('union/rw2_dir', 0o700);
+
+	def test_file_move_with_access(self):
+		os.mkdir('rw1/rw2_dir')
+		os.chmod('rw2/rw2_dir', 0o500);
+		try:
+			self.assertTrue(os.access('union/rw1_dir/rw1_file', os.F_OK))
+			os.rename('union/rw1_dir/rw1_file', 'union/rw2_dir/rw1_file')
+			self.assertFalse(os.access('rw1/rw1_dir/rw1_file', os.F_OK))
+			self.assertTrue(os.access('rw1/rw2_dir/rw1_file', os.F_OK))
+			self.assertTrue(os.access('union/rw2_dir/rw1_file', os.F_OK))
+		finally:
+			# Ensure teardown can delete the files it needs to:
+			os.chmod('rw2/rw2_dir', 0o700);
+
 
 if __name__ == '__main__':
 	unittest.main()
