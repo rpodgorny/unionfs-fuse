@@ -91,6 +91,8 @@ class Common:
 		if platform.system() == 'Darwin':
 			# Need to get the unionfs device name so that we can unmount it later:
 			prev_mounts = get_osxfuse_unionfs_mounts()
+			# nobrowse prevents Finder from creating spurious icons on the desktop (which
+			# sometimes will not go away after the union filesystem is unmounted!)
 			call('%s -o nobrowse %s' % (self.unionfs_path, cmd))
 			cur_mounts = get_osxfuse_unionfs_mounts()
 			self.mount_device = list(set(cur_mounts)-set(prev_mounts))[0]
