@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e -x
 
+# for virtualbox to work with macos image, oracle extensions need to be installed (arch package virtualbox-ext-oracle)
+
 # libfuse3 is disabled for macos since there's no support in macfuse
 # see https://github.com/osxfuse/osxfuse/issues/390
 

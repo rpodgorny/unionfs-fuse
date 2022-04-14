@@ -47,8 +47,7 @@ int path_create_cutlast_cow(const char *path, int nbranch_ro, int nbranch_rw) {
 	DBG("%s\n", path);
 
 	char *dname = u_dirname(path);
-	if (dname == NULL)
-		RETURN(-ENOMEM);
+	if (dname == NULL) RETURN(-ENOMEM);
 	int ret = path_create_cow(dname, nbranch_ro, nbranch_rw);
 	free(dname);
 
@@ -65,10 +64,12 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 	path_create_cutlast_cow(path, branch_ro, branch_rw);
 
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
-	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path))
+	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path)) {
 		RETURN(-ENAMETOOLONG);
-	if (BUILD_PATH(to, uopt.branches[branch_rw].path, path))
+	}
+	if (BUILD_PATH(to, uopt.branches[branch_rw].path, path)) {
 		RETURN(-ENAMETOOLONG);
+	}
 
 	setlocale(LC_ALL, "");
 
