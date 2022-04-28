@@ -27,6 +27,9 @@ int hide_dir(const char *path, int branch_rw);
 filetype_t path_is_dir (const char *path);
 int maybe_whiteout(const char *path, int branch_rw, enum whiteout mode);
 int set_owner(const char *path);
+int lock_file_copyup(const char *path, int branch_rw);
+int unlock_file_copyup(const char *path, int branch_rw, int lockfd);
+bool ongoing_copyup(const char *path, int branch_rw);
 
 
 #endif

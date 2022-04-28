@@ -123,6 +123,46 @@ int path_create_cutlast(const char *path, int nbranch_ro, int nbranch_rw) {
 }
 
 /**
+ * copy file in locked state (to avoid competing processes
+ * stepping on each other).
+ */
+static int copy_file_locked(struct cow *cow, const char *path,
+	int branch_rw) {
+	DBG("%s %s %s %d\n", cow->from_path, cow->to_path,
+		path, branch_rw);
+
+	/* lock copy-up metadata */
+	int lockfd = lock_file_copyup(path, branch_rw);
+	if (lockfd < 0) RETURN(1);
+
+	int res = 0;
+
+	struct stat stbuf;
+	if (lstat(cow->to_path, &stbuf) == 0)  {
+		/* after obtaining the metadata lock, if the file
+		 * already exists, it means another process already
+		 * copied the file. so we do nothing.
+		 */
+		DBG("File %s already copied up. %s, %d\n", cow->to_path,
+			path, branch_rw);
+		goto out;
+	}
+
+	if (errno != ENOENT) {
+		USYSLOG(LOG_ERR, "stat(%s) failed. %s\n",
+			cow->to_path, strerror(errno));
+		res = 1;
+		goto out;
+	}
+
+	res = copy_file(cow);
+out:
+	/* unlock copy-up metadata */
+	unlock_file_copyup(path, branch_rw, lockfd);
+	RETURN(res);
+}
+
+/**
  * initiate the cow-copy action
  */
 int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
@@ -177,7 +217,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 			USYSLOG(LOG_WARNING, "COW of sockets not supported: %s\n", cow.from_path);
 			RETURN(1);
 		default:
-			res = copy_file(&cow);
+			res = copy_file_locked(&cow, path, branch_rw);
 	}
 
 	RETURN(res);

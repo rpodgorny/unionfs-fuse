@@ -59,6 +59,16 @@ static int find_branch(const char *path, searchflag_t flag) {
 
 	int i = 0;
 	for (i = 0; i < uopt.nbranches; i++) {
+
+		if (ongoing_copyup(path, i)) {
+			/* copy-up is in progress. this indicates that
+			 * the write() operation which triggered copy-up
+			 * is not complete yet. in such a case
+			 * search next branch.
+			 */
+			continue;
+		}
+
 		char p[PATHLEN_MAX];
 		if (BUILD_PATH(p, uopt.branches[i].path, path)) {
 			errno = ENAMETOOLONG;
