@@ -1,5 +1,32 @@
-[![Build Status](https://travis-ci.org/rpodgorny/unionfs-fuse.svg?branch=master)](https://travis-ci.org/rpodgorny/unionfs-fuse)
-[![Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/rpodgorny/donate)
+unionfs-fuse-macos
+==================
+
+This is a fork from union-fs (https://github.com/rpodgorny/unionfs-fuse) with small changes made to make it build
+on MacOS and also this git repo provides MacOS binaries.
+
+The release is built on MacOS using following software
+macOS 12.4
+Xcode 13.4.1
+cmake version 3.23.0
+
+Optionally if ninja is installed it will build with that rather than make.
+
+To build run `./build.sh`
+With the above setup this will build without errors and warnings. The result will be in directory `output`.
+
+Version
+-------
+
+This branch is forked from master branch of union-fuse, this is currently a pre-release of 2.3
+
+Binaries
+--------
+
+Prebuilt binaries are in `release/unionfs-fuse-macos-2.3-prerelease.tar.gz`. These are universal2 macOS binaries (intel and arm64)
+
+
+Original ReadMe
+===============
 
 unionfs-fuse
 ============
