@@ -242,7 +242,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
-		USYSLOG(LOG_DAEMON, "Creating %s failed: \n", dirp);
+		USYSLOG(LOG_ERR, "Creating %s failed: \n", dirp);
 		RETURN(1);
 	}
 
