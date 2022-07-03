@@ -242,8 +242,15 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
-		USYSLOG(LOG_ERR, "Creating %s failed: \n", dirp);
-		RETURN(1);
+		if (errno == EEXIST) {
+			// In an NFS environment with many clients trying to write to the same directory tree
+			// and if that tree does not exist on the read write mount, there's a race between them.
+			// The directory may have been created by another client. It's not a fatal error.
+			USYSLOG(LOG_INFO, "Directory %s already existed - probably another client made it if using NFS", dirp);
+		} else {
+			USYSLOG(LOG_ERR, "Creating %s failed: \n", dirp);
+			RETURN(1);
+		}
 	}
 
 	if (nbranch_ro == nbranch_rw) RETURN(0); // the special case again
