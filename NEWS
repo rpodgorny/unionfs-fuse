@@ -1,6 +1,7 @@
 3.0 (unreleased)
 - make it compile under MacOS again
-...
+- libfuse3 support
+- add branch-preserving logic
 
 2.2
 - fixed timestamp precision lost on cow copy
