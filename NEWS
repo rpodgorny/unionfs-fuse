@@ -1,4 +1,7 @@
-3.0 (unreleased)
+3.1
+- just fixes version mess (in manual file, cmake, etc.)
+
+3.0
 - libfuse3 support (and use is as new default)
 - add branch-preserving logic
 - make it compile under MacOS again
