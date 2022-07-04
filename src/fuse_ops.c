@@ -246,6 +246,8 @@ static void *unionfs_init(struct fuse_conn_info *conn, struct fuse_config *cfg) 
 #endif
 	(void) conn;  // just to prevent the compiler complaining about unused variables
 
+	init_syslog();
+
 	// we only now (from unionfs_init) may go into the chroot, since otherwise
 	// fuse_main() will fail to open /dev/fuse and to call mount
 	if (uopt.chroot) {
