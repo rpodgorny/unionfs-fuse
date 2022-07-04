@@ -240,15 +240,28 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 		if (res == -1) RETURN(1); // lower level branch removed in the mean time?
 	}
 
+	bool _call_setfile = true;
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
-		USYSLOG(LOG_ERR, "Creating %s failed: \n", dirp);
-		RETURN(1);
+		if (errno == EEXIST) {
+			// In an NFS environment with many clients trying to write to the same directory tree
+			// and if that tree does not exist on the read write mount, there's a race between them.
+			// The directory may have been created by another client. It's not a fatal error.
+			// TODO: actually, this may also happen locally. anyway, it would probably be better to just
+			// some internal locking instead of relying on return error (!) codes
+			USYSLOG(LOG_INFO, "Directory %s already existed - probably another client made it", dirp);
+			_call_setfile = false;  // leave the call to the thread which had a successful mkdir
+		} else {
+			USYSLOG(LOG_ERR, "Creating %s failed: \n", dirp);
+			RETURN(1);
+		}
 	}
 
 	if (nbranch_ro == nbranch_rw) RETURN(0); // the special case again
 
-	if (setfile(dirp, &buf)) RETURN(1); // directory already removed by another process?
+	if (_call_setfile) {
+		if (setfile(dirp, &buf)) RETURN(1); // directory already removed by another process?
+	}
 
 	// TODO: time, but its values are modified by the next dir/file creation steps?
 
