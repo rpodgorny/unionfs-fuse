@@ -241,6 +241,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 	}
 
 	bool _call_setfile = true;
+
 	res = mkdir(dirp, buf.st_mode);
 	if (res == -1) {
 		if (errno == EEXIST) {
