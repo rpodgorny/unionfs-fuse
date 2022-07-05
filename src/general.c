@@ -251,7 +251,20 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 			// TODO: actually, this may also happen locally. anyway, it would probably be better to just
 			// some internal locking instead of relying on return error (!) codes
 			USYSLOG(LOG_INFO, "Directory %s already existed - probably another client made it", dirp);
-			_call_setfile = false;  // leave the call to the thread which had a successful mkdir
+            if (uopt.cow_nfs_tweak) {
+                // In an NFS environment, particularly nfs v3, it's frequently not practical to try to
+                // lock against races. It is not uncommon for administrators to disable NFS locking because of the
+                // risk of crashing nfs clients not releasing locks, or the firewall configuration that has to be
+                // done for the extra ports that nfs v3 needs for locking.
+                // To try to avoid the case where another NFS client creates the directory but has not set the owner
+                // and permissions yet - allow this client to set the permissions to try attempt to reduce the window
+                // where the directory permissions/ownership is incorrect.
+                // It's particularly risky if the directory has the set gid permission set and you have clients on a
+                // high latency connection to the rw nfs server.
+                _call_setfile = true;
+            } else {
+                _call_setfile = false;  // leave the call to the thread which had a successful mkdir
+            }
 		} else {
 			USYSLOG(LOG_ERR, "Creating %s failed: \n", dirp);
 			RETURN(1);

@@ -38,6 +38,13 @@ for an example.
 .TP
 \fB\-o cow
 Enable copy\-on\-write
+\fB\-o cow_nfs_tweaks
+When using copy on write to a read-write NFS filesystem there is a chance that
+race conditions can occur when you are running independent nfs clients all trying to write to the
+same location that has not been created in the rw-branch. Use this flag to try to reduce
+the chance that this race will cause unexpected failures. In particular the case where a directory
+is set gid and the owner is not root. This will not fix all possible races but will hopefully
+work around the worse cases.
 .TP
 \fB\-o hide_meta_files
 In our unionfs root path we have a
