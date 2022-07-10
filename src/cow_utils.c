@@ -91,7 +91,9 @@ int setfile(const char *path, struct stat *fs)
 	* chown.  If chown fails, lose setuid/setgid bits.
 	*/
 	if (chown(path, fs->st_uid, fs->st_gid)) {
-		if (errno != EPERM) {
+		/* EPERM if no permissions
+		 * EINVAL if user was nobody or group was nogroup */
+		if (errno != EPERM && errno != EINVAL) {
 			USYSLOG(LOG_WARNING, "chown: %s", path);
 			rval = 1;
 		}
