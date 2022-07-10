@@ -208,7 +208,11 @@ int __find_rw_branch_cutlast(const char *path, int rw_hint) {
 		goto out;
 	}
 
-	if (path_create_cow(dname, branch, branch_rw) == 0) branch = branch_rw; // path successfully copied
+	if (path_create_cow(dname, branch, branch_rw) == 0) {
+		branch = branch_rw; // path successfully copied
+	} else {
+		branch = -1; // failed to copy path, error
+	}
 
 out:
 	free(dname);
