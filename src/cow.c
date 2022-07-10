@@ -61,7 +61,8 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 	DBG("%s\n", path);
 
 	// create the path to the file
-	path_create_cutlast_cow(path, branch_ro, branch_rw);
+	int res = path_create_cutlast_cow(path, branch_ro, branch_rw);
+	if (res != 0) RETURN(res);
 
 	char from[PATHLEN_MAX], to[PATHLEN_MAX];
 	if (BUILD_PATH(from, uopt.branches[branch_ro].path, path)) {
@@ -88,7 +89,6 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 	lstat(cow.from_path, &buf);
 	cow.stat = &buf;
 
-	int res;
 	switch (buf.st_mode & S_IFMT) {
 		case S_IFLNK:
 			res = copy_link(&cow);
