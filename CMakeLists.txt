@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(unionfs-fuse VERSION 3.1
+project(unionfs-fuse VERSION 3.2
                      DESCRIPTION "user-space implementation of union filesystem (with help of fuse)"
                      LANGUAGES C)
 
