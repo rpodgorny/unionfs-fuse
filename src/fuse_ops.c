@@ -125,6 +125,10 @@ static int unionfs_create(const char *path, mode_t mode, struct fuse_file_info *
 	// NOW, that the file has the proper owner we may set the requested mode
 	fchmod(res, mode);
 
+	if (uopt.direct_io) {
+		fi->direct_io = 1;
+	}
+
 	fi->fh = res;
 	remove_hidden(path, i);
 
@@ -421,8 +425,13 @@ static int unionfs_open(const char *path, struct fuse_file_info *fi) {
 		remove_hidden(path, i);
 	}
 
-	// This makes exec() fail
+	// This makes exec() fail - wtf is this? obsolete?
 	//fi->direct_io = 1;
+
+	if (uopt.direct_io) {
+		fi->direct_io = 1;
+	}
+
 	fi->fh = (unsigned long)fd;
 
 	DBG("fd = %"PRIx64"\n", fi->fh);

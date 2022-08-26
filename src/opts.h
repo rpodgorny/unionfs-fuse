@@ -31,6 +31,7 @@ typedef struct {
 	pthread_rwlock_t dbgpath_lock; // locks dbgpath
 	bool hide_meta_files;
 	bool relaxed_permissions;
+	bool direct_io;
 
 } uopt_t;
 
@@ -47,7 +48,8 @@ enum {
 	KEY_NOINITGROUPS,
 	KEY_RELAXED_PERMISSIONS,
 	KEY_STATFS_OMIT_RO,
-	KEY_VERSION
+	KEY_DIRECT_IO,
+	KEY_VERSION,
 };
 
 
