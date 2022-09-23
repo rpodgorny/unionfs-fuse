@@ -37,6 +37,7 @@ static ulogs_t *free_head, *free_bottom; // free chained list log entries
 static ulogs_t *used_head = NULL, *used_bottom = NULL; //used chained list pointers
 
 static pthread_mutex_t list_lock; 	// locks the entire chained list
+static pthread_mutex_t sleep_mutex;     // locks cond_message
 static pthread_cond_t cond_message;		// used to wake up the syslog thread
 
 // Only used for debugging, protected by list_lock
@@ -160,9 +161,7 @@ static void * syslog_thread(void *arg)
 	if (tinfo == 0 && tinfo == 1)
 		printf("Starting thread %d", tinfo);
 
-	pthread_mutex_t sleep_mutex; 
 
-	pthread_mutex_init(&sleep_mutex, NULL);
 	pthread_mutex_lock(&sleep_mutex);
 	while (1) {
 		pthread_cond_wait(&cond_message, &sleep_mutex);
@@ -247,7 +246,12 @@ void usyslog(int priority, const char *format, ...)
 
 	pthread_mutex_unlock(&log->lock);
 
+
+	pthread_mutex_lock(&sleep_mutex);
+
 	pthread_cond_signal(&cond_message); // wake up the syslog thread
+
+	pthread_mutex_unlock(&sleep_mutex);
 }
 
 /**
@@ -258,6 +262,7 @@ void init_syslog(void)
 	openlog("unionfs-fuse: ", LOG_CONS | LOG_NDELAY | LOG_NOWAIT | LOG_PID, LOG_DAEMON);
 
 	pthread_mutex_init(&list_lock, NULL);
+	pthread_mutex_init(&sleep_mutex, NULL);
 	pthread_cond_init(&cond_message, NULL);
 	pthread_t thread;
 	pthread_attr_t attr;
