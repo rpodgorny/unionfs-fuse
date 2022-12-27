@@ -4,7 +4,7 @@ set(UNIONFS_SRCS unionfs.c opts.c debug.c findbranch.c readdir.c
     fuse_ops.c)
 set(UNIONFSCTL_SRCS unionfsctl.c)
 
-SET(CMAKE_C_FLAGS "-pipe -W -Wall -DFORTIFY_SOURCE=2")
+SET(CMAKE_C_FLAGS "-pipe -W -Wall -D_FORTIFY_SOURCE=2")
 SET(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g")
 SET(CMAKE_C_FLAGS_RELEASE "-O2")
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -DDEBUG")
