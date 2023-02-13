@@ -1,3 +1,6 @@
+3.3
+- fixed fortified compilation
+
 3.2
 - various nfs fixes
 - various race condition fixes
