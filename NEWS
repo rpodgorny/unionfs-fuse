@@ -1,5 +1,6 @@
 3.3
 - fixed fortified compilation
+- fixed (internal) locking
 
 3.2
 - various nfs fixes
