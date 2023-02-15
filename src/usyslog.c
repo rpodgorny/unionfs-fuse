@@ -13,6 +13,15 @@
  *   calls write without a risk to deadlock into the syslog buffer (chained 
  *   list) and then the seperate syslog_thread call syslog(). That way our
  *   our filesystem thread(s) cannot stall from syslog() calls.
+ *
+ *
+ *   NOTE: usyslog has severe locking issues. It uses two locks obtained in different
+ *         different order - can easily deadlock.
+ *         A much simpler solution would only take one lock and two list heads.
+ *         List gets appended with the lock being hold, and the syslog worker
+ *         thread would just exchange list heads when it is doing syslog.
+ *         It is basically a list splice to let the worker operate without
+ *         any needed and without any possible race.
  */
 
 #include <stdio.h>
@@ -179,6 +188,9 @@ void usyslog(int priority, const char *format, ...)
 	int res;
 	ulogs_t *log;
 
+	// severe code issues - see the file header - this code is disabled for now
+	return;
+
 	// Lock the entire list first, which means the syslog thread MUST NOT
 	// lock it if there is any chance it might be locked forever.
 	pthread_mutex_lock(&list_lock);
@@ -259,6 +271,9 @@ void usyslog(int priority, const char *format, ...)
  */
 void init_syslog(void)
 {
+	// severe code issues - see the file header - this code is disabled for now
+	return;
+
 	openlog("unionfs-fuse: ", LOG_CONS | LOG_NDELAY | LOG_NOWAIT | LOG_PID, LOG_DAEMON);
 
 	pthread_mutex_init(&list_lock, NULL);
