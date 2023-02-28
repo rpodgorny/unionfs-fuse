@@ -1,6 +1,6 @@
 3.3
 - fixed fortified compilation
-- fixed (internal) locking
+- disabled logging to file since it had some unresolved locking issues
 
 3.2
 - various nfs fixes
