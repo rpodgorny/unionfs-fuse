@@ -1,6 +1,7 @@
 3.3
 - fixed fortified compilation
 - disabled logging to file since it had some unresolved locking issues
+- add support for direct_io
 
 3.2
 - various nfs fixes
