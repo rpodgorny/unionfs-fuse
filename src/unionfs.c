@@ -35,6 +35,7 @@ static struct fuse_opt unionfs_opts[] = {
 	FUSE_OPT_KEY("noinitgroups", KEY_NOINITGROUPS),
 	FUSE_OPT_KEY("relaxed_permissions", KEY_RELAXED_PERMISSIONS),
 	FUSE_OPT_KEY("statfs_omit_ro", KEY_STATFS_OMIT_RO),
+	FUSE_OPT_KEY("direct_io", KEY_DIRECT_IO),
 	FUSE_OPT_KEY("--version", KEY_VERSION),
 	FUSE_OPT_KEY("-V", KEY_VERSION),
 	FUSE_OPT_END

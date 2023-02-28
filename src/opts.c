@@ -292,6 +292,7 @@ static void print_help(const char *progname) {
 	"    -o relaxed_permissions Disable permissions checks, but only if\n"
 	"                           running neither as UID=0 or GID=0\n"
 	"    -o statfs_omit_ro      do not count blocks of ro-branches\n"
+	"    -o direct_io           Enable direct-io flag for fuse subsystem\n"
 	"\n",
 	progname);
 }
@@ -393,6 +394,9 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 			return 0;
 		case KEY_RELAXED_PERMISSIONS:
 			uopt.relaxed_permissions = true;
+			return 0;
+		case KEY_DIRECT_IO:
+			uopt.direct_io = true;
 			return 0;
 		case KEY_VERSION:
 			printf("unionfs-fuse version: "VERSION"\n");
