@@ -638,7 +638,7 @@ static int statvfs_local(const char *path, struct statvfs *stbuf) {
 }
 
 /**
- * statvs implementation
+ * statfs implementation
  *
  * Note: We do not set the fsid, as fuse ignores it anyway.
  */
