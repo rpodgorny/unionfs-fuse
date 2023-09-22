@@ -160,7 +160,7 @@ static void do_syslog(void)
 }
 
 /**
- * syslog backgroung thread that tries to to empty the syslog buffer
+ * syslog background thread that tries to to empty the syslog buffer
  */
 static void * syslog_thread(void *arg)
 {
