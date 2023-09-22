@@ -1,3 +1,6 @@
+3.4
+- default to fuse2 api on macos when compiling
+
 3.3
 - fixed fortified compilation
 - disabled logging to file since it had some unresolved locking issues
