@@ -370,6 +370,10 @@ int unionfs_opt_proc(void *data, const char *arg, int key, struct fuse_args *out
 		case KEY_PRESERVE_BRANCH:
 			uopt.preserve_branch = true;
 			return 0;
+		case KEY_ALL_WRITABLE:
+			uopt.all_writable = true;
+			uopt.cow_enabled = true;
+			return 0;
 		case KEY_DEBUG_FILE:
 			uopt.dbgpath = get_opt_str(arg, "debug_file");
 			uopt.debug = true;
