@@ -9,7 +9,7 @@ flexible than the current in-kernel unionfs solution.
 
 I'm open to patches, suggestions, whatever...
 
-The preferred way is the github issue tracker with the mailing list at unionfs-fuse@googlegroups.com as backup. Or see http://groups.google.com/group/unionfs-fuse.
+The preferred way is the github issue tracker with direct mail to me (radek@podgorny.cz) as a backup.
 
 Why choose this stuff
 ---------------------
