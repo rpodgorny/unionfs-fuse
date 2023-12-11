@@ -238,6 +238,7 @@ static int do_create(const char *path, int nbranch_ro, int nbranch_rw) {
 		sprintf(o_dirp, "%s%s", uopt.branches[nbranch_ro].path, path);
 		res = stat(o_dirp, &buf);
 		if (res == -1) RETURN(1); // lower level branch removed in the mean time?
+		if (uopt.all_writable) buf.st_mode |= (buf.st_mode & 0444) >> 1;
 	}
 
 	bool _call_setfile = true;
