@@ -88,6 +88,10 @@ By default, blocks of all branches are counted in statfs() calls
 from the summary of blocks. This may sound weird, but it actually fixes
 "wrong" percentage of free space.
 .TP
+\fB\-o all_writable
+Treat read\-only files and directories on backing filesystems as writable.
+Implies copy\-on\-write.
+.TP
 .SH "Options to libfuse"
 There are several further options available, which don't directly apply to
 unionfs, but to libfuse. Please run
