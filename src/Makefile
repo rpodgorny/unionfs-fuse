@@ -4,6 +4,9 @@ CPPFLAGS += $(shell pkg-config --cflags fuse3)
 LIB = $(shell pkg-config --libs fuse3)
 CPPFLAGS += -DFUSE_USE_VERSION=35
 
+# set this even for 32bit systems - see https://github.com/rpodgorny/unionfs-fuse/issues/142
+CPPFLAGS += -D_FILE_OFFSET_BITS=64
+
 # define the following (and comment out the above) for libfuse2
 #CPPFLAGS += $(shell pkg-config --cflags fuse)
 #LIB = $(shell pkg-config --libs fuse) -lpthread
