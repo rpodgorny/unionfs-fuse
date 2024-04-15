@@ -370,7 +370,7 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 class UnionFS_RW_RO_AW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('-o all_writable,debug_file=/usr/local/google/home/mmuller/w/unionfs-fuse/log.txt rw1=rw:ro1=ro union')
+		self.mount('-o all_writable rw1=rw:ro1=ro union')
 		os.chmod('ro1/ro1_dir', 0o500)
 		os.chmod('ro1/ro1_file', 0o400)
 
