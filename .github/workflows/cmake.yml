@@ -1,0 +1,86 @@
+# Copyright (c) 2024 Sebastian Pipping <sebastian@pipping.org>
+# Licensed under the 3-Clause BSD License
+
+name: Build using CMake
+
+# Drop permissions to minimum for security
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 3 * * 5'  # Every Friday at 3am
+  workflow_dispatch:
+
+jobs:
+  build_cmake:
+    name: CMake (${{ matrix.runs-on }}, ${{ matrix.cc }})
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # FUSE 3 on Linux
+          - cc: gcc-14
+            clang_major_version: null
+            runs-on: ubuntu-24.04
+          - cc: clang-18
+            clang_major_version: 18
+            runs-on: ubuntu-24.04
+          # macFUSE on macOS
+          - cc: gcc-13
+            clang_major_version: null
+            runs-on: macos-12
+          - cc: clang-15
+            clang_major_version: 15
+            runs-on: macos-14
+
+    steps:
+      - name: Install build dependencies
+        if: "${{ runner.os == 'Linux' }}"
+        run: |-
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            cmake \
+            libfuse3-dev \
+            pkg-config
+
+      - name: Add versioned aliases for Clang ${{ matrix.clang_major_version }}
+        if: "${{ runner.os == 'macOS' && contains(matrix.cc, 'clang') }}"
+        run: |-
+          set -x
+          sudo ln -s "$(brew --prefix llvm@${{ matrix.clang_major_version }})"/bin/clang /usr/local/bin/clang-${{ matrix.clang_major_version }}
+
+      - name: Install build dependencies
+        if: "${{ runner.os == 'macOS' }}"
+        run: |-
+          set -x
+          brew install --cask macfuse
+
+      - name: Checkout Git branch
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b  # v4.1.4
+
+      - name: 'Configure with CMake'
+        run: |-
+          cmake_args=(
+            -DCMAKE_C_COMPILER="${{ matrix.cc }}"
+            -DCMAKE_C_FLAGS="-std=gnu99 -Wall -Wextra -pedantic -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
+            -DCMAKE_{EXE,MODULE,SHARED}_LINKER_FLAGS="-g -fsanitize=address,undefined"
+            -S ./
+            -B build/
+          )
+          set -x
+          cmake "${cmake_args[@]}"
+
+      - name: 'Build'
+        run: |-
+          set -x
+          make -C build -j$(nproc) VERBOSE=1
+
+      - name: 'Install'
+        run: |-
+          set -x -o pipefail
+          make -C build install DESTDIR="${PWD}"/ROOT/
+          find ROOT/ | sort | xargs ls -ld
