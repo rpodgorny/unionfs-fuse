@@ -45,7 +45,8 @@ jobs:
           sudo apt-get install --yes --no-install-recommends \
             cmake \
             libfuse3-dev \
-            pkg-config
+            pkg-config \
+            python3-pytest
 
       - name: Add versioned aliases for Clang ${{ matrix.clang_major_version }}
         if: "${{ runner.os == 'macOS' && contains(matrix.cc, 'clang') }}"
@@ -58,6 +59,7 @@ jobs:
         run: |-
           set -x
           brew install --cask macfuse
+          pip3 install --break-system-packages pytest
 
       - name: Checkout Git branch
         uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b  # v4.1.4
@@ -78,6 +80,15 @@ jobs:
         run: |-
           set -x
           make -C build -j$(nproc) VERBOSE=1
+
+      - name: 'Test (without coverage)'
+        run: |-
+          set -x
+          export ASAN_OPTIONS=detect_leaks=0  # TODO fix memleaks and drop line
+          # TODO: hacky shit
+          cp -av build/src/unionfs ./src/
+          cp -av build/src/unionfsctl ./src/
+          python3 -m pytest
 
       - name: 'Install'
         run: |-
