@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/rpodgorny/unionfs-fuse.svg?branch=master)](https://travis-ci.org/rpodgorny/unionfs-fuse)
 [![Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/rpodgorny/donate)
 
 unionfs-fuse
