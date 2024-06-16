@@ -1,0 +1,77 @@
+# Copyright (c) 2024 Sebastian Pipping <sebastian@pipping.org>
+# Licensed under the 3-Clause BSD License
+
+name: Build and test using Makefile
+
+# Drop permissions to minimum for security
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 3 * * 5'  # Every Friday at 3am
+  workflow_dispatch:
+
+jobs:
+  build_makefile:
+    name: Makefile (${{ matrix.runs-on }}, ${{ matrix.cc }})
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cc: gcc-10
+            clang_major_version: null
+            runs-on: ubuntu-22.04
+          - cc: clang-13
+            clang_major_version: 13
+            runs-on: ubuntu-22.04
+    env:
+      CC: ${{ matrix.cc }}
+      CFLAGS: -std=gnu99 -Wall -Wextra -pedantic -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
+      LDFLAGS: -g -fsanitize=address,undefined
+    steps:
+      - name: Install build dependencies
+        run: |-
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            gcovr \
+            libfuse3-dev \
+            pkg-config \
+            python3-pytest
+
+      - name: Checkout Git branch
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b  # v4.1.4
+
+      - name: 'Build and test (without coverage)'
+        run: |-
+          set -x
+          export ASAN_OPTIONS=detect_leaks=0  # TODO fix memleaks and drop line
+          make test
+
+      - name: 'Install'
+        run: |-
+          set -x -o pipefail
+          make install DESTDIR="${PWD}"/ROOT/
+          find ROOT/ | sort | xargs ls -ld
+          rm -Rf ROOT/
+
+      - name: 'Clean (without coverage)'
+        run: |-
+          set -x
+          make clean
+          diff -u0 <(true) <(git ls-files --other --exclude-standard)
+
+      - name: 'Build and test (with coverage)'
+        run: |-
+          set -x
+          export ASAN_OPTIONS=detect_leaks=0  # TODO fix memleaks and drop line
+          make test_coverage
+
+      - name: 'Clean (with coverage)'
+        run: |-
+          set -x
+          make clean_coverage clean
+          diff -u0 <(true) <(git ls-files --other --exclude-standard)
