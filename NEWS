@@ -1,3 +1,6 @@
+3.5
+- fix compilation on 32bit systems
+
 3.4
 - default to fuse2 api on macos when compiling
 
