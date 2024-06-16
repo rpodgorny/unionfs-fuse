@@ -70,16 +70,7 @@ class Common:
 		# when trying to lock the fuse lock file.
 
 		if self.mounted:
-			if os.environ.get('RUNNING_ON_TRAVIS_CI'):
-				# TODO: investigate the following
-				# the sleep seems to be needed for some users or else the umount fails
-				# anyway, everything works fine on my system, so why wait? ;-)
-				# if it fails for someone, let's find the race and fix it!
-				# actually had to re-enable it because travis-ci is one of the bad cases
-				time.sleep(1)
-
-				call('umount union')
-			elif platform.system() == 'Darwin':
+			if platform.system() == 'Darwin':
 				call('umount %s' % self.mount_device)
 			else:
 				call('fusermount -u union')
