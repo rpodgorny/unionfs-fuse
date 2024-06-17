@@ -3,7 +3,7 @@
 # Copyright: Bernd Schubert <bernd.schubert@fastmail.fm>
 # BSD license, see LICENSE file for details
 
-FUSE_OPT="-o allow_other,use_ino,suid,dev,nonempty"
+FUSE_OPT="-o allow_other,suid,dev,nonempty"
 CHROOT_PATH="/tmp/unionfs"
 UNION_OPT="-ocow,chroot=$CHROOT_PATH,max_files=32768"
 

@@ -32,7 +32,7 @@ NET="192.168.1."
 NFS_SERV="192.168.55.86"
 NFS_OPT="-otcp,nfsvers=3,port=2049,rsize=8192,wsize=8192,nolock"
 
-FUSE_OPT="-o default_permissions -o allow_other -o use_ino -o nonempty -o suid"
+FUSE_OPT="-o default_permissions -o allow_other -o nonempty -o suid"
 UNION_OPT="-o cow -o noinitgroups"
 
 UPATH="/unionfs"

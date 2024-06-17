@@ -98,7 +98,7 @@ option on our own.
 .SH "EXAMPLES"
 .Vb 5
 \& unionfs \-o cow,max_files=32768 \e
-\&              \-o allow_other,use_ino,suid,dev,nonempty \e
+\&              \-o allow_other,suid,dev,nonempty \e
 \&              /u/host/etc=RW:/u/group/etc=RO:/u/common/etc=RO \e
 \&              /u/union/etc
 .Ve
