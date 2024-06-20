@@ -204,6 +204,9 @@ static int unionfs_getattr(const char *path, struct stat *stbuf, struct fuse_fil
 	int res = lstat(p, stbuf);
 	if (res == -1) RETURN(-errno);
 
+        // In all writable mode, enable write in all cases where we have read.
+        if (uopt.all_writable) stbuf->st_mode |= (stbuf->st_mode & 0444) >> 1;
+
 	/* This is a workaround for broken gnu find implementations. Actually,
 	 * n_links is not defined at all for directories by posix. However, it
 	 * seems to be common for filesystems to set it to one if the actual value
