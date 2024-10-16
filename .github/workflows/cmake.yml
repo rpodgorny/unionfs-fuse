@@ -32,7 +32,7 @@ jobs:
           # macFUSE on macOS
           - cc: gcc-12
             clang_major_version: null
-            runs-on: macos-12
+            runs-on: macos-13
           - cc: clang-15
             clang_major_version: 15
             runs-on: macos-14
