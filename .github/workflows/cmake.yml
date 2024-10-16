@@ -64,10 +64,18 @@ jobs:
 
       - name: 'Configure with CMake'
         run: |-
+          CFLAGS='-std=gnu99 -Wall -Wextra -pedantic'
+          LDFLAGS=
+
+          if [[ "${{ runner.os }}" = Linux || "${{ matrix.cc }}" = clang* ]]; then
+            CFLAGS+=' -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'
+            LDFLAGS+=' -g -fsanitize=address,undefined'
+          fi
+
           cmake_args=(
             -DCMAKE_C_COMPILER="${{ matrix.cc }}"
-            -DCMAKE_C_FLAGS="-std=gnu99 -Wall -Wextra -pedantic -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
-            -DCMAKE_{EXE,MODULE,SHARED}_LINKER_FLAGS="-g -fsanitize=address,undefined"
+            -DCMAKE_C_FLAGS="${CFLAGS}"
+            -DCMAKE_{EXE,MODULE,SHARED}_LINKER_FLAGS="${LDFLAGS}"
             -S ./
             -B build/
           )
