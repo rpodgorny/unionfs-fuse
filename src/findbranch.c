@@ -229,10 +229,6 @@ int find_rw_branch_cutlast(const char *path) {
 	RETURN(res);
 }
 
-int find_rw_branch_cow(const char *path) {
-	return find_rw_branch_cow_common(path, false);
-}
-
 /**
  * copy-on-write
  * Find path in a union branch and if this branch is read-only,
@@ -241,7 +237,7 @@ int find_rw_branch_cow(const char *path) {
  *       It will definitely fail, when a ro-branch is on top of a rw-branch
  *       and a directory is to be copied from ro- to rw-branch.
  */
-int find_rw_branch_cow_common(const char *path, bool copy_dir) {
+int find_rw_branch_cow(const char *path) {
 	DBG("%s\n", path);
 
 	int branch_rorw = find_rorw_branch(path);
@@ -265,7 +261,54 @@ int find_rw_branch_cow_common(const char *path, bool copy_dir) {
 		RETURN(-1);
 	}
 
-	if (cow_cp(path, branch_rorw, branch_rw, copy_dir)) RETURN(-1);
+	if (cow_cp(path, branch_rorw, branch_rw, false)) RETURN(-1);
+
+	// remove a file that might hide the copied file
+	remove_hidden(path, branch_rw);
+
+	RETURN(branch_rw);
+}
+
+/**
+ * copy-on-write, recursive version
+ * Ensure that a directory path and all its contents are copied to a read-write
+ * branch from every other branch.
+ */
+int find_rw_branch_cow_recursive(const char *path) {
+	DBG("%s\n", path);
+
+	int branch_rorw = find_rorw_branch(path);
+
+	// not found anywhere
+	if (branch_rorw < 0) RETURN(-1);
+
+	// cow is disabled, so deny write permission
+	if (!uopt.cow_enabled) {
+		errno = EACCES;
+		RETURN(-1);
+	}
+
+	// +1 so that branch_rw can be the same as branch_rorw
+	int branch_rw = find_lowest_rw_branch(branch_rorw + 1);
+	if (branch_rw < 0) {
+		// no writable branch found
+		errno = EACCES;
+		RETURN(-1);
+	}
+
+	// Directory copy must be performed for branch_rorw and every branch below
+	// it because every branch may contain different pieces of the directory's
+	// contents. However branch_rw should not be copied to itself.
+	int first_copied_branch = branch_rorw == branch_rw ? branch_rorw + 1 : branch_rorw;
+	for (int i = first_copied_branch; i < uopt.nbranches; i++) {
+		bool is_dir = false;
+		if (branch_contains_path(i, path, &is_dir) && is_dir) {
+			// Recursive copy. File overwriting is not allowed so previously
+			// copied higher priority branches are not overwritten.
+			DBG("starting recursive copy from %i to %i\n", i, branch_rw);
+			if (cow_cp(path, i, branch_rw, true)) RETURN(-1);
+		}
+	}
 
 	// remove a file that might hide the copied file
 	remove_hidden(path, branch_rw);

@@ -57,7 +57,7 @@ int path_create_cutlast_cow(const char *path, int nbranch_ro, int nbranch_rw) {
 /**
  * initiate the cow-copy action
  */
-int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
+int cow_cp(const char *path, int branch_ro, int branch_rw, bool recursive) {
 	DBG("%s\n", path);
 
 	// create the path to the file
@@ -94,7 +94,7 @@ int cow_cp(const char *path, int branch_ro, int branch_rw, bool copy_dir) {
 			res = copy_link(&cow);
 			break;
 		case S_IFDIR:
-			if (copy_dir) {
+			if (recursive) {
 				res = copy_directory(path, branch_ro, branch_rw);
 			} else {
 				res = path_create_cow(path, branch_ro, branch_rw);
@@ -145,6 +145,60 @@ int copy_directory(const char *path, int branch_ro, int branch_rw) {
 			res = 1;
 			break;
 		}
+
+		char from_member[PATHLEN_MAX], to_member[PATHLEN_MAX];
+		if (BUILD_PATH(from_member, uopt.branches[branch_ro].path, member)) {
+			res = -ENAMETOOLONG;
+			break;
+		}
+		if (BUILD_PATH(to_member, uopt.branches[branch_rw].path, member)) {
+			res = -ENAMETOOLONG;
+			break;
+		}
+
+		// Generally if the target file already exists, we should not copy
+		// anything. Directories are a special case as their contents may still
+		// need to be merged.
+		struct stat buf;
+		if (
+			!lstat(to_member, &buf) &&
+			(
+				(buf.st_mode & S_IFMT) != S_IFDIR ||
+				(!lstat(from_member, &buf) && (buf.st_mode & S_IFMT) != S_IFDIR)
+			)
+		) {
+			// File already exists in target and either source or target is not
+			// a directory, skip it
+			DBG("file %s copy skipped, exists in target\n", member);
+			continue;
+		}
+
+		// If source file is hidden by a higher branch, we should not copy
+		// anything. We do this by iterating through all higher branches and
+		// checking if they have a whiteout. This is somewhat inefficient, but
+		// it is the only simple way to handle this case. A more complex
+		// solution would be to collect whiteouts to a hashtable, as has been
+		// done in readdir.
+		bool skip = false;
+		for (int i = 0; i < branch_ro; i++) {
+			// Assuming that only rw branches can have whiteouts
+			if (uopt.branches[i].rw) {
+				int hidden = path_hidden(member, i);
+				if (hidden > 0) {
+					// File was hidden, skip it
+					DBG("file %s copy skipped, hidden by layer %i\n", member, i);
+					skip = true;
+					break;
+				} else if (hidden < 0) {
+					// error in path_hidden
+					res = hidden;
+					break;
+				}
+			}
+		}
+		if (res != 0) break;
+		if (skip) continue;
+
 		res = cow_cp(member, branch_ro, branch_rw, true);
 		if (res != 0) break;
 	}

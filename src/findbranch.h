@@ -18,6 +18,6 @@ int find_lowest_rw_branch(int branch_ro);
 int find_rw_branch_cutlast(const char *path);
 int __find_rw_branch_cutlast(const char *path, int rw_hint);
 int find_rw_branch_cow(const char *path);
-int find_rw_branch_cow_common(const char *path, bool copy_dir);
+int find_rw_branch_cow_recursive(const char *path);
 
 #endif

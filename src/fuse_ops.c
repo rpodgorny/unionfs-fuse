@@ -481,8 +481,6 @@ static int unionfs_release(const char *path, struct fuse_file_info *fi) {
 
 /**
  * unionfs rename function
- * TODO: If we rename a directory on a read-only branch, we need to copy over
- *       all files to the renamed directory on the read-write branch.
  */
 #if FUSE_USE_VERSION < 30
 static int unionfs_rename(const char *from, const char *to) {
@@ -524,10 +522,22 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 		}
 	}
 
-	if (!uopt.branches[i].rw) {
-		i = find_rw_branch_cow_common(from, true);
-		if (i == -1) RETURN(-errno);
+	char f[PATHLEN_MAX], t[PATHLEN_MAX];
+	if (BUILD_PATH(f, uopt.branches[i].path, from)) RETURN(-ENAMETOOLONG);
+
+	filetype_t ftype = path_is_dir(f);
+	if (ftype == NOT_EXISTING) {
+		RETURN(-ENOENT);
+	} else if (ftype == IS_DIR) {
+		is_dir = true;
 	}
+
+	if (is_dir) {
+		i = find_rw_branch_cow_recursive(from);
+	} else if (!uopt.branches[i].rw) {
+		i = find_rw_branch_cow(from);
+	}
+	if (i == -1) RETURN(-errno);
 
 	if (i != j) {
 		USYSLOG(LOG_ERR, "%s: from and to are on different writable branches %d vs %d, which"
@@ -535,11 +545,10 @@ static int unionfs_rename(const char *from, const char *to, unsigned int flags) 
 		RETURN(-EXDEV);
 	}
 
-	char f[PATHLEN_MAX], t[PATHLEN_MAX];
 	if (BUILD_PATH(f, uopt.branches[i].path, from)) RETURN(-ENAMETOOLONG);
 	if (BUILD_PATH(t, uopt.branches[i].path, to)) RETURN(-ENAMETOOLONG);
 
-	filetype_t ftype = path_is_dir(f);
+	ftype = path_is_dir(f);
 	if (ftype == NOT_EXISTING) {
 		RETURN(-ENOENT);
 	} else if (ftype == IS_DIR) {
