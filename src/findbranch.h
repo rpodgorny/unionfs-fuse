@@ -12,6 +12,7 @@ typedef enum searchflag {
 	RWONLY
 } searchflag_t;
 
+bool branch_contains_path(int branch, const char *path, bool *is_dir);
 bool branch_contains_file_or_parent_dir(int branch, const char *path);
 int find_rorw_branch(const char *path);
 int find_lowest_rw_branch(int branch_ro);

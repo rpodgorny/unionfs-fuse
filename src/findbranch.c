@@ -51,7 +51,7 @@
 #include "debug.h"
 #include "usyslog.h"
 
-static bool branch_contains_path(int branch, const char *path, bool *is_dir) {
+bool branch_contains_path(int branch, const char *path, bool *is_dir) {
 	if (branch < 0 || branch >= uopt.nbranches) {
 		RETURN(false);
 	}

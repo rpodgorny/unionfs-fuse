@@ -146,27 +146,12 @@ int copy_directory(const char *path, int branch_ro, int branch_rw) {
 			break;
 		}
 
-		char from_member[PATHLEN_MAX], to_member[PATHLEN_MAX];
-		if (BUILD_PATH(from_member, uopt.branches[branch_ro].path, member)) {
-			res = -ENAMETOOLONG;
-			break;
-		}
-		if (BUILD_PATH(to_member, uopt.branches[branch_rw].path, member)) {
-			res = -ENAMETOOLONG;
-			break;
-		}
-
 		// Generally if the target file already exists, we should not copy
 		// anything. Directories are a special case as their contents may still
 		// need to be merged.
-		struct stat buf;
-		if (
-			!lstat(to_member, &buf) &&
-			(
-				(buf.st_mode & S_IFMT) != S_IFDIR ||
-				(!lstat(from_member, &buf) && (buf.st_mode & S_IFMT) != S_IFDIR)
-			)
-		) {
+		bool is_dir = false;
+		if (branch_contains_path(branch_rw, member, &is_dir) &&
+			(!is_dir || (branch_contains_path(branch_ro, member, &is_dir) && !is_dir))) {
 			// File already exists in target and either source or target is not
 			// a directory, skip it
 			DBG("file %s copy skipped, exists in target\n", member);
