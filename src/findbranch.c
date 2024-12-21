@@ -245,7 +245,7 @@ int find_rw_branch_cow(const char *path) {
 	// not found anywhere
 	if (branch_rorw < 0) RETURN(-1);
 
-	// the found branch is writable, good!
+	// the found branch is writable, good! We don't need to do any cow-copying.
 	if (uopt.branches[branch_rorw].rw) RETURN(branch_rorw);
 
 	// cow is disabled and branch is not writable, so deny write permission
@@ -282,7 +282,22 @@ int find_rw_branch_cow_recursive(const char *path) {
 	// not found anywhere
 	if (branch_rorw < 0) RETURN(-1);
 
-	// cow is disabled, so deny write permission
+	// the found branch is writable and the only branch containing the directory, good!
+	// We don't need to do any cow-copying.
+	if (uopt.branches[branch_rorw].rw) {
+		// Loop through all lower branches and check if the directory exists in any of them
+		bool only_branch = true;
+		for (int i = branch_rorw + 1; i < uopt.nbranches; i++) {
+			bool is_dir = false;
+			if (branch_contains_path(i, path, &is_dir) && is_dir) {
+				only_branch = false;
+				break;
+			}
+		}
+		if (only_branch) RETURN(branch_rorw);
+	}
+
+	// cow is disabled and branch is not writable and only branch, so deny write permission
 	if (!uopt.cow_enabled) {
 		errno = EACCES;
 		RETURN(-1);
