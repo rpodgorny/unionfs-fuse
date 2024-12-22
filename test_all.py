@@ -61,6 +61,10 @@ class Common:
 		write_to_file('ro2/ro_common_file', 'ro2')
 		write_to_file('rw1/rw_common_file', 'rw1')
 		write_to_file('rw2/rw_common_file', 'rw2')
+		write_to_file('ro1/common_dir/ro_common_file', 'ro1')
+		write_to_file('ro2/common_dir/ro_common_file', 'ro2')
+		write_to_file('rw1/common_dir/rw_common_file', 'rw1')
+		write_to_file('rw2/common_dir/rw_common_file', 'rw2')
 
 		os.mkdir('union')
 		self.mounted = False
@@ -226,13 +230,13 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		#self.assertFalse(os.path.isdir('union/common_dir'))
 
 
-class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
+class UnionFS_RW_RO_RO_COW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()
-		self.mount('-o cow rw1=rw:ro1=ro union')
+		self.mount('-o cow rw1=rw:ro1=ro:ro2=ro union')
 
 	def test_listing(self):
-		lst = ['ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
+		lst = ['ro1_file', 'ro2_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file', 'ro1_dir', 'ro2_dir', 'rw1_dir', 'common_dir', 'common_empty_dir', ]
 		self.assertEqual(set(lst), set(os.listdir('union')))
 
 	def test_whiteout(self):
@@ -265,11 +269,12 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 	def test_rename(self):
 		os.rename('union/rw1_file', 'union/rw1_file_renamed')
 		self.assertEqual(read_from_file('union/rw1_file_renamed'), 'rw1')
+		self.assertFalse(os.path.exists('union/rw1_file'))
 
 		os.rename('union/ro1_file', 'union/ro1_file_renamed')
 		self.assertEqual(read_from_file('union/ro1_file_renamed'), 'ro1')
+		self.assertFalse(os.path.exists('union/ro1_file'))
 
-		# See https://github.com/rpodgorny/unionfs-fuse/issues/25
 		ro_dirs = 'ro1/recursive/dirs/1/2/3'
 		os.makedirs(ro_dirs)
 		ro_link = 'ro1/symlink'
@@ -284,8 +289,9 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 		os.rename(original, renamed)
 		os.rename('union/symlink', new_link)
 
-		self.assertFalse(os.path.isdir(original))
+		self.assertFalse(os.path.exists(original))
 		self.assertTrue(os.path.isdir(ro_dirs))
+		self.assertFalse(os.path.exists('ro1/recursive_cow'))
 
 		# the files in the subdirectories should match after renaming
 		self.assertEqual(get_dir_contents('ro1/recursive'), get_dir_contents(renamed))
@@ -293,9 +299,74 @@ class UnionFS_RW_RO_COW_TestCase(Common, unittest.TestCase):
 
 		self.assertTrue(os.path.islink(new_link))
 
-		# TODO: how should the common file behave?
-		#os.rename('union/common_file', 'union/common_file_renamed')
-		#self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
+		os.rename('union/common_file', 'union/common_file_renamed')
+		self.assertEqual(read_from_file('union/common_file_renamed'), 'rw1')
+		self.assertFalse(os.path.exists('union/common_file'))
+
+	def test_rename_common_dir(self):
+		common_dir_contents = ['ro2_file', 'ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
+		self.assertEqual(set(os.listdir('union/common_dir')), set(common_dir_contents))
+
+		os.rename('union/common_dir', 'union/common_dir_renamed')
+
+		self.assertFalse(os.path.exists('union/common_dir'))
+		self.assertTrue(os.path.isdir('union/common_dir_renamed'))
+		self.assertEqual(set(os.listdir('union/common_dir_renamed')), set(common_dir_contents))
+		self.assertEqual(read_from_file('union/common_dir_renamed/ro_common_file'), 'ro1')
+		self.assertEqual(read_from_file('union/common_dir_renamed/common_file'), 'rw1')
+
+		self.assertTrue(os.path.isdir('ro2/common_dir'))
+		self.assertFalse(os.path.exists('ro2/common_dir_renamed'))
+		self.assertEqual(set(os.listdir('ro2/common_dir')), set(['ro2_file', 'ro_common_file', 'common_file']))
+
+		self.assertTrue(os.path.isdir('ro1/common_dir'))
+		self.assertFalse(os.path.exists('ro1/common_dir_renamed'))
+		self.assertEqual(set(os.listdir('ro1/common_dir')), set(['ro1_file', 'ro_common_file', 'common_file']))
+
+		self.assertFalse(os.path.exists('rw1/common_dir'))
+		self.assertTrue(os.path.isdir('rw1/common_dir_renamed'))
+		self.assertEqual(set(os.listdir('rw1/common_dir_renamed')), set(common_dir_contents))
+		self.assertEqual(read_from_file('rw1/common_dir_renamed/ro_common_file'), 'ro1')
+		self.assertEqual(read_from_file('rw1/common_dir_renamed/common_file'), 'rw1')
+
+	def test_rename_common_dir_with_whiteout(self):
+		os.remove('union/common_dir/ro1_file')
+		self.assertFalse(os.path.exists('union/common_dir/ro1_file'))
+
+		os.rename('union/common_dir', 'union/common_dir_renamed')
+
+		self.assertFalse(os.path.exists('union/common_dir_renamed/ro1_file'))
+
+	def test_rename_common_dir_back(self):
+		common_dir_contents = ['ro2_file', 'ro1_file', 'rw1_file', 'ro_common_file', 'rw_common_file', 'common_file']
+		self.assertEqual(set(os.listdir('union/common_dir')), set(common_dir_contents))
+
+		os.rename('union/common_dir', 'union/common_dir_renamed')
+		os.rename('union/common_dir_renamed', 'union/common_dir')
+
+		self.assertEqual(set(os.listdir('union/common_dir')), set(common_dir_contents))
+
+	def test_rename_file_masking_directory(self):
+		os.rmdir('union/common_empty_dir')
+		write_to_file('union/common_empty_dir', 'this is a file')
+		self.assertEqual(read_from_file('union/common_empty_dir'), 'this is a file')
+
+		os.rename('union/common_empty_dir', 'union/common_empty_dir_renamed')
+
+		self.assertEqual(read_from_file('union/common_empty_dir_renamed'), 'this is a file')
+		self.assertFalse(os.path.exists('union/common_empty_dir'))
+
+	def test_rename_onto_lower(self):
+		os.rename('union/rw1_file', 'union/ro1_file')
+
+		self.assertFalse(os.path.exists('union/rw1_file'))
+		self.assertEqual(read_from_file('union/ro1_file'), 'rw1')
+
+	def test_rename_onto_higher(self):
+		os.rename('union/ro1_file', 'union/rw1_file')
+
+		self.assertFalse(os.path.exists('union/ro1_file'))
+		self.assertEqual(read_from_file('union/rw1_file'), 'ro1')
 
 	def test_copystat(self):
 		shutil.copystat('union/ro1_file', 'union/rw1_file')
