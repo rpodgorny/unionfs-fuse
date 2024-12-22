@@ -417,16 +417,23 @@ class UnionFS_RW_RO_RO_COW_TestCase(Common, unittest.TestCase):
 	def test_rmdir(self):
 		with self.assertRaises(OSError):
 			os.rmdir('union/ro1_dir')
+
 		os.remove('union/rw1_dir/rw1_file')
 		os.rmdir('union/rw1_dir')
-		self.assertFalse(os.path.isdir('union/rw1_dir'))
-		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		self.assertFalse(os.path.exists('union/rw1_dir'))
+		self.assertFalse(os.path.exists('rw1/rw1_dir'))
+
 		os.rmdir('union/common_empty_dir')
-		# TODO: decide what the correct behaviour should be
-		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
-		#os.remove('union/common_dir/common_file')
-		#os.rmdir('union/common_dir')
-		#self.assertFalse(os.path.isdir('union/common_dir'))
+		self.assertFalse(os.path.exists('union/common_empty_dir'))
+
+		os.remove('union/common_dir/common_file')
+		os.remove('union/common_dir/ro_common_file')
+		os.remove('union/common_dir/rw_common_file')
+		os.remove('union/common_dir/ro2_file')
+		os.remove('union/common_dir/ro1_file')
+		os.remove('union/common_dir/rw1_file')
+		os.rmdir('union/common_dir')
+		self.assertFalse(os.path.exists('union/common_dir'))
 
 
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
