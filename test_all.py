@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+# try to be as strict as possible when asserting directory existence. this means that you should use:
+# assertTrue(os.path.isdir(...some_directory...))
+# assertFalse(os.path.exists(...some_directory...))
+
 import unittest
 import subprocess
 import os
@@ -206,7 +210,7 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 		os.mkdir('union/dir')
 		self.assertTrue(os.path.isdir('union/dir'))
 		self.assertTrue(os.path.isdir('rw1/dir'))
-		self.assertFalse(os.path.isdir('ro1/dir'))
+		self.assertFalse(os.path.exists('ro1/dir'))
 
 	# TODO: enable this once we decide a good way to run root-only tests
 	#def test_mknod(self):
@@ -220,14 +224,14 @@ class UnionFS_RW_RO_TestCase(Common, unittest.TestCase):
 			os.rmdir('union/ro1_dir')
 		os.remove('union/rw1_dir/rw1_file')
 		os.rmdir('union/rw1_dir')
-		self.assertFalse(os.path.isdir('union/rw1_dir'))
-		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		self.assertFalse(os.path.exists('union/rw1_dir'))
+		self.assertFalse(os.path.exists('rw1/rw1_dir'))
 		os.rmdir('union/common_empty_dir')
 		# TODO: decide what the correct behaviour should be
-		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
+		#self.assertFalse(os.path.exists('union/common_empty_dir'))
 		#os.remove('union/common_dir/common_file')
 		#os.rmdir('union/common_dir')
-		#self.assertFalse(os.path.isdir('union/common_dir'))
+		#self.assertFalse(os.path.exists('union/common_dir'))
 
 
 class UnionFS_RW_RO_RO_COW_TestCase(Common, unittest.TestCase):
@@ -478,14 +482,14 @@ class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 			os.rmdir('union/ro1_dir')
 		os.remove('union/rw1_dir/rw1_file')
 		os.rmdir('union/rw1_dir')
-		self.assertFalse(os.path.isdir('union/rw1_dir'))
-		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		self.assertFalse(os.path.exists('union/rw1_dir'))
+		self.assertFalse(os.path.exists('rw1/rw1_dir'))
 		# TODO: decide what the correct behaviour should be
 		#os.rmdir('union/common_empty_dir')
-		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
+		#self.assertFalse(os.path.exists('union/common_empty_dir'))
 		#os.remove('union/common_dir/common_file')
 		#os.rmdir('union/common_dir')
-		#self.assertFalse(os.path.isdir('union/common_dir'))
+		#self.assertFalse(os.path.exists('union/common_dir'))
 
 
 class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
@@ -527,14 +531,14 @@ class UnionFS_RO_RW_COW_TestCase(Common, unittest.TestCase):
 			os.rmdir('union/ro1_dir')
 		os.remove('union/rw1_dir/rw1_file')
 		os.rmdir('union/rw1_dir')
-		self.assertFalse(os.path.isdir('union/rw1_dir'))
-		self.assertFalse(os.path.isdir('rw1/rw1_dir'))
+		self.assertFalse(os.path.exists('union/rw1_dir'))
+		self.assertFalse(os.path.exists('rw1/rw1_dir'))
 		# TODO: decide what the correct behaviour should be
 		#os.rmdir('union/common_empty_dir')
-		#self.assertFalse(os.path.isdir('union/common_empty_dir'))
+		#self.assertFalse(os.path.exists('union/common_empty_dir'))
 		#os.remove('union/common_dir/common_file')
 		#os.rmdir('union/common_dir')
-		#self.assertFalse(os.path.isdir('union/common_dir'))
+		#self.assertFalse(os.path.exists('union/common_dir'))
 
 
 @unittest.skipIf(os.environ.get('RUNNING_ON_TRAVIS_CI'), 'Not supported on Travis')
