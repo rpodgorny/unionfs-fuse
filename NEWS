@@ -1,3 +1,6 @@
+3.6
+- fix long standing bug with directory renames in cow mode (see #91)
+
 3.5
 - fix compilation on 32bit systems
 

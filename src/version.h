@@ -4,5 +4,5 @@
 */
 
 #ifndef _VERSION_H
-#define VERSION "3.5"
+#define VERSION "3.6"
 #endif
