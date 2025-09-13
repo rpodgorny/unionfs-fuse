@@ -73,7 +73,12 @@ static int unionfs_chmod(const char *path, mode_t mode, struct fuse_file_info *f
 	char p[PATHLEN_MAX];
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
-	int res = chmod(p, mode);
+  #ifdef UNIONFS_HAVE_AT
+    int res = fchmodat(AT_FDCWD, p, mode, AT_SYMLINK_NOFOLLOW);
+  #else
+    int res = chmod(p, mode);
+  #endif
+
 	if (res == -1) RETURN(-errno);
 
 	RETURN(0);
