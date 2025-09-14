@@ -1,3 +1,6 @@
+3.7
+- fix chmod on symlink itself
+
 3.6
 - fix long standing bug with directory renames in cow mode (see #91)
 
