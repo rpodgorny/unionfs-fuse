@@ -39,6 +39,11 @@
 	#include <sys/statvfs.h>
 #endif
 
+#ifdef __APPLE__
+	#include <sys/socket.h>
+	#include <sys/un.h>
+#endif
+
 #ifdef HAVE_XATTR
 	#include <sys/xattr.h>
 #endif
@@ -391,6 +396,22 @@ static int unionfs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
 		res = creat(p, 0);
 		if (res > 0 && close(res) == -1) USYSLOG(LOG_WARNING, "Warning, cannot close file\n");
+#ifdef __APPLE__
+	} else if ((file_type) == S_IFSOCK) {
+        int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+        if (sockfd >= 0) {
+			// Bind (and immediately close) the socket in order to create the file on
+			// the underlying filesystem
+			struct sockaddr_un sock_addr;
+            sock_addr.sun_family = AF_UNIX;
+            strncpy(sock_addr.sun_path, p, sizeof(sock_addr.sun_path));
+            res = bind(sockfd, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+            close(sockfd);
+        } else {
+            res = -1;
+        }
+#endif
 	} else {
 		res = mknod(p, file_type, rdev);
 	}
