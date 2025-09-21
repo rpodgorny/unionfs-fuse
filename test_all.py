@@ -440,6 +440,40 @@ class UnionFS_RW_RO_RO_COW_TestCase(Common, unittest.TestCase):
 		self.assertFalse(os.path.exists('union/common_dir'))
 
 
+class UnionFS_RW_RO_AW_TestCase(Common, unittest.TestCase):
+	def setUp(self):
+		super().setUp()
+		self.mount('-o all_writable rw1=rw:ro1=ro union')
+		os.chmod('ro1/ro1_dir', 0o500)
+		os.chmod('ro1/ro1_file', 0o400)
+
+	def tearDown(self):
+		os.chmod('ro1/ro1_dir', 0o700)
+		os.chmod('ro1/ro1_file', 0o600)
+		super().tearDown()
+
+	def test_mkdir(self):
+		os.mkdir('union/ro1_dir/mydir')
+		self.assertTrue(os.access('union/ro1_dir/mydir', os.W_OK))
+
+	def test_write_file(self):
+		write_to_file('union/ro1_file', 'overwrite!')
+		self.assertEqual(read_from_file('union/ro1_file'), 'overwrite!')
+
+	def test_write_to_ro_dir(self):
+		write_to_file('union/ro1_dir/new_file', 'something')
+		self.assertEqual(read_from_file('union/ro1_dir/new_file'), 'something')
+
+	def test_rmdir(self):
+		os.remove('union/ro1_dir/ro1_file')
+		os.rmdir('union/ro1_dir')
+		self.assertFalse(os.path.exists('union/ro1_dir'))
+
+	def test_rmfile(self):
+		os.remove('union/ro1_file')
+		self.assertFalse(os.path.exists('union/ro1_file'))
+
+
 class UnionFS_RO_RW_TestCase(Common, unittest.TestCase):
 	def setUp(self):
 		super().setUp()

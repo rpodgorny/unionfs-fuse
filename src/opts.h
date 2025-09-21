@@ -22,6 +22,7 @@ typedef struct {
 
 	bool cow_enabled;
 	bool preserve_branch;
+	bool all_writable;
 	bool statfs_omit_ro;
 	int doexit;
 	int retval;
@@ -39,6 +40,7 @@ enum {
 	KEY_CHROOT,
 	KEY_COW,
 	KEY_PRESERVE_BRANCH,
+	KEY_ALL_WRITABLE,
 	KEY_DEBUG_FILE,
 	KEY_DIRS,
 	KEY_HELP,
