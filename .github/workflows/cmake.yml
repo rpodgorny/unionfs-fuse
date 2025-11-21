@@ -30,7 +30,7 @@ jobs:
             clang_major_version: 18
             runs-on: ubuntu-24.04
           # macFUSE on macOS
-          - cc: gcc-12
+          - cc: gcc-14
             clang_major_version: null
             runs-on: macos-14
           - cc: clang-15
