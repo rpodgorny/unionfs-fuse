@@ -1,9 +1,27 @@
-#!/bin/bash
-
-label=$1
-mpoint=$2
-shift 3
-dirs=${@##*,dirs=}
-dirs=${dirs/,/:}
-mount.fuse "unionfs#$dirs" "$mpoint" -o ${@%%,dirs=*} 
-
+#!/bin/sh
+set -f
+print_usage() { echo "usage: ${0##*/} <ignored> destination" \
+    "-o dirs=UNION_DIRS[,opt[,opts...]]"; }
+first_arg=y first_pos=y is_opt='' dirs=''
+IFS=; for arg in "$@"; do
+    [ -z "$first_arg" ] || { first_arg=; set --; }
+    if [ -n "$is_opt" ]; then
+        is_opt='' new_arg=''
+        IFS=,; for part in $arg; do
+            case "$part" in
+                dirs=*) dirs="${dirs:+$dirs:}${part#dirs=}" ;;
+                *) new_arg="${new_arg:+$new_arg,}$part" ;;
+            esac
+        done
+        [ -n "$new_arg" ] || continue
+        set -- "$@" -o "$new_arg"
+    elif [ "-o" = "$arg" ]; then
+        is_opt=y
+    elif [ -n "$first_pos" ] && [ "${arg#-}" = "$arg" ]; then
+        first_pos=''
+    else
+        set -- "$@" "$arg"
+    fi
+done
+[ -n "$dirs" ] && [ -z "$is_opt" ] || { print_usage >&2; exit 1; }
+exec mount.fuse "unionfs#$dirs" "$@"
