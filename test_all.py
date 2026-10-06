@@ -13,6 +13,7 @@ import tempfile
 import stat
 import platform
 import errno
+import threading
 
 
 def call(cmd):
@@ -263,6 +264,54 @@ class UnionFS_RW_RO_RO_COW_TestCase(Common, unittest.TestCase):
 		self.assertFalse(os.path.isfile('union/ro_file'))
 		self.assertFalse(os.path.isfile('rw1/ro_file'))
 		self.assertEqual(read_from_file('ro1/ro1_file'), 'ro1')
+
+	def test_concurrent_cow(self):
+		num_threads = 8
+		file_size = 65536  # larger than MAXBSIZE to ensure multi-chunk copying
+		files = []
+
+		for idx in range(num_threads):
+			fn = 'ro1/concurrent_cow_%d' % idx
+			pattern = (chr(ord('A') + idx) * 1024).encode('ascii') * (file_size // 1024)
+			with open(fn, 'wb') as f:
+				f.write(pattern)
+			files.append(('concurrent_cow_%d' % idx, pattern))
+
+		barrier = threading.Barrier(num_threads)
+		errors = []
+
+		def worker(fname, pat):
+			try:
+				barrier.wait()
+				# Open with read+write to trigger COW copy of original file from ro1 to rw1
+				with open('union/%s' % fname, 'r+b') as f:
+					data = f.read()
+					if data != pat:
+						errors.append("Initial read mismatch for %s: got len %d, expected %d" % (fname, len(data), len(pat)))
+					f.seek(0)
+					f.write(b'MODIFIED_' + pat[9:])
+			except Exception as e:
+				errors.append("Exception in worker for %s: %s" % (fname, e))
+
+		threads = [
+			threading.Thread(target=worker, args=(fn, pat))
+			for fn, pat in files
+		]
+		for t in threads:
+			t.start()
+		for t in threads:
+			t.join()
+
+		self.assertEqual(errors, [])
+
+		for fn, pat in files:
+			expected = b'MODIFIED_' + pat[9:]
+			with open('union/%s' % fn, 'rb') as f:
+				self.assertEqual(f.read(), expected)
+			with open('rw1/%s' % fn, 'rb') as f:
+				self.assertEqual(f.read(), expected)
+			with open('ro1/%s' % fn, 'rb') as f:
+				self.assertEqual(f.read(), pat)
 
 	def test_write_new(self):
 		write_to_file('union/new_file', 'something')

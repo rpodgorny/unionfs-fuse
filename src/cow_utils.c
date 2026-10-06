@@ -149,7 +149,6 @@ int copy_file(struct cow *cow)
 {
 	DBG("from %s to %s\n", cow->from_path, cow->to_path);
 
-	static char buf[MAXBSIZE];
 	struct stat to_stat, *fs;
 	int from_fd, rcount, to_fd, wcount;
 	int rval = 0;
@@ -199,6 +198,14 @@ int copy_file(struct cow *cow)
 	} else
 #endif
 	{
+		char *buf = malloc(MAXBSIZE);
+		if (!buf) {
+			USYSLOG(LOG_WARNING, "malloc failed: %s", cow->from_path);
+			(void)close(from_fd);
+			(void)close(to_fd);
+			RETURN(1);
+		}
+
 		while ((rcount = read(from_fd, buf, MAXBSIZE)) > 0) {
 			wcount = write(to_fd, buf, rcount);
 			if (rcount != wcount || wcount == -1) {
@@ -211,6 +218,8 @@ int copy_file(struct cow *cow)
 			USYSLOG(LOG_WARNING, "copy failed: %s", cow->from_path);
 			rval = 1;
 		}
+
+		free(buf);
 	}
 
 	if (rval == 1) {
