@@ -28,10 +28,10 @@
 /**
  * Check if the given fname suffixes the hide tag
  */
-char *whiteout_tag(const char *fname) {
+const char *whiteout_tag(const char *fname) {
 	DBG("%s\n", fname);
 
-	char *tag = strstr(fname, HIDETAG);
+	const char *tag = strstr(fname, HIDETAG);
 
 	// check if fname has tag, fname is not only the tag, file name ends with the tag
 	// TODO: static strlen(HIDETAG)

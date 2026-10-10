@@ -62,23 +62,20 @@ static bool hide_meta_files(int branch, const char *path, struct dirent *de)
 /**
  * Check if fname has a hiding tag and return its status.
  * Also, add this file and to the hiding hash table.
- * Warning: If fname has the tag, fname gets modified.
  */
-static bool is_hiding(struct hashtable *hides, char *fname) {
+static bool is_hiding(struct hashtable *hides, const char *fname) {
 	DBG("%s\n", fname);
 
-	char *tag;
-
-	tag = whiteout_tag(fname);
+	const char *tag = whiteout_tag(fname);
 	if (tag) {
 		// even more important, ignore the file without the tag!
-		// hint: tag is a pointer to the flag-suffix within de->d_name
-		*tag = '\0'; // this modifies fname!
+		char *key = strndup(fname, tag - fname);
 
 		// add to hides (only if not there already)
-		if (!hashtable_search(hides, fname)) {
-			char *key = strdup(fname);
+		if (!hashtable_search(hides, key)) {
 			hashtable_insert(hides, key, key);
+		} else {
+			free(key);
 		}
 
 		RETURN(true);
