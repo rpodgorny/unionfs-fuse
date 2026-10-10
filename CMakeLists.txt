@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 # src/version.h is the single source of truth for the version
 file(STRINGS src/version.h VERSION_LINE REGEX "^#define VERSION ")
