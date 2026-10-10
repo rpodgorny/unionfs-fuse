@@ -1,3 +1,10 @@
+unreleased
+- fix setting timestamps (touch, utime) failing with -o chroot and relative branch paths
+- no longer prints stray "***** p:" debug lines to stdout on renames and cow
+- man page moved to section 1 (unionfs.1) as unionfs is a user command
+- unionfs --version no longer reports a stale version after incremental builds
+- cmake builds now require cmake 3.10 or newer
+
 3.8
 - fix data corruption when copying files larger than 8 MiB concurrently in cow mode
 - fix "bad address" error when setting a debug file with unionfsctl -p
