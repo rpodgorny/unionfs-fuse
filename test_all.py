@@ -266,8 +266,11 @@ class UnionFS_RW_RO_RO_COW_TestCase(Common, unittest.TestCase):
 		self.assertEqual(read_from_file('ro1/ro1_file'), 'ro1')
 
 	def test_concurrent_cow(self):
-		num_threads = 8
-		file_size = 65536  # larger than MAXBSIZE to ensure multi-chunk copying
+		# copy_file() used to share a static buffer between threads. Files of
+		# up to 8 MiB are copied via mmap and never touch that buffer, so the
+		# files have to be bigger than that to exercise the read/write loop.
+		num_threads = 4
+		file_size = 9 * 1024 * 1024
 		files = []
 
 		for idx in range(num_threads):
