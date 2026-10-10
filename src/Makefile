@@ -30,14 +30,16 @@ UNIONFSCTL_OBJ = unionfsctl.o
 
 all: unionfs unionfsctl libunionfs.a libunionfs.so
 
-unionfs: $(UNIONFS_OBJ) libunionfs.a uioctl.h version.h
+unionfs: $(UNIONFS_OBJ) libunionfs.a uioctl.h
 	$(CC) $(LDFLAGS) -o $@ $(UNIONFS_OBJ) libunionfs.a $(LIB)
 
-unionfsctl: $(UNIONFSCTL_OBJ) uioctl.h version.h
+unionfsctl: $(UNIONFSCTL_OBJ) uioctl.h
 	$(CC) $(LDFLAGS) -o $@ $(UNIONFSCTL_OBJ)
 
-libunionfs.a: $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ) uioctl.h version.h
+libunionfs.a: $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ) uioctl.h
 	$(AR) rc $@ $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ)
+
+opts.o: version.h
 
 libunionfs.so: libunionfs.a
 	$(CC) -shared -o $@ $(LIBUNIONFS_OBJ) $(HASHTABLE_OBJ) $(LIB)

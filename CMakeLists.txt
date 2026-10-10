@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(unionfs-fuse VERSION 3.4
+# src/version.h is the single source of truth for the version
+file(STRINGS src/version.h VERSION_LINE REGEX "^#define VERSION ")
+string(REGEX MATCH "[0-9.]+" UNIONFS_VERSION "${VERSION_LINE}")
+
+project(unionfs-fuse VERSION ${UNIONFS_VERSION}
                      DESCRIPTION "user-space implementation of union filesystem (with help of fuse)"
                      LANGUAGES C)
 
