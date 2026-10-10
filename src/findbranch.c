@@ -62,7 +62,6 @@ bool branch_contains_path(int branch, const char *path, bool *is_dir) {
 		RETURN(false);
 	}
 
-	printf("***** p: %s\n", p);
 	struct stat stbuf;
 	int res = lstat(p, &stbuf);
 
