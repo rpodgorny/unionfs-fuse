@@ -804,7 +804,7 @@ static int unionfs_utimens(const char *path, const struct timespec ts[2], struct
 	if (BUILD_PATH(p, uopt.branches[i].path, path)) RETURN(-ENAMETOOLONG);
 
 #ifdef UNIONFS_HAVE_AT
-	int res = utimensat(0, p, ts, AT_SYMLINK_NOFOLLOW);
+	int res = utimensat(AT_FDCWD, p, ts, AT_SYMLINK_NOFOLLOW);
 #else
 	struct timeval tv[2];
 	tv[0].tv_sec = ts[0].tv_sec;
