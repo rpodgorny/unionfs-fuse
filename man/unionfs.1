@@ -63,6 +63,11 @@ to stderr and a debug file (./unionfs_debug.log by default).
 \fB\-o debug_file=file
 Write unionfs debug information into that file.
 .TP
+\fB\-o direct_io
+Bypass the kernel page cache for file contents, so reads and writes always
+go to the underlying branches. Useful when files are modified directly in
+the branches while mounted. Slower, and may break mmap() on older kernels.
+.TP
 \fB\-o max_files=number
 Maximum number of open files. Most systems have a default limit of 1024
 open files per process. For example if unionfs serves "/", applications
