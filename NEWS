@@ -1,5 +1,8 @@
-3.8 (unreleased)
+3.8
 - fix data corruption when copying files larger than 8 MiB concurrently in cow mode
+- fix "bad address" error when setting a debug file with unionfsctl -p
+- fix creating unix sockets on macos
+- mount.unionfs helper no longer requires bash and accepts multiple -o options
 
 3.7
 - fix chmod on symlink itself
