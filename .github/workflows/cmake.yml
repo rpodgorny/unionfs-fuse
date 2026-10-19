@@ -32,10 +32,10 @@ jobs:
           # macFUSE on macOS
           - cc: gcc-14
             clang_major_version: null
-            runs-on: macos-14
-          - cc: clang-15
-            clang_major_version: 15
-            runs-on: macos-14
+            runs-on: macos-15
+          - cc: clang-18
+            clang_major_version: 18
+            runs-on: macos-15
 
     steps:
       - name: Install build dependencies
