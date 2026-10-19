@@ -36,6 +36,12 @@ jobs:
           - cc: clang-18
             clang_major_version: 18
             runs-on: macos-15
+          - cc: gcc-15
+            clang_major_version: null
+            runs-on: macos-26
+          - cc: clang-20
+            clang_major_version: 20
+            runs-on: macos-26
 
     steps:
       - name: Install build dependencies
